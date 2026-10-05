@@ -1,0 +1,23 @@
+#!/bin/bash
+# Run the API (uvicorn --reload), the Celery worker and the Next.js dev server.
+# Ctrl+C stops all three.
+set -euo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
+
+docker compose up -d --wait
+
+if [ -f .env ]; then
+  set -a; . ./.env; set +a
+fi
+
+pids=()
+cleanup() { kill "${pids[@]}" 2>/dev/null || true; wait 2>/dev/null || true; }
+trap cleanup EXIT INT TERM
+
+(cd backend && uv run uvicorn app.main:app --reload --port 8000) & pids+=($!)
+(cd backend && uv run celery -A app.jobs.celery_app worker --loglevel=info) & pids+=($!)
+(cd frontend && npm run dev) & pids+=($!)
+
+echo "API http://localhost:8000/api/v1/health  |  Web http://localhost:3000/health"
+wait -n
