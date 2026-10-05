@@ -1,0 +1,382 @@
+# The 12 Dimensions of Innovation, machine-readable.
+# Source: Amy-Renee's book "The 12 Dimensions of Innovation".
+#   - readiness_questions and next_steps: Chapter 15 (verbatim; Amy approved verbatim use, Qnr 4.5).
+#   - sub_aspects: chapter headings of Chapters 1 to 12.
+#   - iq_levels: Chapter 13. readiness_bands: Chapter 15.
+# Curly quotes were normalised to straight quotes. Nothing else was changed.
+# Code loads this file. Never retype dimension names, questions or bands anywhere else.
+# Any change to question wording requires bumping question_set_version (use /decision).
+
+question_set_version: 1
+
+categories:
+  - key: customer_facing
+    name: Customer-Facing Innovation
+    order: 1
+  - key: process
+    name: Process Innovation
+    order: 2
+  - key: strategic
+    name: Strategic Innovation
+    order: 3
+
+readiness_scale:
+  min: 1
+  max: 5
+  labels:
+    1: Strongly Disagree
+    5: Strongly Agree
+
+readiness_bands:   # on the total out of 300, inclusive ranges
+  - key: innovation_champion
+    name: Innovation Champion
+    min: 250
+    max: 300
+    text: "Your organization is thriving in innovation across all dimensions. Maintain momentum and fine-tune strategies."
+  - key: building_blocks
+    name: Building Blocks
+    min: 175
+    max: 249
+    text: "You have a strong foundation but may need to focus on specific weaknesses."
+  - key: emerging_innovator
+    name: Emerging Innovator
+    min: 100
+    max: 174
+    text: "Significant gaps exist. Prioritize improvements for the lowest-scoring dimensions."
+  - key: beginner
+    name: Beginner
+    min: 0        # lowest possible completed total is 60
+    max: 99
+    text: "Build innovation capacity step by step, beginning with the foundational dimensions."
+
+iq_scale:
+  min: 1
+  max: 10
+
+iq_levels:        # per dimension score, inclusive ranges
+  - key: continuous_improvement
+    name: Continuous Improvement
+    min: 1
+    max: 3
+    text: "Activities that enhance existing processes, products, or services incrementally."
+  - key: innovation
+    name: Innovation
+    min: 4
+    max: 6
+    text: "Novel solutions that address customer needs or improve operational capabilities, with meaningful differentiation."
+  - key: invention
+    name: Invention
+    min: 7
+    max: 10
+    text: "Breakthroughs that redefine markets, create entirely new demand, or disrupt existing systems."
+
+dimensions:
+  - key: customer_journey
+    name: Customer Journey
+    order: 1
+    category: customer_facing
+    description: "Focus on mapping, understanding, and optimizing the customer's entire interaction lifecycle."
+    readiness_questions:
+      - id: customer_journey_1
+        text: "Do you have a clear understanding of your customer's end-to-end experience?"
+      - id: customer_journey_2
+        text: "Is customer feedback regularly integrated into refining this experience?"
+      - id: customer_journey_3
+        text: "Are touchpoints optimized to ensure seamless navigation and usability?"
+      - id: customer_journey_4
+        text: "Do your strategies prioritize customer loyalty and advocacy?"
+      - id: customer_journey_5
+        text: "Are your customers' emotional needs and expectations a focal point?"
+    next_steps: "If scoring low, map customer interactions and identify areas for improvement in personalization and service delivery."
+    sub_aspects:
+      - Awareness and Discovery
+      - Evaluation and Consideration
+      - Purchase and Acquisition
+      - Onboarding and Usage
+      - Support and Service
+      - Retention and Loyalty
+      - Advocacy and Referral
+
+  - key: brand_magnetism
+    name: Brand Magnetism
+    order: 2
+    category: customer_facing
+    description: "Build a brand that establishes trust, captivates audiences, and fosters customer loyalty."
+    readiness_questions:
+      - id: brand_magnetism_1
+        text: "Are your brand values clearly articulated and consistently communicated?"
+      - id: brand_magnetism_2
+        text: "Does your brand story resonate emotionally with your target audience?"
+      - id: brand_magnetism_3
+        text: "Is the brand design consistent across all channels?"
+      - id: brand_magnetism_4
+        text: "Are you fostering an engaged customer community or ecosystem?"
+      - id: brand_magnetism_5
+        text: "Are your branding efforts attracting loyal advocates over time?"
+    next_steps: "Enhance storytelling, engage customers emotionally, and align branding across all interactions."
+    sub_aspects:
+      - Brand Positioning
+      - Brand Identity
+      - Brand Values
+      - Customer Experience
+      - Brand Storytelling
+      - Community Building
+      - Social Media Presence
+      - Content Marketing
+      - Brand Partnerships
+
+  - key: channel_navigation
+    name: Channel Navigation
+    order: 3
+    category: customer_facing
+    description: "Ensure seamless customer access and interaction across all channels."
+    readiness_questions:
+      - id: channel_navigation_1
+        text: "Are your online and offline channels intuitive and easily accessible?"
+      - id: channel_navigation_2
+        text: "Do you use omnichannel strategies to unify customer experiences?"
+      - id: channel_navigation_3
+        text: "Are delivery and logistics optimized for reliability and satisfaction?"
+      - id: channel_navigation_4
+        text: "Is accessibility prioritized to cater to diverse customer needs?"
+      - id: channel_navigation_5
+        text: "Are personalization tools used to tailor interactions for individual users?"
+    next_steps: "Map out and optimize key touchpoints, and integrate data platforms for a seamless omnichannel experience."
+    sub_aspects:
+      - Online Channels
+      - Offline Channels
+      - Omnichannel Integration
+      - Direct-to-Consumer (DTC)
+      - Channel Partnerships
+      - Delivery and Logistics
+      - Accessibility and Convenience
+      - Personalized Channel Experiences
+
+  - key: service_excellence
+    name: Service Excellence
+    order: 4
+    category: customer_facing
+    description: "Deliver high-quality, empathetic service experiences consistently."
+    readiness_questions:
+      - id: service_excellence_1
+        text: "Does your service delivery meet or exceed customer expectations?"
+      - id: service_excellence_2
+        text: "Are multiple service channels available and user-friendly?"
+      - id: service_excellence_3
+        text: "Is customer support proactive and easily accessible?"
+      - id: service_excellence_4
+        text: "Do customers benefit from clear service guarantees or policies?"
+      - id: service_excellence_5
+        text: "Are service interactions personalized based on customer history or preferences?"
+    next_steps: "Focus on expanding service accessibility, integrating customer data, and adopting technologies like AI for better speed and reliability."
+    sub_aspects:
+      - Delivery Method
+      - Speed
+      - Reliability
+      - Personalization
+      - Accessibility
+      - Convenience
+      - Interaction
+      - Technology Integration
+      - Service Scope
+
+  - key: product_evolution
+    name: Product Evolution
+    order: 5
+    category: customer_facing
+    description: "Continuously improve product design and functionality to meet evolving customer needs."
+    readiness_questions:
+      - id: product_evolution_1
+        text: "Are your products designed with customer feedback in mind?"
+      - id: product_evolution_2
+        text: "Do you evaluate your products' environmental and lifecycle impacts?"
+      - id: product_evolution_3
+        text: "Are design and functionality aligned with market trends?"
+      - id: product_evolution_4
+        text: "Do you emphasize aesthetics, performance, and usability?"
+      - id: product_evolution_5
+        text: "Is innovation a consistent focus within product development teams?"
+    next_steps: "Conduct customer-focused R&D and adopt agile development practices to innovate products faster and effectively."
+    sub_aspects:
+      - Aesthetics
+      - Performance
+      - Functionality
+      - Usability
+      - Materials
+
+  - key: operational_efficiency
+    name: Operational Efficiency
+    order: 6
+    category: process
+    description: "Streamline internal operations for smarter, faster, and more cost-effective work."
+    readiness_questions:
+      - id: operational_efficiency_1
+        text: "Are workflows regularly reviewed and optimized for efficiency?"
+      - id: operational_efficiency_2
+        text: "Do you employ tools like automation and AI to reduce operational bottlenecks?"
+      - id: operational_efficiency_3
+        text: "Are lean methodologies or similar systems in place?"
+      - id: operational_efficiency_4
+        text: "Is operational flexibility a priority to adapt to unexpected changes?"
+      - id: operational_efficiency_5
+        text: "Are quality assurance measures implemented across all key operations?"
+    next_steps: "Automate repetitive processes and strengthen flexibility and quality control for operational consistency."
+    sub_aspects:
+      - Process Design
+      - Process Efficiency
+      - Technology Integration
+      - Quality Control
+      - Flexibility and Adaptability
+
+  - key: organizational_agility
+    name: Organizational Agility
+    order: 7
+    category: process
+    description: "Maintain flexibility and resilience to pivot quickly when needed."
+    readiness_questions:
+      - id: organizational_agility_1
+        text: "Can teams easily adapt to crises or rapidly changing market demands?"
+      - id: organizational_agility_2
+        text: "Are communication systems in place to support agility at all levels?"
+      - id: organizational_agility_3
+        text: "Do employees feel empowered to innovate and make decisions independently?"
+      - id: organizational_agility_4
+        text: "Is knowledge shared effectively across teams and departments?"
+      - id: organizational_agility_5
+        text: "Are innovative HR policies like hybrid work or cross-functional projects encouraged?"
+    next_steps: "Empower decision-making at all levels and develop an agile-focused culture backed by tools and training."
+    sub_aspects:
+      - Knowledge Management
+      - HR Innovation
+      - Communication
+      - Financial Management
+      - Legal and Compliance
+
+  - key: collaborative_synergy
+    name: Collaborative Synergy
+    order: 8
+    category: strategic
+    description: "Maximize innovation through partnerships and co-creation."
+    readiness_questions:
+      - id: collaborative_synergy_1
+        text: "Does your organization actively collaborate with external partners or stakeholders?"
+      - id: collaborative_synergy_2
+        text: "Are supplier and customer collaborations part of your innovation process?"
+      - id: collaborative_synergy_3
+        text: "Are R&D partnerships pursued strategically?"
+      - id: collaborative_synergy_4
+        text: "Do you engage with startups, universities, or innovation hubs for cross-industry learning?"
+      - id: collaborative_synergy_5
+        text: "Are co-creation initiatives yielding tangible results?"
+    next_steps: "Build trust-based ecosystems with partners and explore untapped collaboration opportunities."
+    sub_aspects:
+      - Supplier Collaboration
+      - Customer Collaboration
+      - R&D Partnerships
+      - Strategic Alliances
+      - Open Innovation
+      - Distribution Channel Innovation
+
+  - key: value_creation_engine
+    name: Value Creation Engine
+    order: 9
+    category: strategic
+    description: "Develop and deliver offerings that drive customer satisfaction and long-term business growth."
+    readiness_questions:
+      - id: value_creation_engine_1
+        text: "Are you aligned with customer needs when developing new products or services?"
+      - id: value_creation_engine_2
+        text: "Do you have a clear, effective value proposition?"
+      - id: value_creation_engine_3
+        text: "Is the value generated by your innovation efforts measured effectively?"
+      - id: value_creation_engine_4
+        text: "Are customer insights integrated into continuous product iteration?"
+      - id: value_creation_engine_5
+        text: "Do partnerships and revenue models reinforce value creation?"
+    next_steps: "Refine your value proposition and actively measure ROI from new initiatives."
+    sub_aspects:
+      - Value Proposition
+      - Revenue Model
+      - Customer Relationships
+      - Channels
+      - Key Activities
+      - Key Resources
+      - Key Partnerships
+      - Cost Structure
+
+  - key: sustainable_future
+    name: Sustainable Future
+    order: 10
+    category: strategic
+    description: "Integrate sustainability into operations, products, and strategies."
+    readiness_questions:
+      - id: sustainable_future_1
+        text: "Are sustainability-focused goals incorporated into your organization's broader strategy?"
+      - id: sustainable_future_2
+        text: "Are you utilizing renewable or eco-friendly resources in production?"
+      - id: sustainable_future_3
+        text: "Do you evaluate and reduce your carbon emissions?"
+      - id: sustainable_future_4
+        text: "Are you investing in the circular economy or similar green initiatives?"
+      - id: sustainable_future_5
+        text: "Are societal impacts actively considered in your innovation efforts?"
+    next_steps: "Align product designs, processes, and communications with long-term sustainability goals."
+    sub_aspects:
+      - Resource Efficiency
+      - Emissions Reduction
+      - Circular Economy
+      - Sustainable Sourcing
+      - Product Lifecycle Impacts
+      - Ethical Labor Practices
+      - Diversity and Inclusion
+      - Community Engagement
+      - Product Accessibility
+      - Social Impact
+
+  - key: data_intelligence
+    name: Data Intelligence
+    order: 11
+    category: strategic
+    description: "Harness actionable data insights to inform smarter, innovation-driven decision-making."
+    readiness_questions:
+      - id: data_intelligence_1
+        text: "Is data governance (security and ethical use) prioritized?"
+      - id: data_intelligence_2
+        text: "Are you using data systems for real-time insights and decision-making?"
+      - id: data_intelligence_3
+        text: "Do analytics systems directly inform innovation strategies?"
+      - id: data_intelligence_4
+        text: "Are predictive tools or AI regularly used to forecast trends?"
+      - id: data_intelligence_5
+        text: "Have teams been trained to interpret and apply data effectively?"
+    next_steps: "Invest in predictive analytics and centralized dashboards that ensure consistent application of data insights."
+    sub_aspects:
+      - Data Acquisition and Management
+      - Data Analytics and Insights
+      - Data-Driven Decision Making
+      - Data Visualization and Communication
+      - Data Security and Privacy
+
+  - key: financial_imperative
+    name: Financial Imperative
+    order: 12
+    category: strategic
+    description: "Balance fiscal responsibility with bold innovation strategies."
+    readiness_questions:
+      - id: financial_imperative_1
+        text: "Are innovation projects reviewed for ROI and financial feasibility?"
+      - id: financial_imperative_2
+        text: "Is innovation funding prioritized within broader budgets?"
+      - id: financial_imperative_3
+        text: "Are long-term risks like economic disruptions factored into financial planning?"
+      - id: financial_imperative_4
+        text: "Do pricing models support capturing the full value of your innovations?"
+      - id: financial_imperative_5
+        text: "Are resources allocated to both incremental and high-risk initiatives?"
+    next_steps: "Strengthen financial models to balance innovation growth with profitability and sustainability."
+    sub_aspects:
+      - Cost Optimization
+      - Resource Allocation
+      - Investment Strategy
+      - Financial Risk Management
+      - Value Capture

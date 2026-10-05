@@ -1,0 +1,13 @@
+#!/bin/bash
+# Runs only the pure scoring engine tests. Keep this fast (under 10 seconds).
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+if [ ! -d "$ROOT/backend/tests/scoring" ]; then
+  echo "No scoring tests yet (backend/tests/scoring). Nothing to run."
+  exit 0
+fi
+cd "$ROOT/backend" || exit 1
+if command -v uv >/dev/null 2>&1; then
+  uv run pytest tests/scoring -q
+else
+  python -m pytest tests/scoring -q
+fi

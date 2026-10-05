@@ -1,0 +1,29 @@
+# Reference material (Emergent prototype, book text) — not part of the repo
+reference/
+
+# Original setup bundle (already copied into the repo root)
+files3/
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Claude Code local state
+.claude/settings.local.json
+.claude/.spec-edit-unlocked
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node
+node_modules/
+.next/
+
+# OS / editor
+.DS_Store
