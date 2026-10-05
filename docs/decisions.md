@@ -13,3 +13,8 @@ Engineering decisions inside the stack. One line each: date, decision, reason. M
 - 2026-10-06: `npm run typecheck` runs `next typegen` before `tsc --noEmit`, since Next 16 route types are generated.
 - 2026-10-06: Keep `frontend/AGENTS.md` and `frontend/CLAUDE.md` from create-next-app; `next dev` re-creates them, and they warn agents that Next 16 differs from older docs.
 - 2026-10-06: Validation error responses strip submitted `input` and `ctx`, so user text never echoes into responses or logs.
+- 2026-10-06: Frontend API types are hand-written for Phase 0 (one endpoint). Switch to `openapi-typescript` generated from `/openapi.json`, with a CI drift check, in Phase 2 when the API grows.
+- 2026-10-06: CI uses Node 22 LTS (Node 20 is end of life); local `engines` stays `>=20.19` so both work.
+- 2026-10-06: Docker Postgres and Redis publish on 127.0.0.1 only; dev credentials are weak and Redis has no auth.
+- 2026-10-06: Unhandled exceptions become the 500 envelope in an ASGI middleware inside CORS, so browsers can read `internal_error`.
+- 2026-10-06: Settings refuse to start in staging or production with the default or a short `SECRET_KEY`.

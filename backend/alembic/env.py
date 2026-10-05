@@ -6,10 +6,10 @@ The URL comes from app settings (DATABASE_URL). Tests pass an explicit URL throu
 
 from logging.config import fileConfig
 
+from alembic import context
 from sqlalchemy import create_engine, pool
 
 import app.models  # noqa: F401  (registers every model on Base.metadata)
-from alembic import context
 from app.core.settings import get_settings
 from app.db.base import Base
 

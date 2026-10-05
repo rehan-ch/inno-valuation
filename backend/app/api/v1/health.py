@@ -1,4 +1,5 @@
 import logging
+from typing import Literal
 
 from fastapi import APIRouter, Depends, status
 from sqlalchemy import text
@@ -18,12 +19,12 @@ router = APIRouter(tags=["health"])
 def health(db: Session = Depends(get_db)) -> HealthOut:
     try:
         db.execute(text("SELECT 1"))
-        database: str = "ok"
+        database: Literal["ok", "error"] = "ok"
     except SQLAlchemyError:
         logger.warning("Health check could not reach the database")
         database = "error"
     return HealthOut(
         status="ok",
-        database="ok" if database == "ok" else "error",
+        database=database,
         version=get_settings().app_version,
     )

@@ -14,13 +14,13 @@ from collections.abc import Iterator  # noqa: E402
 from pathlib import Path  # noqa: E402
 
 import pytest  # noqa: E402
+from alembic import command  # noqa: E402
 from alembic.config import Config  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 from sqlalchemy import Engine, create_engine, text  # noqa: E402
 from sqlalchemy.engine import make_url  # noqa: E402
 from sqlalchemy.orm import Session  # noqa: E402
 
-from alembic import command  # noqa: E402
 from app.core.deps import get_db  # noqa: E402
 from app.core.settings import get_settings  # noqa: E402
 from tests import factories  # noqa: E402
@@ -36,19 +36,21 @@ def database_url() -> Iterator[str]:
     admin = create_engine(
         base_url.set(database="postgres"), isolation_level="AUTOCOMMIT", pool_pre_ping=True
     )
-    with admin.connect() as conn:
-        conn.execute(text(f'CREATE DATABASE "{name}"'))
-    url = base_url.set(database=name).render_as_string(hide_password=False)
     try:
-        cfg = Config(str(BACKEND_DIR / "alembic.ini"))
-        cfg.set_main_option("script_location", str(BACKEND_DIR / "alembic"))
-        cfg.attributes["database_url"] = url
-        cfg.attributes["configure_logger"] = False
-        command.upgrade(cfg, "head")
-        yield url
-    finally:
         with admin.connect() as conn:
-            conn.execute(text(f'DROP DATABASE IF EXISTS "{name}" WITH (FORCE)'))
+            conn.execute(text(f'CREATE DATABASE "{name}"'))
+        url = base_url.set(database=name).render_as_string(hide_password=False)
+        try:
+            cfg = Config(str(BACKEND_DIR / "alembic.ini"))
+            cfg.set_main_option("script_location", str(BACKEND_DIR / "alembic"))
+            cfg.attributes["database_url"] = url
+            cfg.attributes["configure_logger"] = False
+            command.upgrade(cfg, "head")
+            yield url
+        finally:
+            with admin.connect() as conn:
+                conn.execute(text(f'DROP DATABASE IF EXISTS "{name}" WITH (FORCE)'))
+    finally:
         admin.dispose()
 
 

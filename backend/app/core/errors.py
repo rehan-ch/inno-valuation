@@ -13,6 +13,7 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 logger = logging.getLogger(__name__)
 
@@ -89,17 +90,49 @@ async def validation_exception_handler(request: Request, exc: Exception) -> JSON
     )
 
 
-async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
-    logger.exception("Unhandled error on %s %s", request.method, request.url.path)
-    return JSONResponse(
-        status_code=500,
-        content=error_body("internal_error", "Something went wrong."),
-    )
+class UnhandledErrorMiddleware:
+    """Turn any unhandled exception into the 500 envelope.
+
+    A pure ASGI middleware instead of an ``Exception`` handler: Starlette runs that handler in
+    ServerErrorMiddleware, outside CORSMiddleware, so 500s would lose their CORS headers.
+    Add this before CORSMiddleware so CORS wraps it.
+    """
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        response_started = False
+
+        async def send_wrapper(message: Message) -> None:
+            nonlocal response_started
+            if message["type"] == "http.response.start":
+                response_started = True
+            await send(message)
+
+        try:
+            await self.app(scope, receive, send_wrapper)
+        except Exception:
+            if response_started:
+                # Too late to send an envelope; let the server close the connection.
+                raise
+            logger.exception("Unhandled error on %s %s", scope["method"], scope["path"])
+            response = JSONResponse(
+                status_code=500,
+                content=error_body("internal_error", "Something went wrong."),
+            )
+            await response(scope, receive, send)
 
 
 def register_exception_handlers(app: FastAPI) -> None:
-    """The one place where error handlers are attached to the app."""
+    """The one place where error handlers are attached to the app.
+
+    Unhandled exceptions are caught by ``UnhandledErrorMiddleware``, added in ``create_app``.
+    """
     app.add_exception_handler(AppError, app_error_handler)
     app.add_exception_handler(StarletteHTTPException, http_exception_handler)
     app.add_exception_handler(RequestValidationError, validation_exception_handler)
-    app.add_exception_handler(Exception, unhandled_exception_handler)

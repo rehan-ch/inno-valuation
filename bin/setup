@@ -17,7 +17,7 @@ echo "Starting Postgres and Redis..."
 docker compose up -d --wait
 
 echo "Installing backend (uv)..."
-(cd backend && uv sync)
+(cd backend && uv sync --locked)
 
 echo "Running migrations..."
 (cd backend && uv run alembic upgrade head)

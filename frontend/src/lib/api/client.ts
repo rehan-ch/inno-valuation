@@ -49,7 +49,8 @@ async function readJson(response: Response): Promise<unknown> {
 export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers);
   if (!headers.has("Accept")) headers.set("Accept", "application/json");
-  if (init.body !== undefined && !headers.has("Content-Type")) {
+  // Only JSON strings get a JSON content type; FormData and Blob bodies set their own.
+  if (typeof init.body === "string" && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
 

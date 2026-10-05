@@ -1,5 +1,8 @@
 """Every error leaves the API in the single envelope {"error": {"code", "message"}}."""
 
+import logging
+from collections.abc import Iterator
+
 import pytest
 from fastapi import FastAPI, status
 from fastapi.testclient import TestClient
@@ -18,7 +21,7 @@ class _Out(BaseModel):
 
 
 @pytest.fixture(scope="module")
-def error_client() -> TestClient:
+def error_client() -> Iterator[TestClient]:
     test_app: FastAPI = create_app()
 
     @test_app.get("/boom/app-error", response_model=_Out, status_code=200, tags=["test"])
@@ -33,7 +36,8 @@ def error_client() -> TestClient:
     def validate(body: _Body) -> _Out:
         return _Out(ok=True)
 
-    return TestClient(test_app, raise_server_exceptions=False)
+    with TestClient(test_app, raise_server_exceptions=False) as c:
+        yield c
 
 
 def test_app_error(error_client: TestClient) -> None:
@@ -71,3 +75,21 @@ def test_unhandled_error_hides_details(error_client: TestClient) -> None:
         "error": {"code": "internal_error", "message": "Something went wrong."}
     }
     assert "secret internal detail" not in response.text
+
+
+def test_unhandled_error_keeps_cors_headers(error_client: TestClient) -> None:
+    response = error_client.get("/boom/unhandled", headers={"Origin": "http://localhost:3000"})
+    assert response.status_code == 500
+    assert response.json() == {
+        "error": {"code": "internal_error", "message": "Something went wrong."}
+    }
+    assert response.headers["access-control-allow-origin"] == "http://localhost:3000"
+
+
+def test_unhandled_error_logged_once(
+    error_client: TestClient, caplog: pytest.LogCaptureFixture
+) -> None:
+    with caplog.at_level(logging.ERROR):
+        error_client.get("/boom/unhandled")
+    tracebacks = [record for record in caplog.records if record.exc_info]
+    assert len(tracebacks) == 1

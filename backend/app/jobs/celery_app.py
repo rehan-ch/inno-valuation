@@ -19,7 +19,10 @@ celery_app.conf.update(
     accept_content=["json"],
     timezone="UTC",
     enable_utc=True,
+    # acks_late (plus reject_on_worker_lost) means a task can be delivered more than once,
+    # for example after a worker crash. Every task must therefore be idempotent.
     task_acks_late=True,
+    task_reject_on_worker_lost=True,
     task_always_eager=settings.is_test,
     task_eager_propagates=settings.is_test,
 )

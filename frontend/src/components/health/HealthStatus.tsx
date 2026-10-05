@@ -73,7 +73,7 @@ export function HealthStatus() {
   const { health } = state;
   return (
     <dl className="divide-y divide-neutral-200 rounded-md border border-neutral-200 px-4">
-      <StatusRow label="API" value={health.status === "ok" ? "OK" : health.status} good={health.status === "ok"} />
+      <StatusRow label="API" value="OK" good />
       <StatusRow
         label="Database"
         value={health.database === "ok" ? "OK" : "Error"}
