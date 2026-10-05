@@ -7,8 +7,11 @@ cd "$ROOT"
 
 docker compose up -d --wait
 
+# The backend reads .env itself (pydantic-settings). The frontend only needs the API URL,
+# so pass that one value through instead of shell-sourcing the whole file.
 if [ -f .env ]; then
-  set -a; . ./.env; set +a
+  api_url=$(grep -E '^NEXT_PUBLIC_API_BASE_URL=' .env | tail -1 | cut -d= -f2- | tr -d '"' || true)
+  if [ -n "${api_url:-}" ]; then export NEXT_PUBLIC_API_BASE_URL="$api_url"; fi
 fi
 
 pids=()
