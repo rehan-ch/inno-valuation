@@ -9,21 +9,21 @@ import os
 
 os.environ["ENVIRONMENT"] = "test"
 
-import uuid  # noqa: E402
-from collections.abc import Iterator  # noqa: E402
-from pathlib import Path  # noqa: E402
+import uuid
+from collections.abc import Iterator
+from pathlib import Path
 
-import pytest  # noqa: E402
-from alembic import command  # noqa: E402
-from alembic.config import Config  # noqa: E402
-from fastapi.testclient import TestClient  # noqa: E402
-from sqlalchemy import Engine, create_engine, text  # noqa: E402
-from sqlalchemy.engine import make_url  # noqa: E402
-from sqlalchemy.orm import Session  # noqa: E402
+import pytest
+from alembic import command
+from alembic.config import Config
+from fastapi.testclient import TestClient
+from sqlalchemy import Engine, create_engine, text
+from sqlalchemy.engine import make_url
+from sqlalchemy.orm import Session
 
-from app.core.deps import get_db  # noqa: E402
-from app.core.settings import get_settings  # noqa: E402
-from tests import factories  # noqa: E402
+from app.core.deps import get_db
+from app.core.settings import get_settings
+from tests import factories
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 
@@ -82,7 +82,8 @@ def db(db_engine: Engine) -> Iterator[Session]:
 
 @pytest.fixture
 def client(db: Session) -> Iterator[TestClient]:
-    from app.main import app
+    # Imported late on purpose: ENVIRONMENT=test must be set before the app loads.
+    from app.main import app  # noqa: PLC0415
 
     def _override_get_db() -> Iterator[Session]:
         yield db

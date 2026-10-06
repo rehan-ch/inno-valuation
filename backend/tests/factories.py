@@ -11,7 +11,8 @@ _session: Session | None = None
 
 
 def bind_session(session: Session | None) -> None:
-    global _session
+    # Module-level binding is how factory-boy factories find the per-test session.
+    global _session  # noqa: PLW0603
     _session = session
 
 

@@ -38,7 +38,24 @@ target-version = "py312"
 extend-exclude = [".venv"]
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "B", "UP", "SIM"]
+# Beyond style: security (S), timezone-safe datetimes (DTZ), bug patterns (B, PL, PERF,
+# ASYNC), pytest style (PT), no stray prints (T20) or commented-out code (ERA).
+select = [
+    "E", "W", "F", "I", "B", "UP", "SIM", "S", "RUF", "C4", "PT", "PERF", "ASYNC",
+    "N", "DTZ", "T20", "PIE", "RET", "ERA", "PL", "TRY",
+]
+ignore = [
+    "TRY003",  # AppError(code, message) is the house style for errors.
+    "PLR0913", # FastAPI endpoints take many injected dependencies.
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = [
+    "S101",    # pytest uses assert.
+    "PLR2004", # HTTP status codes and expected values read best inline.
+    "S105",    # test fixtures use fake passwords and tokens.
+    "S106",
+]
 
 [tool.ruff.lint.isort]
 known-first-party = ["app", "tests"]

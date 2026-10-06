@@ -15,6 +15,18 @@ Then open http://localhost:3000/health (the page calls `GET /api/v1/health`).
 
 Services from `docker-compose.yml`: Postgres on `localhost:5440`, Redis on `localhost:6390`.
 
+## Git hooks
+
+`bin/setup` turns on the hooks in `.githooks/` (`git config core.hooksPath .githooks`). All checks live in `bin/check`, so you can run them by hand too.
+
+| Hook | Runs | Checks |
+|---|---|---|
+| `pre-commit` | `bin/check staged` (seconds) | no secrets, `.env` files, keys, conflict markers or files over 1 MB; ruff lint and format and mypy on staged Python; eslint with zero warnings on staged TypeScript; scoring tests when the engine or `dimensions.yml` changes |
+| `commit-msg` | `bin/check message` | subject is `type(scope): summary`, at most 100 characters; no AI attribution or co-author lines |
+| `pre-push` | `bin/check range` + `bin/check full` (about a minute) | no direct push to `main`; pushed commits scanned for secrets and attribution; lock file in sync; ruff, mypy, all backend tests (Postgres must be up), migrations match models, OpenAPI types current, frontend lint, typecheck, tests and build; `pip-audit` and `npm audit` on production dependencies |
+
+Do not skip them with `--no-verify`. CI runs the same checks, so a skipped hook only moves the failure to CI.
+
 ## Tests and checks
 
 ```bash

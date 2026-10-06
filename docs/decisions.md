@@ -18,3 +18,8 @@ Engineering decisions inside the stack. One line each: date, decision, reason. M
 - 2026-10-06: Docker Postgres and Redis publish on 127.0.0.1 only; dev credentials are weak and Redis has no auth.
 - 2026-10-06: Unhandled exceptions become the 500 envelope in an ASGI middleware inside CORS, so browsers can read `internal_error`.
 - 2026-10-06: Settings refuse to start in staging or production with the default or a short `SECRET_KEY`.
+- 2026-10-06: Git hooks live in `.githooks/` (enabled by `bin/setup` through `core.hooksPath`), with all logic in `bin/check` so hooks, humans and CI share one definition. No hook framework dependency.
+- 2026-10-06: Ruff rule set widened to include security (S), timezone-safe datetimes (DTZ), pylint (PL), pytest style (PT), no prints (T20) and no commented-out code (ERA). It caught runtime `assert`s in the error handlers, which vanish under `python -O`; they are now real checks.
+- 2026-10-06: TypeScript adds `noUncheckedIndexedAccess`, `noImplicitOverride` and `noFallthroughCasesInSwitch`; eslint runs with `--max-warnings=0`.
+- 2026-10-06: Dependency audits block on production dependencies only (`pip-audit` on the locked set, `npm audit --omit=dev --audit-level=high`). The 5 known high findings are in dev-only lint tooling.
+- 2026-10-06: Commit subjects are limited to 100 characters (commitlint default); the push scan skips commits already on `main`.

@@ -84,6 +84,7 @@ bin/                   setup, dev, test-scoring
 - `bin/setup`: create the virtualenv with uv, install both apps, create the database, run migrations, seed dimensions.
 - `bin/dev`: run FastAPI (`uvicorn --reload`), Celery worker, and Next.js.
 - `bin/test-scoring`: engine tests only (the edit hook runs this automatically).
+- `bin/check staged|full`: the quality gate behind the git hooks in `.githooks/` (pre-commit, commit-msg, pre-push). `bin/setup` enables them. Never bypass with `--no-verify`.
 - `cd backend && uv run pytest`: full backend suite. `cd frontend && npm test`: frontend suite.
 - `cd backend && uv run ruff check . && uv run mypy app`: lint and types.
 - `cd backend && uv run alembic revision --autogenerate -m "..."`, then review the file before committing.

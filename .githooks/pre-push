@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Full gate before code leaves this machine: no direct pushes to main, no secrets or
+# attribution in the pushed commits, then everything CI runs plus dependency audits.
+set -euo pipefail
+cd "$(git rev-parse --show-toplevel)"
+zero=0000000000000000000000000000000000000000
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [ "$local_sha" = "$zero" ] && continue  # deleting a remote branch
+  if [ "$remote_ref" = "refs/heads/main" ]; then
+    echo "pre-push: do not push to main directly. Push a branch and open a pull request." >&2
+    exit 1
+  fi
+  if [ "$remote_sha" = "$zero" ]; then
+    bin/check range "" "$local_sha"
+  else
+    bin/check range "$remote_sha" "$local_sha"
+  fi
+done
+exec bin/check full

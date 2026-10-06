@@ -48,19 +48,24 @@ def error_body(code: str, message: str, details: Any | None = None) -> dict[str,
     return {"error": error}
 
 
+SERVER_ERROR_MIN = 500  # first HTTP 5xx status
+
+
 def _code_for_status(status_code: int) -> str:
     if status_code in HTTP_STATUS_CODES:
         return HTTP_STATUS_CODES[status_code]
-    return "internal_error" if status_code >= 500 else "http_error"
+    return "internal_error" if status_code >= SERVER_ERROR_MIN else "http_error"
 
 
 async def app_error_handler(request: Request, exc: Exception) -> JSONResponse:
-    assert isinstance(exc, AppError)
+    if not isinstance(exc, AppError):  # not assert: asserts vanish under python -O
+        raise TypeError(type(exc).__name__)
     return JSONResponse(status_code=exc.status_code, content=error_body(exc.code, exc.message))
 
 
 async def http_exception_handler(request: Request, exc: Exception) -> JSONResponse:
-    assert isinstance(exc, StarletteHTTPException)
+    if not isinstance(exc, StarletteHTTPException):  # not assert: asserts vanish under python -O
+        raise TypeError(type(exc).__name__)
     if isinstance(exc.detail, str):
         message = exc.detail
     else:
@@ -76,7 +81,8 @@ async def http_exception_handler(request: Request, exc: Exception) -> JSONRespon
 
 
 async def validation_exception_handler(request: Request, exc: Exception) -> JSONResponse:
-    assert isinstance(exc, RequestValidationError)
+    if not isinstance(exc, RequestValidationError):  # not assert: asserts vanish under python -O
+        raise TypeError(type(exc).__name__)
     # Drop the submitted input from details so user text never echoes into responses or logs.
     details = [
         {key: value for key, value in err.items() if key not in ("input", "ctx", "url")}

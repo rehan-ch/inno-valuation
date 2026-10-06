@@ -8,6 +8,9 @@ for tool in uv npm docker; do
   command -v "$tool" >/dev/null 2>&1 || { echo "Missing required tool: $tool" >&2; exit 1; }
 done
 
+echo "Installing git hooks (.githooks: pre-commit, commit-msg, pre-push)..."
+git config core.hooksPath .githooks
+
 if [ ! -f .env ]; then
   cp .env.example .env
   echo "Created .env from .env.example"

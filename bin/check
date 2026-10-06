@@ -1,0 +1,182 @@
+#!/usr/bin/env bash
+# Quality gate shared by the git hooks (.githooks/) and usable by hand.
+#
+#   bin/check staged          fast checks on staged files (pre-commit)
+#   bin/check full            everything CI runs, plus dependency audits (pre-push)
+#   bin/check message <file>  commit message rules (commit-msg)
+#   bin/check range <a> <b>   secrets and attribution in commits a..b (pre-push)
+#
+# Every failure prints what broke and how to fix it. Do not bypass with --no-verify.
+set -euo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
+
+red() { printf '\033[31m%s\033[0m\n' "$*" >&2; }
+step() { printf '\033[36m==> %s\033[0m\n' "$*"; }
+fail() { red "check failed: $*"; exit 1; }
+
+# Added lines that look like real credentials. Placeholders in .env.example stay empty.
+SECRET_PATTERN='(-----BEGIN ([A-Z]+ )?PRIVATE KEY-----|sk-ant-[A-Za-z0-9_-]{20,}|AKIA[0-9A-Z]{16}|GOCSPX-[A-Za-z0-9_-]{10,}|gh[pousr]_[A-Za-z0-9]{30,}|xox[baprs]-[A-Za-z0-9-]{10,}|(api[_-]?key|secret|token|password)["'\'']?[[:space:]]*[:=][[:space:]]*["'\''][A-Za-z0-9/+_=-]{24,}["'\''])'
+
+# Commit messages must not credit AI tools (developer rule). ".claude/" paths are allowed.
+ATTRIBUTION_PATTERN='(co-authored-by:.*(claude|anthropic)|noreply@anthropic\.com|generated (with|by) \[?claude|(^|[^./[:alnum:]_])claude([^/[:alnum:]_]|$))'
+
+SUBJECT_PATTERN='^(feat|fix|chore|docs|test|refactor|perf|build|ci|style|revert)(\([a-z0-9._/-]+\))?!?: [^ ].*'
+
+scan_added_lines() {
+  # stdin: a unified diff. Fails on secrets or conflict markers in added lines.
+  local diff
+  diff="$(cat)"
+  if grep -E '^\+' <<<"$diff" | grep -vE '^\+\+\+ ' | grep -qE -- "$SECRET_PATTERN"; then
+    grep -E '^\+' <<<"$diff" | grep -vE '^\+\+\+ ' | grep -nE -- "$SECRET_PATTERN" | cut -c1-120 >&2
+    fail "a line looks like a secret (key, token or password). Move it to .env."
+  fi
+  if grep -qE '^\+(<<<<<<< |>>>>>>> |=======$)' <<<"$diff"; then
+    fail "merge conflict markers are present."
+  fi
+}
+
+check_message_text() {
+  # $1: commit message text (comments already stripped).
+  local msg="$1" subject
+  subject="$(head -n1 <<<"$msg")"
+  if grep -qiE -- "$ATTRIBUTION_PATTERN" <<<"$msg"; then
+    fail "commit message mentions an AI tool or carries an AI co-author line. Remove it."
+  fi
+  case "$subject" in
+    "Merge "* | "Revert "* | "fixup! "* | "squash! "* | "amend! "*) return 0 ;;
+  esac
+  if ! grep -qE -- "$SUBJECT_PATTERN" <<<"$subject"; then
+    fail "subject must look like 'type(scope): summary' (types: feat fix chore docs test refactor perf build ci style revert). Got: $subject"
+  fi
+  if [ "${#subject}" -gt 100 ]; then
+    fail "subject is ${#subject} characters; keep it at 100 or fewer (commitlint default)."
+  fi
+}
+
+cmd_message() {
+  local file="$1" msg
+  msg="$(grep -vE '^#' "$file" || true)"
+  [ -n "$(tr -d '[:space:]' <<<"$msg")" ] || fail "empty commit message."
+  check_message_text "$msg"
+}
+
+cmd_range() {
+  # Commits in $1..$2. $1 empty means a new branch: what is not on a remote or on main.
+  local from="$1" to="$2" commits c
+  if [ -z "$from" ]; then
+    # Commits already on main are reviewed history; scan only what this branch adds.
+    commits="$(git rev-list "$to" --not --remotes $(git rev-parse --verify -q refs/heads/main || true))"
+  else
+    commits="$(git rev-list "$from..$to")"
+  fi
+  for c in $commits; do
+    check_message_text "$(git log -1 --format=%B "$c")" || fail "in commit $(git log -1 --format='%h %s' "$c")"
+    git show --format= --unified=0 "$c" | scan_added_lines || fail "in commit $(git log -1 --format='%h %s' "$c")"
+  done
+}
+
+cmd_staged() {
+  local files
+  files="$(git diff --cached --name-only --diff-filter=ACMR)"
+  [ -n "$files" ] || exit 0
+
+  step "staged files: secrets, env files, size, conflict markers"
+  while IFS= read -r f; do
+    case "$(basename "$f")" in
+      .env.example) ;;
+      .env | .env.* | *.pem | *.key | id_rsa* | id_ed25519*) fail "$f must never be committed." ;;
+    esac
+    if [ "$(git cat-file -s ":$f")" -gt 1048576 ]; then
+      fail "$f is larger than 1 MB. Keep large files out of git."
+    fi
+  done <<<"$files"
+  git diff --cached --unified=0 | scan_added_lines
+
+  local py ts scoring
+  py="$(grep -E '^backend/.*\.py$' <<<"$files" | sed 's|^backend/||' || true)"
+  ts="$(grep -E '^frontend/.*\.(ts|tsx|js|jsx|mjs|cjs)$' <<<"$files" | grep -v 'schema\.d\.ts$' | sed 's|^frontend/||' || true)"
+  scoring="$(grep -E '^(backend/app/scoring/|backend/tests/scoring/|docs/methodology/dimensions\.yml$)' <<<"$files" || true)"
+
+  if [ -n "$py" ]; then
+    step "backend: ruff lint and format on staged files"
+    # shellcheck disable=SC2086
+    (cd backend && uv run --quiet ruff check $py && uv run --quiet ruff format --check $py) \
+      || fail "ruff found problems. Fix them, or run 'uv run ruff check --fix' and 'uv run ruff format' in backend/."
+    if grep -qE '^app/' <<<"$py"; then
+      step "backend: mypy (strict)"
+      (cd backend && uv run --quiet mypy app) || fail "mypy found type errors."
+    fi
+  fi
+  if [ -n "$scoring" ]; then
+    step "scoring engine tests"
+    bin/test-scoring || fail "scoring engine tests failed."
+  fi
+  if [ -n "$ts" ]; then
+    step "frontend: eslint on staged files (no warnings allowed)"
+    # shellcheck disable=SC2086
+    (cd frontend && npx --no-install eslint --max-warnings=0 $ts) || fail "eslint found problems."
+  fi
+  step "pre-commit checks passed"
+}
+
+cmd_full() {
+  step "backend: lock file matches pyproject.toml"
+  (cd backend && uv lock --check --quiet) || fail "uv.lock is out of date. Run 'uv lock' in backend/."
+  step "backend: ruff lint and format"
+  (cd backend && uv run --quiet ruff check . && uv run --quiet ruff format --check .) || fail "ruff found problems."
+  step "backend: mypy (strict)"
+  (cd backend && uv run --quiet mypy app) || fail "mypy found type errors."
+  step "scoring engine tests"
+  bin/test-scoring || fail "scoring engine tests failed."
+
+  step "backend: database reachable"
+  (cd backend && uv run --quiet python -c "
+from sqlalchemy import create_engine, text
+from app.core.settings import get_settings
+with create_engine(get_settings().database_url, connect_args={'connect_timeout': 3}).connect() as c:
+    c.execute(text('select 1'))
+") >/dev/null 2>&1 || fail "Postgres is not reachable. Run 'docker compose up -d' first."
+  step "backend: full test suite"
+  (cd backend && uv run --quiet pytest -q) || fail "backend tests failed."
+  step "backend: migrations match the models"
+  (cd backend && uv run --quiet alembic check) \
+    || fail "models and migrations differ, or the dev database is behind. Run 'uv run alembic upgrade head', then add a migration if needed."
+  if [ -f frontend/openapi.json ]; then
+    step "backend: OpenAPI matches frontend/openapi.json"
+    (cd backend && uv run --quiet python -m app.openapi_dump 2>/dev/null | diff -q - ../frontend/openapi.json >/dev/null) \
+      || fail "frontend/openapi.json is stale. Run 'uv run python -m app.openapi_dump > ../frontend/openapi.json' in backend/."
+  fi
+  step "backend: dependency vulnerability audit"
+  local req
+  req="$(mktemp)"
+  (cd backend && uv export --frozen --no-dev --no-emit-project --format requirements-txt -o "$req" >/dev/null 2>&1)
+  uvx --quiet pip-audit --disable-pip --require-hashes --strict -r "$req" \
+    || { rm -f "$req"; fail "a backend dependency has a known vulnerability (or the audit could not run). Upgrade it."; }
+  rm -f "$req"
+
+  step "frontend: eslint (no warnings allowed)"
+  (cd frontend && npm run --silent lint) || fail "eslint found problems."
+  step "frontend: typecheck"
+  (cd frontend && npm run --silent typecheck) || fail "TypeScript found type errors."
+  if (cd frontend && npm pkg get scripts.check:api | grep -q '"'); then
+    step "frontend: generated API types are current"
+    (cd frontend && npm run --silent check:api) || fail "API types are stale. Run 'npm run gen:api' in frontend/."
+  fi
+  step "frontend: tests"
+  (cd frontend && npm test --silent) || fail "frontend tests failed."
+  step "frontend: production build"
+  (cd frontend && npm run --silent build >/dev/null) || fail "next build failed. Run 'npm run build' in frontend/ to see why."
+  step "frontend: dependency vulnerability audit (production dependencies)"
+  (cd frontend && npm audit --omit=dev --audit-level=high) || fail "a frontend dependency has a known high or critical vulnerability."
+
+  step "all checks passed"
+}
+
+case "${1:-}" in
+  staged) cmd_staged ;;
+  full) cmd_full ;;
+  message) cmd_message "${2:?commit message file}" ;;
+  range) cmd_range "${2-}" "${3:?to}" ;;
+  *) echo "usage: bin/check staged|full|message <file>|range <from> <to>" >&2; exit 2 ;;
+esac

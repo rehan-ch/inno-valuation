@@ -14,7 +14,8 @@ def test_health_ok(client: TestClient) -> None:
     body = response.json()
     assert body["status"] == "ok"
     assert body["database"] == "ok"
-    assert isinstance(body["version"], str) and body["version"]
+    assert isinstance(body["version"], str)
+    assert body["version"]
 
 
 class _BrokenSession:

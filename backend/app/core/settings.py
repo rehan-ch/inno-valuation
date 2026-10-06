@@ -17,7 +17,8 @@ REPO_ROOT = BACKEND_DIR.parent
 
 Environment = Literal["development", "test", "staging", "production"]
 
-DEFAULT_SECRET_KEY = "change-me-in-production"
+# Placeholder, not a secret: the validator refuses it outside development and test.
+DEFAULT_SECRET_KEY = "change-me-in-production"  # noqa: S105
 MIN_SECRET_KEY_LENGTH = 32
 
 

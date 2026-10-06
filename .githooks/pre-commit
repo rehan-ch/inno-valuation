@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Fast checks on what is being committed. Installed by bin/setup (core.hooksPath).
+set -euo pipefail
+cd "$(git rev-parse --show-toplevel)"
+exec bin/check staged
