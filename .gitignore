@@ -4,6 +4,9 @@ reference/
 # Original setup bundle (already copied into the repo root)
 files3/
 
+# Draft messages and reports for Amy (kept local, not committed)
+ask-amy/
+
 # Secrets
 .env
 .env.*
