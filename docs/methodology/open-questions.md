@@ -161,3 +161,48 @@ How to use this file:
 - Affects: design tokens, PDF header, emails.
 - Decision:
 - Decided by / on:
+
+## Q18 How should IQ and Value for Money be rounded?
+- Status: OPEN
+- Why it matters: the spec says IQ is rounded to 1 decimal and VfM to 2 decimals. It does not say how to round a half. Round half up works like a calculator. Round half to even is the Python default. It also does not say if VfM divides the cost by the rounded IQ the user sees or by the unrounded IQ. Example: scores that add up to 83 give IQ 69.1666..., shown as 69.2. With a cost of 50,000, VfM is 722.54 using 69.2, or 722.89 using the unrounded IQ. The spec also does not say how many decimals a category IQ shows (Q9 says "mean x 10").
+- Options: (a) round half up, VfM uses the rounded IQ shown; (b) round half up, VfM uses the unrounded IQ; (c) other. Category IQ: 1 decimal like the main IQ, or a whole number.
+- Provisional default: (a), so a user can recompute every number they see from other numbers they see. Category IQ shows 1 decimal, like the main IQ.
+- Affects: `app/scoring/iq.py`, `app/scoring/vfm.py`, `app/scoring/categories.py`, reports.
+- Decision:
+- Decided by / on:
+
+## Q19 When two dimensions have the same score, which one is the higher priority?
+- Status: OPEN
+- Why it matters: the priorities list shows the lowest scores first. When two dimensions have the same score, the app needs a fixed rule to pick the order. The spec (section 7) proposes book order, but Amy has not confirmed it.
+- Options: (a) book order, the earlier dimension comes first; (b) reverse book order; (c) show all tied dimensions, even if that means more than 5; (d) other.
+- Provisional default: (a).
+- Affects: `app/scoring/priorities.py`, priorities list, AI touchpoint 5.
+- Decision:
+- Decided by / on:
+
+## Q20 If a client changes the dimension weights, do the weights also change the category scores?
+- Status: OPEN
+- Why it matters: Q2 covers the IQ with weights. Q9 covers category scores. Neither says if weights apply inside a category. The compass and the PDF need one rule.
+- Options: (a) no, category IQ is the plain average of its dimension scores x 10; (b) yes, category IQ is the weighted average using the same weights.
+- Provisional default: (a).
+- Affects: `app/scoring/categories.py`, compass, PDF.
+- Decision:
+- Decided by / on:
+
+## Q21 Is the priorities list always 5 dimensions?
+- Status: OPEN
+- Why it matters: spec section 7 says the app prioritises "normally the lowest 5" dimensions, but does not say when it is not 5. The priorities list, the AI gap suggestions and the PDF all depend on the count.
+- Options: (a) always 5; (b) the client chooses the number; (c) 5, plus any dimension tied with the fifth (see Q19).
+- Provisional default: (a) always 5.
+- Affects: `app/scoring/priorities.py` (`PRIORITY_COUNT`), priorities list, AI touchpoint 5, PDF.
+- Decision:
+- Decided by / on:
+
+## Q22 What values may a client give the dimension weights?
+- Status: OPEN
+- Why it matters: Q2 says weights are non-negative and are scaled to add up to 1, but sets no other limit. Without a range, a client could enter a weight like 10 billion, which makes no sense and slows the app down. The weights page also needs to know what to offer.
+- Options: (a) any number from 0 to 1000, any decimals; (b) whole numbers from 0 to 10; (c) percentages from 0 to 100 that must add up to 100; (d) other.
+- Provisional default: (a) from 0 to 1000, at most 6 decimal places.
+- Affects: `app/scoring/iq.py` (weight validation), weights settings page.
+- Decision:
+- Decided by / on:

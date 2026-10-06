@@ -8,4 +8,5 @@ if [ ! -d "$ROOT/backend/tests/scoring" ]; then
 fi
 command -v uv >/dev/null 2>&1 || { echo "uv is required (https://docs.astral.sh/uv/)" >&2; exit 1; }
 cd "$ROOT/backend"
-uv run pytest tests/scoring -q
+# --confcutdir keeps the root conftest (FastAPI, database fixtures) out of the engine run.
+uv run pytest tests/scoring -q --confcutdir=tests/scoring

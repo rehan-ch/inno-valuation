@@ -1,2 +1,2 @@
 - [Review workflow](review_workflow.md): diff permission quirks, which checks to run locally
-- [Recurring findings](recurring_findings.md): open issues from the Phase 0 review plus accepted decisions
+- [Recurring findings](recurring_findings.md): open issues from the Phase 0 and Phase 1 engine reviews plus accepted decisions
