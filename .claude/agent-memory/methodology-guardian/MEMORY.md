@@ -1,1 +1,1 @@
-- [Review log](project_review_log.md) — files cleared per branch (phase 0, phase 1 engine), PROVISIONAL marker map, open SPEC GAP
+- [Review log](project_review_log.md) — cleared files per branch (phase 0, phase 1 incl. 2026-10-08 weights rework), marker map, SPEC GAPs

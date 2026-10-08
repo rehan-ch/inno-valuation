@@ -203,15 +203,15 @@ How to use this file:
 - Why it matters: Q2 (decided) says weights never change the IQ; they only change the order of the priorities list (Q23). No range is set. Without one, a client could enter a weight like 10 billion, which makes no sense and slows the app down. The weights page also needs to know what to offer. This is a product rule the team decides; it is not being asked of Amy.
 - Options: (a) any number from 0 to 1000, any decimals; (b) whole numbers from 0 to 10; (c) percentages from 0 to 100 that must add up to 100; (d) other.
 - Provisional default: (a) from 0 to 1000, at most 6 decimal places.
-- Affects: `app/scoring/priorities.py` (weight validation), weights settings page.
+- Affects: `app/scoring/weights.py` (weight validation), weights settings page.
 - Decision:
 - Decided by / on:
 
 ## Q23 How should the client's weights change the order of the priorities list?
 - Status: OPEN
-- Why it matters: Amy decided weights only change the priority order (Q2), but not how.
-- Options: (a) rank by score as now, and use the weight only to break ties (more important first); (b) rank by a weighted weakness, so an important dimension can come before a slightly weaker but less important one; (c) other.
-- Provisional default: (a).
+- Why it matters: Amy decided weights only change the priority order (Q2), but not how. She answered it for ideas (IQ); it is also not said whether the weights reorder the company's readiness priorities list.
+- Options: (a) rank by score as now, and use the weight only to break ties (more important first); (b) rank by a weighted weakness, so an important dimension can come before a slightly weaker but less important one; (c) other. And: the weights reorder (1) the idea (IQ) priorities only, or (2) both the idea and the readiness priorities.
+- Provisional default: (a), for the idea (IQ) priorities only. The engine accepts weights for both lists; services pass them to the IQ list only until this is decided.
 - Affects: `app/scoring/priorities.py`, priorities list, AI touchpoint 5.
 - Decision:
 - Decided by / on:

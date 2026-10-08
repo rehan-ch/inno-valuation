@@ -1,6 +1,7 @@
-"""Category aggregates (spec 2.6 and 3.6, PROVISIONAL Q9, Q18, Q20)."""
+"""Category aggregates (spec 2.6 and 3.6, CONFIRMED Q9 and Q20; decimals PROVISIONAL Q18)."""
 
 import dataclasses
+import inspect
 from decimal import Decimal
 
 import pytest
@@ -63,13 +64,10 @@ def test_iq_categories_at_the_extremes() -> None:
     ] * 3
 
 
-def test_iq_categories_ignore_custom_weights() -> None:
-    """PROVISIONAL Q20: weights do not apply inside a category."""
-    scores = iq_scores([7, 8, 6, 9, 5, 3, 4, 1, 1, 1, 1, 2])
-    weights = dict(zip(KEYS, [9, 1, 1, 1, 1, 5, 1, 1, 1, 1, 1, 9], strict=True))
-    weighted = score_iq(scores, weights=weights)
-    assert weighted.iq != score_iq(scores).iq
-    assert iq_categories(weighted).categories == iq_categories(score_iq(scores)).categories
+def test_iq_categories_take_no_weights() -> None:
+    """Spec 3.6 (Q20): weights never change category scores, so there is no weights input."""
+    assert list(inspect.signature(iq_categories).parameters) == ["result", "question_set"]
+    assert list(inspect.signature(readiness_categories).parameters) == ["result", "question_set"]
 
 
 def test_iq_incomplete_category_is_none() -> None:

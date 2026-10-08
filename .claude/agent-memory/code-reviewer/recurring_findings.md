@@ -18,6 +18,10 @@ Phase 1 scoring engine review (2026-10-06, uncommitted on phase-1-scoring-engine
 - The YAML duplicate check runs after flatten_mapping, so a legitimate `<<:` merge override is reported as "Duplicate key". The real file has no merges, so this is a nit.
 - tests/scoring/test_readiness.py:134 fails mypy (an int key). It is not gated because CI runs `mypy app` only.
 
+Status 2026-10-08: the float-weight and unbounded-weight items above are FIXED (weights.py rejects floats, WEIGHT_LIMITS 0..1000, 6 dp).
+
+Weights rework review (2026-10-08, uncommitted on phase-1-scoring-engine): Amy decided Q2(b). Weights never change any score. score_iq has no weights parameter (question_set is keyword-only). Validation lives in app/scoring/weights.py (`validate_weights`). Priorities sort key is (score, -Fraction(weight), book order): weight only breaks ties (PROVISIONAL Q23), and book order is Q19. Engine verified correct, 620 tests green, ruff and mypy clean. Open item: docs still describe the old layout (PROGRESS.md lines 27, 34, 36; decisions.md:26 lists `_weighted_iq` and `_validated_weights`; open-questions Q22 "Affects" names priorities.py, but the code is in weights.py). Check these on the next review.
+
 Accepted engine decisions: Fraction maths, rounded once with ROUND_HALF_UP (PROVISIONAL Q18). VfM divides by the rounded IQ. The libyaml CSafeLoader subclass is safe (SafeConstructor, and add_constructor copies the dict on the subclass). Raw formula helpers are private.
 
 Accepted decisions (see docs/decisions.md): Celery is eager in tests, so CI has no Redis. Tests use a throwaway DB per run with a rolled-back transaction per test (join_transaction_mode="create_savepoint"). Health returns 200 with database "error" when the DB is down.

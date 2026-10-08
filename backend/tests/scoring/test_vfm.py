@@ -149,10 +149,18 @@ def test_cost_too_large_for_the_engine_raises_scoring_error() -> None:
         vfm(10**60, 2, 70)
 
 
-def test_provisional_markers_sit_directly_above_def_vfm() -> None:
+def test_only_the_q18_marker_sits_directly_above_def_vfm() -> None:
+    """Q7 is decided (spec 5.2), so only the Q18 rounding marker remains."""
     lines = Path(vfm_module.__file__).read_text(encoding="utf-8").splitlines()
     index = next(i for i, line in enumerate(lines) if line.startswith("def vfm("))
     assert lines[index - 2 : index] == [
-        "# PROVISIONAL: see open-questions Q7 (idea level only, total planned investment)",
+        "",
         "# PROVISIONAL: see open-questions Q18 (VfM divides by the rounded IQ)",
     ]
+    assert not any("open-questions Q7" in line for line in lines)
+
+
+def test_procurement_opportunity_uses_the_same_calculation() -> None:
+    """Spec 5.2: total purchase value / IQ, currency per innovation point."""
+    total_purchase_value_minor = 30_000_000
+    assert vfm(total_purchase_value_minor, 2, 84) == Decimal("3571.43")

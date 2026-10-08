@@ -69,31 +69,46 @@ def test_the_checks_would_catch_a_hardcoded_key() -> None:
 
 EXPECTED_MARKERS = [
     ("_rounding.py", "ROUNDING = ROUND_HALF_UP  # PROVISIONAL: see open-questions Q18"),
-    ("iq.py", "# PROVISIONAL: see open-questions Q2\ndef _validated_weights("),
-    ("iq.py", "# PROVISIONAL: see open-questions Q2\ndef _weighted_iq("),
-    ("priorities.py", "# PROVISIONAL: see open-questions Q19"),
+    ("priorities.py", "-row.weight,  # PROVISIONAL: see open-questions Q23"),
+    ("priorities.py", "row.order,  # PROVISIONAL: see open-questions Q19"),
     ("priorities.py", "PRIORITY_COUNT = 5  # PROVISIONAL: see open-questions Q21"),
-    ("iq.py", "# PROVISIONAL: see open-questions Q22\nWEIGHT_LIMITS = WeightLimits("),
-    ("categories.py", "# PROVISIONAL: see open-questions Q9\ndef readiness_categories("),
-    ("categories.py", "# PROVISIONAL: see open-questions Q9\ndef iq_categories("),
-    (
-        "categories.py",
-        "# PROVISIONAL: see open-questions Q20 (custom weights do not apply inside a category)",
-    ),
+    ("weights.py", "# PROVISIONAL: see open-questions Q22\nWEIGHT_LIMITS = WeightLimits("),
     ("categories.py", "# PROVISIONAL: see open-questions Q18 (category IQ shows 1 decimal)"),
     ("targets.py", "# PROVISIONAL: see open-questions Q8\ndef readiness_targets("),
     ("targets.py", "# PROVISIONAL: see open-questions Q8\ndef iq_targets("),
-    (
-        "vfm.py",
-        "# PROVISIONAL: see open-questions Q7 (idea level only, total planned investment)\n"
-        "# PROVISIONAL: see open-questions Q18 (VfM divides by the rounded IQ)\ndef vfm(",
-    ),
+    ("vfm.py", "# PROVISIONAL: see open-questions Q18 (VfM divides by the rounded IQ)\ndef vfm("),
 ]
+
+# Decided on 2026-10-08 (Amy): these rules are CONFIRMED and must carry no PROVISIONAL marker.
+DECIDED_QUESTIONS = [2, 7, 9, 20]
 
 
 @pytest.mark.parametrize(("name", "marker"), EXPECTED_MARKERS)
 def test_provisional_marker_present(name: str, marker: str) -> None:
     assert marker in SOURCES[name]
+
+
+@pytest.mark.parametrize("number", DECIDED_QUESTIONS)
+def test_no_marker_for_a_decided_question(number: int) -> None:
+    pattern = re.compile(rf"PROVISIONAL: see open-questions Q{number}\b")
+    found = [name for name, source in SOURCES.items() if pattern.search(source)]
+    assert not found, f"Q{number} is decided but still marked PROVISIONAL in {found}"
+
+
+def test_marker_set_is_exactly_the_expected_one() -> None:
+    """Every PROVISIONAL marker in app/scoring is listed above; none is stale or unlisted."""
+    pattern = re.compile(r"PROVISIONAL: see open-questions Q(\d+)\b")
+    found = {
+        (name, int(m.group(1)))
+        for name, source in SOURCES.items()
+        for m in pattern.finditer(source)
+    }
+    expected = {
+        (name, int(m.group(1)))
+        for name, marker in EXPECTED_MARKERS
+        for m in pattern.finditer(marker)
+    }
+    assert found == expected
 
 
 def test_every_provisional_marker_names_a_question() -> None:

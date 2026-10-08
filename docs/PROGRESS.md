@@ -19,29 +19,29 @@ Phase 0
 Phase 1
 - `211616d` feat(scoring): `question_set`, `readiness`, `iq`, `vfm`, `priorities`, `categories`, `targets`, `errors`, plus `_rounding` (one fixed Decimal context) and `_guards` (question set version check). 548 engine tests, about 4 s.
 - Gate: methodology-guardian 0 BLOCK, 0 WARN. code-reviewer "Ready to merge: yes"; its should-fix items (float and unbounded weights, VfM input bounds) and nits applied before the commit.
+- `9e450ee` chore(git): ignore local `ask-amy/` drafts.
+- `516b6d0` docs(methodology): Amy's answers recorded (Q1, Q2, Q5, Q7, Q9, Q11, Q12, Q16 decided; Q20 follows from Q2; Q23 new).
+- Engine follow-up (next commit): weights never change the IQ (Q2). `score_iq` has no weights; weight validation moved to `app/scoring/weights.py` (`validate_weights`, read-only snapshot); priorities take optional weights as a tie-break after score and before book order (Q23). 621 engine tests. Gate: methodology-guardian 0 BLOCK, 0 WARN; code-reviewer "Ready to merge: yes".
 
 ## In progress
 - Nothing. Next step: Phase 2, starting with the `organisations`, `users` and `memberships` tables and the auth dependencies.
 
-## PROVISIONAL markers added
-- Q2: `backend/app/scoring/iq.py` (weighted IQ).
-- Q7: `backend/app/scoring/vfm.py` (idea level only, total planned investment).
+## Decided by Amy (2026-10-08)
+- Q1 AI proposes IQ scores, the owner confirms or changes them. Q2 weights never change the IQ, only the priority order. Q5 a facilitator sets the agreed answer. Q7 cost is the planned or known investment; procurement VfM is total purchase value / IQ. Q9 category scores. Q11 the AI judges when to suggest a consultation (built with touchpoint 8, Phase 6). Q12 the client admin invites the consultant, with an end date. Q16 the Version 1 feature list. Q20 follows from Q2.
+- Team decisions (not sent to Amy, see `docs/decisions.md`): currency USD by default with a per-organisation setting; Q6 one full assessment; Q4 no per-dimension labels in Version 1.
+
+## PROVISIONAL markers in code
 - Q8: `backend/app/scoring/targets.py` (per dimension, both scales).
-- Q9: `backend/app/scoring/categories.py` (readiness sum, IQ mean x 10).
-- Q11: `backend/config/ai.yml` (consultation nudge off).
+- Q11: `backend/config/ai.yml` (consultation nudge off until touchpoint 8 is built; Q11 itself is decided).
 - Q18: `backend/app/scoring/_rounding.py` (half up), `vfm.py` (uses the rounded IQ), `categories.py` (category IQ 1 decimal).
 - Q19: `backend/app/scoring/priorities.py` (ties in book order).
-- Q20: `backend/app/scoring/categories.py` (weights do not apply inside a category).
 - Q21: `backend/app/scoring/priorities.py` `PRIORITY_COUNT = 5`.
-- Q22: `backend/app/scoring/iq.py` `WEIGHT_LIMITS` (0 to 1000, at most 6 decimals).
+- Q22: `backend/app/scoring/weights.py` `WEIGHT_LIMITS` (0 to 1000, at most 6 decimals).
+- Q23: `backend/app/scoring/priorities.py` (weight breaks ties after score, before book order; IQ list only for now).
 
-## New open questions
-- Q18: rounding mode, whether VfM uses the rounded IQ, category IQ decimals.
-- Q19: priority tie-break.
-- Q20: whether custom weights change category scores.
-- Q21: whether the priorities list is always 5 dimensions.
-- Q22: the allowed range for dimension weights.
-- `scoring-spec.md` has no PENDING lines for Q18 to Q22 yet. It can only change through `/decision`; add them when Amy answers.
+## Open questions
+- Still OPEN in `docs/methodology/open-questions.md`: Q3, Q4, Q6, Q8, Q10, Q13 to Q15, Q17 to Q19, Q21 to Q23. Q3, Q4 and Q6 are settled informally (see above) and should be closed with `/decision` when convenient.
+- Q23 is the only new methodology question for Amy: how weights reorder priorities, and whether readiness priorities use them too. Ask it together with Q19 if needed.
 
 ## Known gaps
 - `.env.example` has `EMAIL_FROM=InnoValuation <no-reply@example.com>` unquoted. Harmless now (nothing shell-sources `.env`), but it should be quoted. Agents cannot edit `.env.*` (project permission rule), so a human must change it.

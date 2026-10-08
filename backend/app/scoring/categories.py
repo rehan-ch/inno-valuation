@@ -1,4 +1,4 @@
-"""Category aggregates for readiness and IQ (spec 2.6 and 3.6, formula pending Q9).
+"""Category aggregates for readiness and IQ (spec 2.6 and 3.6, CONFIRMED, Amy, 2026-10-08).
 
 Readiness and IQ categories are computed separately; no function takes both.
 """
@@ -54,11 +54,12 @@ class IqCategories:
     categories: tuple[IqCategoryScore, ...]
 
 
-# PROVISIONAL: see open-questions Q9
 def readiness_categories(
     result: ReadinessResult, question_set: QuestionSet = QUESTION_SET
 ) -> ReadinessCategories:
-    """Readiness category score = sum of its dimension scores (spec 2.6, PROPOSED).
+    """Readiness category score = sum of its dimension scores (spec 2.6).
+
+    CONFIRMED (Amy, 2026-10-08): shown with its maximum.
 
     The maximum is derived from the question set (spec 2.6 lists 125, 50 and 125). A
     category with any unscored dimension has score None.
@@ -87,11 +88,11 @@ def readiness_categories(
     )
 
 
-# PROVISIONAL: see open-questions Q9
 def iq_categories(result: IqResult, question_set: QuestionSet = QUESTION_SET) -> IqCategories:
-    """Category IQ = mean of its dimension scores x 10, out of 100 (spec 3.6, PROPOSED).
+    """Category IQ = mean of its dimension scores x 10, out of 100 (spec 3.6).
 
-    A category with any unscored dimension has score None.
+    CONFIRMED (Amy, 2026-10-08). Weights are never used (spec 3.4, 3.6). A category with
+    any unscored dimension has score None.
     """
     require_same_version(
         result.question_set_version, [d.key for d in result.dimensions], question_set
@@ -105,7 +106,6 @@ def iq_categories(result: IqResult, question_set: QuestionSet = QUESTION_SET) ->
         present = [s for s in scores if s is not None]
         score: Decimal | None = None
         if len(present) == len(scores):
-            # PROVISIONAL: see open-questions Q20 (custom weights do not apply inside a category)
             mean_times_ten = Fraction(sum(present) * 100, len(present) * top)
             # PROVISIONAL: see open-questions Q18 (category IQ shows 1 decimal)
             score = rational_to_decimal(mean_times_ten, IQ_DECIMAL_PLACES)

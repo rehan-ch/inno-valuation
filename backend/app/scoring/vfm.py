@@ -15,7 +15,6 @@ def _is_int(value: object) -> bool:
     return isinstance(value, int) and not isinstance(value, bool)
 
 
-# PROVISIONAL: see open-questions Q7 (idea level only, total planned investment)
 # PROVISIONAL: see open-questions Q18 (VfM divides by the rounded IQ)
 def vfm(
     cost_minor: int | None,
@@ -23,7 +22,11 @@ def vfm(
     iq: Decimal | int | None,
     question_set: QuestionSet = QUESTION_SET,
 ) -> Decimal | None:
-    """Value for Money = investment cost / IQ, rounded to 2 decimals (spec 5.1).
+    """Value for Money = investment cost / IQ, rounded to 2 decimals (spec 5.1, 5.2).
+
+    For an idea, the cost is the total planned or known investment in the idea. The same
+    calculation serves a procurement opportunity: total purchase value / IQ (spec 5.2).
+    VfM for a whole dimension is not defined and is out of Version 1 (spec 5.2).
 
     ``cost_minor`` is the cost in minor units (for example cents) and
     ``minor_unit_exponent`` the currency's number of minor-unit digits (2 for EUR, 0 for
