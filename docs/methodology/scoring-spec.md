@@ -60,16 +60,16 @@ Boundaries are inclusive as written: 249 is Building Blocks, 250 is Innovation C
 Amy wants labels per dimension (Qnr 3.7: "yes and I like the labels you identified"), but the labels and thresholds Haroon proposed are not in any document we have.
 PROPOSED while waiting: none shown. Do not invent thresholds.
 
-### 2.6 Category aggregates (CONFIRMED that they exist, Qnr 5.3; formula PENDING Q9)
-PROPOSED: readiness category score = sum of its dimension scores (Customer-Facing out of 125, Process out of 50, Strategic out of 125), shown with the max.
+### 2.6 Category aggregates (CONFIRMED, Qnr 5.3; formula Q9)
+CONFIRMED: readiness category score = sum of its dimension scores, shown with the max (Customer-Facing out of 125, Process out of 50, Strategic out of 125). Decision Q9: "Readiness category score is the sum of its dimension scores, shown with the max" (Amy, 2026-10-08).
 
 ### 2.7 Mandatory questions (PENDING Q6)
 Amy: "depends on the assessment" (Qnr 4.4). Which assessment types exist is undecided.
 PROPOSED: one assessment type, all 60 questions required to finalise; drafts may be partial.
 
-### 2.8 Multiple respondents and consensus (CONFIRMED that it exists, Qnr 4.2, 4.3; mechanism PENDING Q5)
+### 2.8 Multiple respondents and consensus (CONFIRMED, Qnr 4.2, 4.3; mechanism Q5)
 Amy: multiple people answer; "need to reach a consensus but show evolving scores to get to that consensus".
-PROPOSED: each respondent submits their own 60 answers; the app shows the mean per question (2 decimals) and the spread; a facilitator records the final consensus answer per question; the final result is computed from consensus answers only. Every submission is kept so the "evolving" view can be shown.
+CONFIRMED: each respondent submits their own 60 answers; a facilitator sees every answer, the mean per question (2 decimals) and the spread, and sets the agreed answer per question; the final result is computed from agreed answers only. Every submission is kept so the "evolving" view can be shown. Decision Q5: "Each respondent answers on their own; a facilitator sets the agreed answer per question; the final result uses the agreed answers only" (Amy, 2026-10-08).
 
 ### 2.9 Save and resume (CONFIRMED, Qnr 4.6)
 Drafts are saved automatically and can be resumed.
@@ -91,19 +91,19 @@ Measures how innovative one idea or project is. CONFIRMED that IQ is "the main d
 - `iq = (sum of the 12 dimension scores / 120) x 100`, rounded to 1 decimal. Range 10 to 100.
 - Book example: scores summing to 84 give IQ 70.
 
-### 3.3 Who assigns the 1 to 10 scores (CONFIRMED that AI proposes, Qnr 8.1; override PENDING Q1)
-Amy: AI should "determine the scoring". Whether a human can change an AI score is undecided.
-PROPOSED: AI proposes each score with a rationale; the idea owner confirms or edits; the confirmed score is final. Both the AI proposal and the final value are stored.
+### 3.3 Who assigns the 1 to 10 scores (CONFIRMED, Qnr 8.1; override Q1)
+Amy: AI should "determine the scoring".
+CONFIRMED: AI proposes each score with a rationale; the idea owner confirms or changes it; the confirmed score is final. Both the AI proposal and the final value are stored. Decision Q1: "The AI proposes each 1 to 10 score with a rationale; the idea owner confirms or changes it; the confirmed score is final" (Amy, 2026-10-08).
 
-### 3.4 Weights (CONFIRMED equal by default and client-editable, Qnr 3.4, 3.5; formula with weights PENDING Q2)
-PROPOSED: `iq = weighted mean of the 12 scores x 10`, where weights are non-negative and normalised to sum to 1. With equal weights this equals the book formula. Weights are stored per organisation and snapshotted on each assessment.
+### 3.4 Weights (CONFIRMED, Qnr 3.4, 3.5; effect of weights Q2)
+CONFIRMED: weights do not change the IQ. The IQ is always the book formula in section 3.2 (sum of the 12 dimension scores / 120 x 100, 1 decimal), whatever the weights. Weights are equal by default and client-editable; they only change the order of the priorities list (section 7). Weights are stored per organisation and snapshotted on each assessment. Decision Q2: "Weights do not change the IQ; client weights only change the order of the priorities list" (Amy, 2026-10-08).
 
 ### 3.5 Organisation-level IQ (PENDING Q3)
 The book (ch. 14) also scores the organisation 1 to 10 per dimension. Amy said IQ is per idea. Whether the organisation itself also gets an IQ, and what "both on the dashboard" shows, is undecided.
 PROPOSED: dashboard headline = organisation Readiness (/300) plus the IQ of the selected idea. No organisation IQ until decided.
 
-### 3.6 Category aggregates for IQ (PENDING Q9)
-PROPOSED: category IQ = mean of its dimension scores x 10 (out of 100).
+### 3.6 Category aggregates for IQ (CONFIRMED, Q9 and Q20)
+CONFIRMED: category IQ = mean of its dimension scores x 10 (out of 100). Weights are never used (Q20 follows from Q2). Decision Q9: "IQ category score is the mean of its dimension scores x 10, out of 100" (Amy, 2026-10-08). Decimals for the category IQ remain PENDING Q18.
 
 ---
 
@@ -119,9 +119,13 @@ Readiness and IQ are "two independent views". They are never added, averaged, bl
 - Undefined (nil) when IQ is 0 or cost is missing. Round to 2 decimals.
 - Example: cost 50,000 and IQ 70 gives 714.29 per point.
 
-### 5.2 Where VfM applies (CONFIRMED list, Qnr 7.4; detail PENDING Q7)
-Amy: ideas, procurement opportunities, and whole dimensions. What "cost" and "IQ" mean for a single dimension, and the currency and time basis of cost, are undecided.
-PROPOSED: idea-level only in Version 1; cost = total planned investment in the idea's currency.
+### 5.2 Where VfM applies (CONFIRMED list, Qnr 7.4; detail Q7)
+Amy: ideas, procurement opportunities, and whole dimensions.
+CONFIRMED:
+- Idea: cost = the total planned or known investment in the idea. Decision Q7: "cost = the total planned or known investment in the idea" (Amy, 2026-10-08).
+- Procurement opportunity: `vfm = total_purchase_value / iq`, in currency per innovation point. Amy: "total purchase value which is like an investment divided by IQ to get a dollar spend per point of innovation" (Amy, 2026-10-08).
+- Whole dimension: not defined by Amy. Out of Version 1. Do not build.
+Currency is a product setting, not a methodology rule: USD by default, selectable per organisation.
 
 ### 5.3 Comparison metric (CONFIRMED, Qnr 7.1)
 Ideas are compared on cost per innovation point.
@@ -138,6 +142,8 @@ PROPOSED: targets per dimension on each scale (readiness target out of 25, IQ ta
 - Automatically prioritise the lowest-scoring dimensions. Normally the lowest 5.
 - Applies separately to a readiness result and to an IQ assessment.
 - PROPOSED tie-break: lower score first, then book order.
+- CONFIRMED: client weights change the order of the priorities list, and nothing else. Decision Q2: "client weights only change the order of the priorities list" (Amy, 2026-10-08).
+- PENDING Q23: how weights change the order. Provisional default: rank by score as now, and use the weight only to break ties (more important first).
 
 ---
 
@@ -155,9 +161,10 @@ A new assessment never overwrites an old one. The app compares results over time
 
 ---
 
-## 10. Consultation nudge (CONFIRMED feature, Qnr 10.11; threshold PENDING Q11)
-AI recommends booking a consultation "if they have significant gaps in where they are and where they want to be". "Significant" is undefined.
-PROPOSED: off until defined.
+## 10. Consultation nudge (CONFIRMED, Qnr 10.11; threshold Q11)
+AI recommends booking a consultation "if they have significant gaps in where they are and where they want to be".
+CONFIRMED: there is no fixed threshold. The AI judges from the gap between where the company is and where it wants to be, and recommends a consultation when it sees a significant gap. Decision Q11: "There is no hard and fast number so let AI recommend" (Amy, 2026-10-08).
+This is a suggestion only (touchpoint 8). The AI still produces no numbers; it reads gaps computed by the scoring engine and names the dimensions behind its suggestion.
 
 ---
 
@@ -175,7 +182,7 @@ IQ
 - All 10s give IQ 100.0. All 1s give IQ 10.0.
 - Level: 3 is Continuous Improvement, 4 is Innovation, 6 is Innovation, 7 is Invention, 10 is Invention.
 - A score of 0 or 11 is invalid.
-- Equal weights reproduce the book formula exactly.
+- Weights never change the IQ: any set of weights gives the same IQ as the book formula (Q2).
 
 VfM
 - Cost 50,000 and IQ 70 give 714.29.
