@@ -7,6 +7,12 @@ files3/
 # Draft messages and reports for Amy (kept local, not committed)
 ask-amy/
 
+# Local planning notes (timeline), not committed
+planning/
+
+# Client documents (questionnaires from Amy), kept local, not committed
+docs/*.docx
+
 # Secrets
 .env
 .env.*
