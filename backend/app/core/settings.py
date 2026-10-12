@@ -29,7 +29,10 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    environment: Environment = "development"
+    # Defaults to production so a deploy that forgets ENVIRONMENT still gets the
+    # secret key check. Local scripts (bin/dev, bin/setup, bin/check) and the test
+    # suite set development or test themselves.
+    environment: Environment = "production"
     app_version: str = "0.1.0"
 
     database_url: str = (
@@ -58,7 +61,8 @@ class Settings(BaseSettings):
         ):
             raise ValueError(
                 f"SECRET_KEY must be set to a non-default value of at least "
-                f"{MIN_SECRET_KEY_LENGTH} characters in {self.environment}."
+                f"{MIN_SECRET_KEY_LENGTH} characters in {self.environment}. "
+                "For local work, set ENVIRONMENT=development in .env."
             )
         return self
 

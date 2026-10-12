@@ -44,7 +44,7 @@ jobs:
       - run: uv lock --check
       - run: uv run ruff check .
       - run: uv run ruff format --check .
-      - run: uv run mypy app
+      - run: uv run mypy app tests
       - run: ../bin/test-scoring
       - run: uv run pytest --ignore=tests/scoring
       - run: uv run alembic upgrade head && uv run alembic check

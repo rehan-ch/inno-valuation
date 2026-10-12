@@ -5,6 +5,12 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
+# The backend defaults to ENVIRONMENT=production so a deploy can never skip the secret
+# key check. Local runs use development unless the shell or .env already sets it.
+if [ -z "${ENVIRONMENT:-}" ] && ! grep -qE '^ENVIRONMENT=' .env 2>/dev/null; then
+  export ENVIRONMENT=development
+fi
+
 docker compose up -d --wait
 
 # The backend reads .env itself (pydantic-settings). The frontend only needs the API URL,

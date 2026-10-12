@@ -6,7 +6,8 @@ cd "$(git rev-parse --show-toplevel)"
 zero=0000000000000000000000000000000000000000
 while read -r local_ref local_sha remote_ref remote_sha; do
   [ "$local_sha" = "$zero" ] && continue  # deleting a remote branch
-  if [ "$remote_ref" = "refs/heads/main" ]; then
+  # The one exception: the very first push that creates main on a new remote.
+  if [ "$remote_ref" = "refs/heads/main" ] && [ "$remote_sha" != "$zero" ]; then
     echo "pre-push: do not push to main directly. Push a branch and open a pull request." >&2
     exit 1
   fi

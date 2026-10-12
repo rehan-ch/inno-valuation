@@ -22,7 +22,7 @@ def _get_session() -> Session:
     return _session
 
 
-class BaseFactory(SQLAlchemyModelFactory):  # type: ignore[misc]
+class BaseFactory(SQLAlchemyModelFactory):
     class Meta:
         abstract = True
         sqlalchemy_session_factory = _get_session

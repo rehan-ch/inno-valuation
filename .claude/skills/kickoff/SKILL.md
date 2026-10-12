@@ -37,7 +37,7 @@ Your job is to take the project from an empty repository to a working, tested, d
 - Ask me only when: (a) you need a credential or external account (Anthropic API key, Google OAuth client, Resend key, production database or Redis), (b) two documents contradict each other, (c) an acceptance check cannot pass without a product decision that has no provisional default. When you ask, give me the options and your recommendation in one message.
 - Scope is the Version 1 list in Q16's provisional default. Never build anything listed in `scoring-spec.md` section 12 ("not part of the methodology"). Never build Phase 2 items (action plans with owners, innovation identifier, booking, payments, consultant overrides, benchmarks) unless I ask.
 - The Emergent prototype, if present at `reference/prototype/`, is a UX reference only. Use `/prototype <screen>` to look at layouts. Never copy its scoring logic, readiness dimensions, tiers or grades.
-- Quality gates for every feature before you call it done: tests green, `uv run ruff check .` and `uv run mypy app` clean, `/spec-check` returns no BLOCK, `/review-pr` says "Ready to merge: yes", and a cross-organisation 404 test exists for every new client table.
+- Quality gates for every feature before you call it done: tests green, `uv run ruff check .` and `uv run mypy app tests` clean, `/spec-check` returns no BLOCK, `/review-pr` says "Ready to merge: yes", and a cross-organisation 404 test exists for every new client table.
 - No live AI calls in tests. Patch `app.ai.client` and use recorded fixtures.
 - All UI copy and AI-facing text: simple English, short sentences, no em dashes.
 - Commit after every feature with `type(scope): summary`. Push the branch if a remote exists.

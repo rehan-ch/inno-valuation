@@ -11,6 +11,12 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
+# The backend defaults to ENVIRONMENT=production so a deploy can never skip the secret
+# key check. Local runs use development unless the shell or .env already sets it.
+if [ -z "${ENVIRONMENT:-}" ] && ! grep -qE '^ENVIRONMENT=' .env 2>/dev/null; then
+  export ENVIRONMENT=development
+fi
+
 red() { printf '\033[31m%s\033[0m\n' "$*" >&2; }
 step() { printf '\033[36m==> %s\033[0m\n' "$*"; }
 fail() { red "check failed: $*"; exit 1; }
@@ -103,9 +109,9 @@ cmd_staged() {
     # shellcheck disable=SC2086
     (cd backend && uv run --quiet ruff check $py && uv run --quiet ruff format --check $py) \
       || fail "ruff found problems. Fix them, or run 'uv run ruff check --fix' and 'uv run ruff format' in backend/."
-    if grep -qE '^app/' <<<"$py"; then
+    if grep -qE '^(app|tests)/' <<<"$py"; then
       step "backend: mypy (strict)"
-      (cd backend && uv run --quiet mypy app) || fail "mypy found type errors."
+      (cd backend && uv run --quiet mypy app tests) || fail "mypy found type errors."
     fi
   fi
   if [ -n "$scoring" ]; then
@@ -126,7 +132,7 @@ cmd_full() {
   step "backend: ruff lint and format"
   (cd backend && uv run --quiet ruff check . && uv run --quiet ruff format --check .) || fail "ruff found problems."
   step "backend: mypy (strict)"
-  (cd backend && uv run --quiet mypy app) || fail "mypy found type errors."
+  (cd backend && uv run --quiet mypy app tests) || fail "mypy found type errors."
   step "scoring engine tests"
   bin/test-scoring || fail "scoring engine tests failed."
 

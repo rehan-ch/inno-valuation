@@ -34,5 +34,5 @@ Delivery checklist (all items, every feature):
 - Service function with a unit test.
 - Router with a request test using `TestClient`, including the cross-organisation 404 test and a role test.
 - Celery task with a test that runs it eagerly (`task_always_eager`).
-- Run `uv run pytest` on the touched test files and `uv run ruff check . && uv run mypy app`; report only failures.
+- Run `uv run pytest` on the touched test files and `uv run ruff check . && uv run mypy app tests`; report only failures.
 - Summary: endpoints added, tables changed, tasks added, PENDING items touched and their PROVISIONAL markers.

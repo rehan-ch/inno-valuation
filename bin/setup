@@ -4,6 +4,12 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
+# The backend defaults to ENVIRONMENT=production so a deploy can never skip the secret
+# key check. Local runs use development unless the shell or .env already sets it.
+if [ -z "${ENVIRONMENT:-}" ] && ! grep -qE '^ENVIRONMENT=' .env 2>/dev/null; then
+  export ENVIRONMENT=development
+fi
+
 for tool in uv npm docker; do
   command -v "$tool" >/dev/null 2>&1 || { echo "Missing required tool: $tool" >&2; exit 1; }
 done
