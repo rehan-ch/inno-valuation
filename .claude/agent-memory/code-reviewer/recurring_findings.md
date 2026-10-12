@@ -5,24 +5,27 @@ metadata:
   type: project
 ---
 
-Phase 0 skeleton review (2026-10-06). Open items at the time:
-- 500 responses have no CORS headers. The `Exception` handler runs in Starlette's ServerErrorMiddleware, which sits outside CORSMiddleware. I verified this with a script. The browser sees a network error instead of the envelope. Fix: pure ASGI middleware, or add CORS headers in the 500 handler.
-- `secret_key` default "change-me-in-production" is not guarded in staging or production.
-- Frontend `src/lib/api/types.ts` is hand-written. The checklist requires types generated from OpenAPI (openapi-typescript).
-- CI uses Node "20". Node 20 is EOL (April 2026).
-- Celery `task_acks_late=True` is set globally, so AI tasks must be idempotent or they can be redelivered (Redis visibility timeout).
+Status as of the pre-merge review of phase-1-scoring-engine (2026-10-12):
 
-Phase 1 scoring engine review (2026-10-06, uncommitted on phase-1-scoring-engine). Open items:
-- iq.py `_validated_weights` turns float weights into Fraction(float), which is the exact binary value. 902 of 200k random weight sets rounded differently from the decimal intent, and stored weights look like Decimal('0.1000000000000000055...'). Fix: reject floats, or convert with Decimal(repr(v)).
-- Decimal weights have no upper bound. A weight of 1E10000000 took 12s (CPU DoS once weights come from the API). Fix: bound the exponent and size in the engine and in the Pydantic schema.
-- The YAML duplicate check runs after flatten_mapping, so a legitimate `<<:` merge override is reported as "Duplicate key". The real file has no merges, so this is a nit.
-- tests/scoring/test_readiness.py:134 fails mypy (an int key). It is not gated because CI runs `mypy app` only.
+FIXED (do not re-flag):
+- 500s lose CORS headers: fixed by pure ASGI `UnhandledErrorMiddleware` added before CORSMiddleware, with a test.
+- `secret_key` default unguarded: validator now rejects it in staging/production (but see ENVIRONMENT item below).
+- CI Node 20: CI now uses 22 (README, `engines`, `@types/node` and the dev box still say 20).
+- Float weights and unbounded Decimal weights: weights.py rejects floats, WEIGHT_LIMITS 0..1000, 6 dp.
+- YAML `<<:` merge nit: merge keys are now rejected outright.
+- tests/scoring/test_readiness.py mypy error: gone. Stale weights docs (PROGRESS, decisions, Q22): fixed.
 
-Status 2026-10-08: the float-weight and unbounded-weight items above are FIXED (weights.py rejects floats, WEIGHT_LIMITS 0..1000, 6 dp).
+STILL OPEN (call them repeats if seen again):
+- frontend/src/lib/api/types.ts is hand-written. bin/check already has hooks for `app.openapi_dump` and `npm run check:api`, but neither exists yet. Must be fixed before Phase 2 adds schemas.
+- `ENVIRONMENT` defaults to "development", so a deploy that forgets it skips the secret-key guard (fail-open). Becomes load-bearing once Phase 2 signs JWTs.
+- mypy is not run on tests (pyproject `files = ["app"]`). tests/core/test_settings.py (Literal arg-type) and tests/factories.py (unused ignore) have 7 errors.
+- Celery `task_acks_late=True` globally: AI tasks must be idempotent.
+- pre-push blocks any push to refs/heads/main, including the first push of main to a new remote. The repo had no git remote on 2026-10-12, so CI has never run.
+- commit-msg ATTRIBUTION_PATTERN rejects messages that mention `CLAUDE.md` (nit). User rule: no AI attribution in commits, so the pattern itself is intended.
 
-Weights rework review (2026-10-08, uncommitted on phase-1-scoring-engine): Amy decided Q2(b). Weights never change any score. score_iq has no weights parameter (question_set is keyword-only). Validation lives in app/scoring/weights.py (`validate_weights`). Priorities sort key is (score, -Fraction(weight), book order): weight only breaks ties (PROVISIONAL Q23), and book order is Q19. Engine verified correct, 620 tests green, ruff and mypy clean. Open item: docs still describe the old layout (PROGRESS.md lines 27, 34, 36; decisions.md:26 lists `_weighted_iq` and `_validated_weights`; open-questions Q22 "Affects" names priorities.py, but the code is in weights.py). Check these on the next review.
+Phase 2 watch list: map `ScoringError` to an AppError 422 in services (otherwise 500); CSRF/SameSite for the cookie JWT (CORS has allow_credentials); cross-org 404 test fixture; disable /docs in production; question_set.py reads repo-root docs/methodology/dimensions.yml (Docker image must copy it or set INNO_QUESTION_SET_PATH).
 
-Accepted engine decisions: Fraction maths, rounded once with ROUND_HALF_UP (PROVISIONAL Q18). VfM divides by the rounded IQ. The libyaml CSafeLoader subclass is safe (SafeConstructor, and add_constructor copies the dict on the subclass). Raw formula helpers are private.
+Accepted engine decisions: Fraction maths, rounded once with ROUND_HALF_UP (PROVISIONAL Q18). Weights never change any score (Amy Q2(b)); they only break priority ties (PROVISIONAL Q23), then book order (Q19). VfM divides by the rounded IQ. The libyaml CSafeLoader subclass is safe. Raw formula helpers are private.
 
 Accepted decisions (see docs/decisions.md): Celery is eager in tests, so CI has no Redis. Tests use a throwaway DB per run with a rolled-back transaction per test (join_transaction_mode="create_savepoint"). Health returns 200 with database "error" when the DB is down.
 
