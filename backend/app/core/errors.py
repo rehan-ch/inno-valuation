@@ -15,6 +15,8 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
+from app.scoring.errors import ScoringError
+
 logger = logging.getLogger(__name__)
 
 HTTP_STATUS_CODES: dict[int, str] = {
@@ -96,6 +98,21 @@ async def validation_exception_handler(request: Request, exc: Exception) -> JSON
     )
 
 
+async def scoring_error_handler(request: Request, exc: Exception) -> JSONResponse:
+    """Bad input that reached the scoring engine is the caller's fault, never a 500.
+
+    Services should validate first; this is the backstop. The engine's message may quote
+    caller values, so it is neither returned nor logged.
+    """
+    if not isinstance(exc, ScoringError):  # not assert: asserts vanish under python -O
+        raise TypeError(type(exc).__name__)
+    logger.warning("Scoring rejected input on %s %s", request.method, request.url.path)
+    return JSONResponse(
+        status_code=422,
+        content=error_body("invalid_input", "The input could not be scored. Check the values."),
+    )
+
+
 class UnhandledErrorMiddleware:
     """Turn any unhandled exception into the 500 envelope.
 
@@ -142,3 +159,4 @@ def register_exception_handlers(app: FastAPI) -> None:
     app.add_exception_handler(AppError, app_error_handler)
     app.add_exception_handler(StarletteHTTPException, http_exception_handler)
     app.add_exception_handler(RequestValidationError, validation_exception_handler)
+    app.add_exception_handler(ScoringError, scoring_error_handler)
