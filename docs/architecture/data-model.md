@@ -3,12 +3,24 @@
 Relational (PostgreSQL). Every client record belongs to exactly one organisation. All times UTC.
 
 ## Tenancy and roles
-- `Organisation`: name, industry, country, size_band, revenue_band, founder_names, currency, settings (weights, targets defaults).
-- `User`: email, name, auth provider.
-- `Membership`: organisation, user, role. Roles: `owner`, `admin`, `member`, `committee`, `investor` (see Q13), plus `tech_admin` (platform staff).
-- `ConsultantGrant`: organisation, consultant_user, granted_by, scope (`read_results`, `add_notes`), expires_at. The only way a consultant sees client data (Qnr 10.6).
+Built in migration `0002_accounts` (`app/models/accounts.py`, `app/models/audit.py`). Primary keys are UUIDs. Enumerations are VARCHAR plus a named CHECK constraint.
 
-Rule: routers get the organisation from the `current_org` dependency (resolved from the membership), never from a parameter. `require_role(...)` on every route. One request test per model proves cross-organisation reads return 404.
+- `Organisation` (`organisations`): name, description, industry, country (ISO 3166-1 alpha-2, optional), size_band, revenue_band, founder_names, website, primary_contact_name, primary_contact_email, currency (ISO 4217, default `USD`), status (`active`, `archived`), created_by_user_id, created_at, updated_at. Organisations are archived, not deleted. Settings (weights, target defaults) arrive with the features that use them. The logo arrives in Phase 7 with file storage.
+- `User` (`users`): email (stored trimmed and lowercased, unique), name, password_hash (empty for Google-only users), google_sub (unique), email_verified_at, is_active (a disabled user cannot sign in), is_platform_admin, terms_accepted_at, terms_version, last_login_at. A user needs at least one sign-in method (password or Google; see Q14). A user is not tied to one organisation: memberships link the two.
+- `Membership` (`memberships`): organisation, user, role. One per (organisation, user). Roles: `owner`, `admin`, `member`, `committee`, `investor` (investor is a role inside one company, PROVISIONAL Q13).
+- Platform staff (tech admin, Haroon) are not a membership role. `users.is_platform_admin` marks them, because they span organisations.
+- `Invitation` (`invitations`): organisation, email, role, token_hash, invited_by, expires_at, accepted_at, revoked_at. At most one pending (not accepted, not revoked) invitation per (organisation, email).
+- `UserToken` (`user_tokens`): user, purpose (`verify_email`, `reset_password`), token_hash, expires_at, used_at. Single use.
+- `ConsultantGrant` (`consultant_grants`): organisation, consultant_email, consultant_user (set when the consultant accepts), granted_by, scope (`read_results` for now), expires_at (required), revoked_at, accepted_at. The only way a consultant sees client data. A consultant is never a membership. The client's admin invites the consultant and chooses when access ends (Q12). A grant is active when accepted, not revoked, and `expires_at` is in the future.
+- `AuditEvent` (`audit_events`): organisation (empty for events outside an organisation, such as signing in), actor_user, action, target_type, target_id, details (jsonb), created_at. Details never hold secrets, passwords, tokens, idea text, answers or company details.
+
+Tokens (invitations, email verification, password reset) are stored only as SHA-256 hex digests. The raw token exists only in the email link.
+
+On delete:
+- Organisation: memberships, invitations and consultant grants are deleted with it. Audit events block the delete (RESTRICT).
+- User: memberships, user tokens and grants where they are the consultant are deleted. "Created by", "invited by", "granted by" and the audit actor become NULL, so those records stay.
+
+Rule: routers get the organisation from the `current_org` dependency (resolved from the membership, or from an active consultant grant), never from a parameter. `require_role(...)` on every route. One request test per model proves cross-organisation reads return 404.
 
 ## Question bank
 - `docs/methodology/dimensions.yml` is loaded once by `app.scoring.question_set` into a `QuestionSet` with `version`. Assessments store `question_set_version`. Changing wording bumps the version; old assessments keep theirs.
@@ -37,6 +49,7 @@ Rule: routers get the organisation from the `current_org` dependency (resolved f
 - History is the set of final ReadinessResults and confirmed IqAssessments over time. No separate history table.
 
 ## Indexes and constraints
-- `organisation_id` on every client table, indexed.
+- `organisation_id` on every client table, indexed. A full (not partial) composite index or unique constraint that starts with `organisation_id` counts (for example `(organisation_id, user_id)` on memberships). The same applies to every foreign key; `tests/models/test_schema.py` enforces it.
+- Every timestamp is `timestamptz` (UTC).
 - Unique: `(readiness_assessment_id, user_id)` on responses; `(iq_assessment_id, dimension_key)` on scores.
 - Check constraints: answers 1..5, scores 1..10, investment >= 0.

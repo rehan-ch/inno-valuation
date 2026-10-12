@@ -1,6 +1,9 @@
 """Declarative base with a constraint naming convention so Alembic names are stable."""
 
-from sqlalchemy import MetaData
+from datetime import datetime
+from typing import Any, ClassVar
+
+from sqlalchemy import DateTime, MetaData
 from sqlalchemy.orm import DeclarativeBase
 
 NAMING_CONVENTION: dict[str, str] = {
@@ -14,3 +17,5 @@ NAMING_CONVENTION: dict[str, str] = {
 
 class Base(DeclarativeBase):
     metadata = MetaData(naming_convention=NAMING_CONVENTION)
+    # Every Mapped[datetime] is timezone-aware (timestamptz). All times are UTC.
+    type_annotation_map: ClassVar[dict[Any, Any]] = {datetime: DateTime(timezone=True)}
