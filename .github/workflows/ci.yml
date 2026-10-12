@@ -48,6 +48,13 @@ jobs:
       - run: ../bin/test-scoring
       - run: uv run pytest --ignore=tests/scoring
       - run: uv run alembic upgrade head && uv run alembic check
+      - name: OpenAPI matches frontend/openapi.json
+        run: |
+          uv run python -m app.openapi_dump > /tmp/openapi.json
+          if ! diff -u ../frontend/openapi.json /tmp/openapi.json; then
+            echo "::error::frontend/openapi.json is stale. In backend/, run 'uv run python -m app.openapi_dump > ../frontend/openapi.json', then 'npm run gen:api' in frontend/, and commit both files."
+            exit 1
+          fi
       - name: Dependency vulnerability audit
         run: |
           uv export --frozen --no-dev --no-emit-project --format requirements-txt -o /tmp/req.txt
@@ -68,6 +75,12 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run typecheck
+      - name: Generated API types are current
+        run: |
+          if ! npm run --silent check:api; then
+            echo "::error::src/lib/api/schema.d.ts is stale. Run 'npm run gen:api' in frontend/ and commit it."
+            exit 1
+          fi
       - run: npm test
       - run: npm run build
       - run: npm audit --omit=dev --audit-level=high

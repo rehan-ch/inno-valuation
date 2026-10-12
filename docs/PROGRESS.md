@@ -45,7 +45,6 @@ Phase 1
 
 ## Known gaps
 - `.env.example` has `EMAIL_FROM=InnoValuation <no-reply@example.com>` unquoted. Harmless now (nothing shell-sources `.env`), but it should be quoted. Agents cannot edit `.env.*` (project permission rule), so a human must change it.
-- Frontend API types are hand-written; switch to generated types in Phase 2 (see `docs/decisions.md`).
 - CI workflow is written but has never run (no remote).
 - `npm audit`: 5 high findings in dev-only lint dependencies (eslint-config-next). Production dependencies have none; the pre-push and CI audits check production only.
 - Starlette prints a deprecation warning about `httpx` in the TestClient. Harmless.

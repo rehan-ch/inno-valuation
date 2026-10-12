@@ -33,8 +33,17 @@ Do not skip them with `--no-verify`. CI runs the same checks, so a skipped hook 
 bin/test-scoring                                   # scoring engine only, no database, under 10 s
 cd backend && uv run pytest                        # full backend suite (needs Postgres from docker compose)
 cd backend && uv run ruff check . && uv run ruff format --check . && uv run mypy app tests
-cd frontend && npm test && npm run lint && npm run typecheck
+cd frontend && npm test && npm run lint && npm run typecheck && npm run check:api
 ```
+
+After changing any API route or schema, regenerate the contract and the frontend types, then commit `frontend/openapi.json` and `frontend/src/lib/api/schema.d.ts`:
+
+```bash
+cd backend && uv run python -m app.openapi_dump > ../frontend/openapi.json
+cd frontend && npm run gen:api
+```
+
+CI fails when either file is stale. Import API types from `frontend/src/lib/api/types.ts`, never hand-write them.
 
 The backend suite creates a throwaway database per run on the `TEST_DATABASE_URL` server and drops it afterwards. Celery runs eagerly in tests. CI (`.github/workflows/ci.yml`) runs all of the above on every pull request and on every push to `main`.
 
