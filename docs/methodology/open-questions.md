@@ -202,7 +202,7 @@ How to use this file:
 - Status: OPEN
 - Why it matters: Q2 (decided) says weights never change the IQ; they only change the order of the priorities list (Q23). No range is set. Without one, a client could enter a weight like 10 billion, which makes no sense and slows the app down. The weights page also needs to know what to offer. This is a product rule the team decides; it is not being asked of Amy.
 - Options: (a) any number from 0 to 1000, any decimals; (b) whole numbers from 0 to 10; (c) percentages from 0 to 100 that must add up to 100; (d) other.
-- Provisional default: (a) from 0 to 1000, at most 6 decimal places.
+- Provisional default: (a) from 0 to 1000, at most 6 decimal places, and at least one weight above zero (all zeros would mean no dimension matters, which is almost always a mistake).
 - Affects: `app/scoring/weights.py` (weight validation), weights settings page.
 - Decision:
 - Decided by / on:

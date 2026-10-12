@@ -33,4 +33,4 @@ touchpoints:
     model: claude-sonnet-5-5
     max_tokens: 400
     temperature: 0.3
-    enabled: false  # PROVISIONAL: see open-questions Q11
+    enabled: false  # off until touchpoint 8 is built; Q11 decided (AI judges the gap, no fixed threshold)

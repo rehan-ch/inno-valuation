@@ -81,6 +81,7 @@ def validate_weights(
     if missing:
         raise ScoringError(f"Weights missing for dimensions: {missing}")
     valid = {k: _validated_weight(k, weights[k]) for k in question_set.dimension_keys}
+    # Part of the provisional Q22 limits above: all zeros is treated as a mistake.
     if not any(valid.values()):
         raise ScoringError("At least one weight must be above zero")
     return MappingProxyType(valid)
