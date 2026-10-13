@@ -149,5 +149,5 @@ class SignInThrottleFactory(BaseFactory[SignInThrottle]):
         model = SignInThrottle
 
     key_hash = Sequence(lambda n: throttle_key(f"throttled{n}@example.com"))
-    failed_count = 1
-    first_failed_at = LazyFunction(lambda: datetime.now(UTC))
+    attempt_count = 1
+    window_started_at = LazyFunction(lambda: datetime.now(UTC))

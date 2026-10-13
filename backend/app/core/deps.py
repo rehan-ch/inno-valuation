@@ -18,9 +18,9 @@ from dataclasses import dataclass
 from fastapi import Depends, Request
 from sqlalchemy.orm import Session
 
-from app.core.csrf import enforce_csrf
+from app.core.csrf import csrf_valid, enforce_csrf
 from app.core.errors import AppError
-from app.core.permissions import OrgContext, OrgRole, Permission
+from app.core.permissions import OrgContext, OrgRole, Permission, has_permission
 from app.core.security import SessionClaims
 from app.core.sessions import read_session
 from app.db.session import get_db
@@ -33,9 +33,9 @@ __all__ = [
     "current_session",
     "current_user",
     "get_db",
-    "optional_session",
     "require_permission",
     "require_role",
+    "session_if_csrf_valid",
 ]
 
 
@@ -68,11 +68,13 @@ def current_session(request: Request, db: Session = Depends(get_db)) -> AuthCont
     return auth
 
 
-def optional_session(request: Request, db: Session = Depends(get_db)) -> AuthContext | None:
-    """The session if there is a valid one (CSRF still checked), else None."""
+def session_if_csrf_valid(request: Request, db: Session = Depends(get_db)) -> AuthContext | None:
+    """For sign-out: the session only when it is valid and the CSRF check passes. Never
+    raises, so sign-out can always clear the cookies; without a passing check it is not
+    treated as the user's own action (no audit event)."""
     auth = _authenticate(request, db)
-    if auth is not None:
-        enforce_csrf(request, auth.claims)
+    if auth is None or not csrf_valid(request, auth.claims):
+        return None
     return auth
 
 
@@ -97,7 +99,11 @@ def _forbidden() -> AppError:
 
 
 def require_role(*roles: OrgRole) -> Callable[..., OrgContext]:
-    """``current_org`` plus: the caller's role must be one of ``roles``."""
+    """``current_org`` plus: the caller's role must be one of ``roles``.
+
+    Role only. Routes that change data use ``require_permission``, which also refuses
+    edits in an archived organisation.
+    """
     allowed = frozenset(roles)
 
     def dependency(ctx: OrgContext = Depends(current_org)) -> OrgContext:
@@ -112,8 +118,12 @@ def require_permission(permission: Permission) -> Callable[..., OrgContext]:
     """``current_org`` plus: the caller's role must have ``permission`` in the matrix."""
 
     def dependency(ctx: OrgContext = Depends(current_org)) -> OrgContext:
-        if not ctx.can(permission):
+        if not has_permission(ctx.role, permission):
             raise _forbidden()
+        if not ctx.can(permission):
+            raise AppError(
+                "organisation_archived", "This organisation is archived and cannot be changed.", 403
+            )
         return ctx
 
     return dependency

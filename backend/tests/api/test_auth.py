@@ -86,7 +86,7 @@ def test_sign_up_creates_unverified_user_and_emails_link(
     [message] = outbox.outbox
     assert message.to == "new.person@example.com"
     assert message.subject == SUBJECTS[AccountEmail.VERIFY_EMAIL]
-    assert message.link.startswith(f"{get_settings().frontend_origin}/verify-email?token=")
+    assert message.link.startswith(f"{get_settings().frontend_origin}/verify-email#token=")
     token = token_from(message)
     assert token in message.text
     assert token in message.html
@@ -279,7 +279,12 @@ def test_sign_in_sets_session_cookies_and_returns_me(client: TestClient, db: Ses
     assert body["email_verified"] is True
     assert body["active_organisation_id"] == str(org.id)
     assert body["memberships"] == [
-        {"organisation_id": str(org.id), "organisation_name": org.name, "role": "owner"}
+        {
+            "organisation_id": str(org.id),
+            "organisation_name": org.name,
+            "organisation_status": "active",
+            "role": "owner",
+        }
     ]
 
     cookies = _set_cookie_headers(response)
@@ -299,14 +304,51 @@ def test_sign_in_sets_session_cookies_and_returns_me(client: TestClient, db: Ses
     assert client.get(ME).status_code == 200
 
 
-def test_session_cookies_are_secure_when_deployed(
+def test_deployed_cookies_use_host_prefix_and_secure(
     client: TestClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     verified_user(email="person@example.com")
     monkeypatch.setattr(get_settings(), "environment", "production")
     cookies = _set_cookie_headers(sign_in(client, "person@example.com"))
-    assert "secure" in cookies[SESSION_COOKIE]
-    assert "secure" in cookies[CSRF_COOKIE]
+    assert set(cookies) == {"__Host-iv_session", "__Host-csrf_token"}
+    for header in cookies.values():
+        assert "secure" in header
+        assert "path=/" in header
+        assert "domain=" not in header
+    assert "httponly" in cookies["__Host-iv_session"]
+    assert "httponly" not in cookies["__Host-csrf_token"]
+
+
+def test_local_cookies_use_plain_names(client: TestClient) -> None:
+    verified_user(email="person@example.com")
+    cookies = _set_cookie_headers(sign_in(client, "person@example.com"))
+    assert set(cookies) == {SESSION_COOKIE, CSRF_COOKIE}
+    for header in cookies.values():
+        assert "domain=" not in header
+
+
+def test_deployed_session_is_read_from_the_host_cookie(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user = verified_user()
+    monkeypatch.setattr(get_settings(), "environment", "production")
+    response = sign_in(client, user.email)
+    # Read from the header: the test client's jar drops Secure cookies on plain http.
+    token = _cookie_value(response, "__Host-iv_session")
+    client.cookies.clear()
+    # The plain name is ignored when deployed.
+    client.cookies.set(SESSION_COOKIE, token)
+    assert client.get(ME).status_code == 401
+    client.cookies.clear()
+    client.cookies.set("__Host-iv_session", token)
+    assert client.get(ME).status_code == 200
+
+
+def _cookie_value(response: Any, name: str) -> str:
+    for header in response.headers.get_list("set-cookie"):
+        if header.startswith(f"{name}="):
+            return str(header.split("=", 1)[1].split(";", 1)[0])
+    raise AssertionError(name)
 
 
 def test_no_active_organisation_when_user_has_several(client: TestClient) -> None:
@@ -329,14 +371,10 @@ def test_wrong_password_and_unknown_email_look_the_same(client: TestClient, db: 
     assert wrong.json()["error"]["code"] == "invalid_credentials"
     assert SESSION_COOKIE not in client.cookies
 
-    events = _events(db, AuditAction.SIGN_IN_FAILED)
-    by_actor = {event.actor_user_id is not None: event for event in events}
-    assert by_actor[True].details == {
-        "reason": "invalid_credentials",
-        "email": "person@example.com",
-    }
-    assert by_actor[False].details == {"reason": "invalid_credentials"}
-    assert by_actor[False].target_id is None
+    # Unknown emails leave no audit row; known accounts get one without the email.
+    [event] = _events(db, AuditAction.SIGN_IN_FAILED)
+    assert event.actor_user_id is not None
+    assert event.details == {"reason": "invalid_credentials"}
 
 
 @pytest.mark.parametrize("email", ["person@example.com", "nobody@example.com"])
@@ -346,9 +384,9 @@ def test_repeated_failures_lock_every_email_alike(
     verified_user(email="person@example.com")
     codes = [
         sign_in(client, email, "wrong password").json()["error"]["code"]
-        for _ in range(sign_in_throttle.MAX_FAILURES)
+        for _ in range(sign_in_throttle.MAX_ATTEMPTS)
     ]
-    assert codes == ["invalid_credentials"] * (sign_in_throttle.MAX_FAILURES - 1) + [
+    assert codes == ["invalid_credentials"] * (sign_in_throttle.MAX_ATTEMPTS - 1) + [
         "too_many_attempts"
     ]
     # Locked: even the right password is refused, and the response says nothing more.
@@ -357,11 +395,20 @@ def test_repeated_failures_lock_every_email_alike(
     assert locked.json()["error"]["code"] == "too_many_attempts"
     # The throttle stores no email.
     assert all(email not in row.key_hash for row in db.scalars(select(SignInThrottle)))
+    # Audit: one row per wrong password for a real account, one "locked" row per lock, and
+    # nothing at all for an unknown email.
+    sign_in(client, email)
+    reasons = [event.details["reason"] for event in _events(db, AuditAction.SIGN_IN_FAILED)]
+    if email == "person@example.com":
+        assert reasons.count("invalid_credentials") == sign_in_throttle.MAX_ATTEMPTS - 1
+        assert reasons.count("locked") == 1
+    else:
+        assert reasons == []
 
 
 def test_sign_in_works_again_after_the_lock_ends(client: TestClient, db: Session) -> None:
     verified_user(email="person@example.com")
-    for _ in range(sign_in_throttle.MAX_FAILURES):
+    for _ in range(sign_in_throttle.MAX_ATTEMPTS):
         sign_in(client, "person@example.com", "wrong password")
     row = db.scalars(select(SignInThrottle)).one()
     row.locked_until = datetime.now(UTC) - timedelta(seconds=1)
@@ -444,12 +491,14 @@ def test_sign_out_clears_the_session(client: TestClient, db: Session) -> None:
     assert len(_events(db, AuditAction.SIGNED_OUT)) == 1
 
 
-def test_sign_out_with_a_session_needs_the_csrf_header(client: TestClient) -> None:
+def test_sign_out_without_csrf_clears_cookies_but_is_not_audited(
+    client: TestClient, db: Session
+) -> None:
     signed_in(client, verified_user())
     response = client.post(SIGN_OUT)
-    assert response.status_code == 403
-    assert response.json()["error"]["code"] == "csrf_failed"
-    assert client.get(ME).status_code == 200
+    assert response.status_code == 200
+    assert SESSION_COOKIE not in client.cookies
+    assert _events(db, AuditAction.SIGNED_OUT) == []
 
 
 def test_sign_out_without_a_session_still_succeeds(client: TestClient) -> None:
@@ -476,7 +525,7 @@ def test_forgot_password_does_not_reveal_accounts(
     [message] = outbox.outbox
     assert message.to == "person@example.com"
     assert message.subject == SUBJECTS[AccountEmail.RESET_PASSWORD]
-    assert message.link.startswith(f"{get_settings().frontend_origin}/reset-password?token=")
+    assert message.link.startswith(f"{get_settings().frontend_origin}/reset-password#token=")
     assert "1 hour" in message.text
     assert len(_events(db, AuditAction.PASSWORD_RESET_REQUESTED)) == 1
 
@@ -530,7 +579,7 @@ def test_reset_verifies_the_email_and_clears_the_lock(
     client: TestClient, db: Session, outbox: MemoryEmailBackend
 ) -> None:
     user = UserFactory.create(email="pending@example.com")
-    for _ in range(sign_in_throttle.MAX_FAILURES):
+    for _ in range(sign_in_throttle.MAX_ATTEMPTS):
         sign_in(client, "pending@example.com", "wrong password")
     client.post(FORGOT, json={"email": "pending@example.com"})
     token = token_from(outbox.outbox[0])
@@ -592,3 +641,142 @@ def test_change_password_needs_csrf(client: TestClient) -> None:
     )
     assert response.status_code == 403
     assert response.json()["error"]["code"] == "csrf_failed"
+
+
+# Pre-registration takeover
+
+ATTACKER_PASSWORD = "attacker password 1"
+VICTIM_PASSWORD = "victim password 22"
+CHOSEN_PASSWORD = "chosen at verify 333"
+
+
+def _sign_up_as(client: TestClient, password: str, name: str) -> None:
+    body = _sign_up_body(email="victim@example.com", name=name, password=password)
+    assert client.post(SIGN_UP, json=body).status_code == 202
+
+
+def test_attacker_first_then_victim_must_choose_a_password(
+    client: TestClient, db: Session, outbox: MemoryEmailBackend
+) -> None:
+    _sign_up_as(client, ATTACKER_PASSWORD, "Attacker")
+    attacker_link = token_from(outbox.outbox[0])
+    fresh = client.post(SIGN_UP, json=_sign_up_body(email="someone.else@example.com"))
+    repeat = client.post(SIGN_UP, json=_sign_up_body(email="victim@example.com"))
+    # The repeat sign-up looks exactly like a new one.
+    assert (repeat.status_code, repeat.json()) == (fresh.status_code, fresh.json())
+    victim_link = token_from(outbox.outbox[-1])
+    user = _user(db, "victim@example.com")
+    stored_hash = user.password_hash
+
+    # The repeat sign-up changed nothing and voided the earlier link.
+    assert user.password_hash == stored_hash
+    assert client.post(VERIFY, json={"token": attacker_link}).status_code == 400
+
+    missing = client.post(VERIFY, json={"token": victim_link})
+    assert missing.status_code == 400
+    assert missing.json()["error"]["code"] == "password_required"
+    chosen = client.post(VERIFY, json={"token": victim_link, "password": CHOSEN_PASSWORD})
+    assert chosen.status_code == 200
+    db.refresh(user)
+    assert user.email_verified_at is not None
+    assert user.session_version == 2
+    assert sign_in(client, "victim@example.com", ATTACKER_PASSWORD).status_code == 401
+    assert sign_in(client, "victim@example.com", CHOSEN_PASSWORD).status_code == 200
+
+
+def test_victim_first_then_attacker_never_gets_the_attackers_password(
+    client: TestClient, db: Session, outbox: MemoryEmailBackend
+) -> None:
+    _sign_up_as(client, VICTIM_PASSWORD, "Victim")
+    victim_link = token_from(outbox.outbox[0])
+    _sign_up_as(client, ATTACKER_PASSWORD, "Attacker")
+    newest = token_from(outbox.outbox[1])
+    user = _user(db, "victim@example.com")
+    assert user.name == "Victim"
+    assert verify_password(user.password_hash, VICTIM_PASSWORD).ok
+
+    # The victim's one-click link was replaced; the newest one needs a password.
+    assert client.post(VERIFY, json={"token": victim_link}).status_code == 400
+    assert client.post(VERIFY, json={"token": newest}).json()["error"]["code"] == (
+        "password_required"
+    )
+    assert (
+        client.post(VERIFY, json={"token": newest, "password": CHOSEN_PASSWORD}).status_code == 200
+    )
+    assert sign_in(client, "victim@example.com", ATTACKER_PASSWORD).status_code == 401
+    assert sign_in(client, "victim@example.com", CHOSEN_PASSWORD).status_code == 200
+
+
+def test_password_required_without_a_password_keeps_the_link(
+    client: TestClient, db: Session, outbox: MemoryEmailBackend
+) -> None:
+    _sign_up_as(client, ATTACKER_PASSWORD, "Attacker")
+    _sign_up_as(client, VICTIM_PASSWORD, "Victim")
+    link = token_from(outbox.outbox[-1])
+    for _ in range(2):
+        response = client.post(VERIFY, json={"token": link})
+        assert response.json()["error"]["code"] == "password_required"
+    row = db.scalars(select(UserToken).where(UserToken.used_at.is_(None))).one()
+    assert row.requires_password
+    assert _user(db, "victim@example.com").email_verified_at is None
+    short = client.post(VERIFY, json={"token": link, "password": "short"})
+    assert short.status_code == 422
+    ok = client.post(VERIFY, json={"token": link, "password": CHOSEN_PASSWORD})
+    assert ok.status_code == 200
+
+
+def test_first_sign_up_verifies_in_one_click(
+    client: TestClient, db: Session, outbox: MemoryEmailBackend
+) -> None:
+    client.post(SIGN_UP, json=_sign_up_body())
+    link = token_from(outbox.outbox[0])
+    # A password sent with a one-click link is ignored: the sign-up password stays.
+    response = client.post(VERIFY, json={"token": link, "password": "ignored password"})
+    assert response.status_code == 200
+    assert sign_in(client, "new.person@example.com").status_code == 200
+
+
+def test_a_resend_after_a_repeat_sign_up_still_requires_a_password(
+    client: TestClient, db: Session, outbox: MemoryEmailBackend
+) -> None:
+    _sign_up_as(client, ATTACKER_PASSWORD, "Attacker")
+    _sign_up_as(client, VICTIM_PASSWORD, "Victim")
+    for row in db.scalars(select(UserToken)):
+        row.created_at = datetime.now(UTC) - timedelta(minutes=5)
+    db.flush()
+    client.post(RESEND, json={"email": "victim@example.com"})
+    resent = token_from(outbox.outbox[-1])
+    assert client.post(VERIFY, json={"token": resent}).json()["error"]["code"] == (
+        "password_required"
+    )
+    client.post(VERIFY, json={"token": resent, "password": CHOSEN_PASSWORD})
+    assert sign_in(client, "victim@example.com", ATTACKER_PASSWORD).status_code == 401
+    assert sign_in(client, "victim@example.com", CHOSEN_PASSWORD).status_code == 200
+
+
+def test_verifying_ends_sessions_and_clears_the_lock(
+    client: TestClient, db: Session, outbox: MemoryEmailBackend
+) -> None:
+    client.post(SIGN_UP, json=_sign_up_body())
+    for _ in range(sign_in_throttle.MAX_ATTEMPTS):
+        sign_in(client, "new.person@example.com", "wrong password")
+    client.post(VERIFY, json={"token": token_from(outbox.outbox[0])})
+    assert sign_in(client, "new.person@example.com").status_code == 200
+
+
+# Resend and forgot password do the same work for every email
+
+
+@pytest.mark.parametrize("path", [RESEND, FORGOT])
+def test_requests_queue_one_task_for_every_email(
+    client: TestClient, path: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from app.jobs.tasks.emails import request_account_email  # noqa: PLC0415
+
+    user = UserFactory.create(email="known@example.com")
+    calls: list[tuple[Any, ...]] = []
+    monkeypatch.setattr(request_account_email, "delay", lambda *args: calls.append(args))
+    client.post(path, json={"email": "nobody@example.com"})
+    client.post(path, json={"email": "known@example.com"})
+    kind = "verify_email" if path == RESEND else "reset_password"
+    assert calls == [(kind, None), (kind, str(user.id))]

@@ -117,3 +117,11 @@ def test_every_route_method_is_allowed_by_cors() -> None:
         for method in route.methods or ()
     }
     assert used <= set(CORS_METHODS) | {"HEAD"}, "add the new method to CORS_METHODS"
+
+
+def test_null_origin_is_rejected(client: TestClient) -> None:
+    response = client.post(
+        "/api/v1/auth/password/forgot", json={"email": "a@example.com"}, headers={"Origin": "null"}
+    )
+    assert response.status_code == 403
+    assert response.json()["error"]["code"] == "csrf_failed"

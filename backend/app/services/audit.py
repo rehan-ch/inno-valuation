@@ -20,6 +20,7 @@ class AuditAction(StrEnum):
     PASSWORD_RESET_REQUESTED = "user.password_reset_requested"  # noqa: S105
     PASSWORD_RESET = "user.password_reset"  # noqa: S105
     PASSWORD_CHANGED = "user.password_changed"  # noqa: S105
+    USER_DISABLED = "user.disabled"
     ORGANISATION_UPDATED = "organisation.updated"
 
 

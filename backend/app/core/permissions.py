@@ -13,7 +13,7 @@ from enum import StrEnum
 from typing import Final
 
 from app.models import Organisation, User
-from app.models.enums import MembershipRole
+from app.models.enums import MembershipRole, OrganisationStatus
 
 
 class OrgRole(StrEnum):
@@ -43,6 +43,10 @@ class Permission(StrEnum):
 
 _MANAGE: Final = frozenset(Permission)
 _VIEW: Final = frozenset({Permission.VIEW_ORGANISATION, Permission.VIEW_TEAM})
+
+# What anyone may still do in an archived organisation (view-only until the archive
+# feature exists; see docs/decisions.md 2026-10-13).
+READ_ONLY_PERMISSIONS: Final = _VIEW
 
 ROLE_PERMISSIONS: Final[dict[OrgRole, frozenset[Permission]]] = {
     OrgRole.OWNER: _MANAGE,
@@ -77,5 +81,12 @@ class OrgContext:
     def is_consultant(self) -> bool:
         return self.role is OrgRole.CONSULTANT
 
+    @property
+    def is_archived(self) -> bool:
+        return self.organisation.status is OrganisationStatus.ARCHIVED
+
     def can(self, permission: Permission) -> bool:
+        """The role allows it, and an archived organisation allows only viewing."""
+        if self.is_archived and permission not in READ_ONLY_PERMISSIONS:
+            return False
         return has_permission(self.role, permission)

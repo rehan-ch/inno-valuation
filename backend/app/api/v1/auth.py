@@ -4,9 +4,9 @@ the router-wide origin check; routes with a session also need the CSRF header.""
 from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.orm import Session
 
-from app.core.deps import AuthContext, get_db, optional_session
+from app.core.deps import AuthContext, get_db, session_if_csrf_valid
 from app.core.sessions import clear_session, start_session
-from app.schemas.auth import EmailIn, ResetPasswordIn, SignInIn, SignUpIn, TokenIn
+from app.schemas.auth import EmailIn, ResetPasswordIn, SignInIn, SignUpIn, VerifyEmailIn
 from app.schemas.common import MessageOut
 from app.schemas.me import MeOut, me_out
 from app.services import auth as auth_service
@@ -24,8 +24,8 @@ def sign_up(body: SignUpIn, db: Session = Depends(get_db)) -> MessageOut:
 
 
 @router.post("/verify-email", response_model=MessageOut, status_code=status.HTTP_200_OK)
-def verify_email(body: TokenIn, db: Session = Depends(get_db)) -> MessageOut:
-    auth_service.verify_email(db, token=body.token)
+def verify_email(body: VerifyEmailIn, db: Session = Depends(get_db)) -> MessageOut:
+    auth_service.verify_email(db, token=body.token, password=body.password)
     return MessageOut(message="Your email is confirmed. You can sign in now.")
 
 
@@ -48,10 +48,11 @@ def sign_in(body: SignInIn, response: Response, db: Session = Depends(get_db)) -
 @router.post("/sign-out", response_model=MessageOut, status_code=status.HTTP_200_OK)
 def sign_out(
     response: Response,
-    auth: AuthContext | None = Depends(optional_session),
+    auth: AuthContext | None = Depends(session_if_csrf_valid),
     db: Session = Depends(get_db),
 ) -> MessageOut:
-    """Ends the session in this browser. Works without a valid session too."""
+    """Ends the session in this browser. Always clears the cookies; it is audited only with
+    a valid session and a passing CSRF check."""
     if auth is not None:
         auth_service.record_sign_out(db, auth.user)
     clear_session(response)

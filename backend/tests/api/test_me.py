@@ -3,9 +3,12 @@
 import uuid
 
 from fastapi.testclient import TestClient
+from sqlalchemy import delete
 from sqlalchemy.orm import Session
 
+from app.models import Membership
 from app.models.enums import MembershipRole
+from app.services.users import disable_user
 from tests.api.helpers import csrf, member, signed_in
 from tests.factories import MembershipFactory, OrganisationFactory, verified_user
 
@@ -91,3 +94,26 @@ def test_switch_needs_csrf(client: TestClient) -> None:
     signed_in(client, user)
     response = client.post(ACTIVE, json={"organisation_id": str(org.id)})
     assert response.status_code == 403
+
+
+def test_me_drops_an_active_organisation_the_user_lost(client: TestClient, db: Session) -> None:
+    user, org = member(MembershipRole.MEMBER)
+    signed_in(client, user)
+    assert client.get(ME).json()["active_organisation_id"] == str(org.id)
+    db.execute(delete(Membership).where(Membership.user_id == user.id))
+    db.flush()
+    assert client.get(ME).json()["active_organisation_id"] is None
+    patched = client.patch(ME, json={"name": "Still here"}, headers=csrf(client))
+    assert patched.json()["active_organisation_id"] is None
+
+
+def test_disable_user_ends_sessions_for_good(client: TestClient, db: Session) -> None:
+    user = verified_user()
+    signed_in(client, user)
+    disable_user(db, user, actor=None)
+    assert client.get(ME).status_code == 401
+    user.is_active = True  # re-enabled later by an admin
+    db.flush()
+    assert client.get(ME).status_code == 401  # the old session stays dead
+    signed_in(client, user)
+    assert client.get(ME).status_code == 200

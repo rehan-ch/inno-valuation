@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 
 from app.core.permissions import OrgContext, OrgRole
 from app.models import ConsultantGrant, Membership, Organisation, User
+from app.models.enums import ConsultantGrantScope
 
 
 def resolve_org_access(db: Session, user: User, organisation_id: uuid.UUID) -> OrgContext | None:
@@ -40,6 +41,8 @@ def resolve_org_access(db: Session, user: User, organisation_id: uuid.UUID) -> O
         .where(
             ConsultantGrant.organisation_id == organisation_id,
             ConsultantGrant.consultant_user_id == user.id,
+            # The only scope today; a new scope must decide its own role before it counts.
+            ConsultantGrant.scope == ConsultantGrantScope.READ_RESULTS,
             ConsultantGrant.accepted_at.is_not(None),
             ConsultantGrant.revoked_at.is_(None),
             ConsultantGrant.expires_at > datetime.now(UTC),

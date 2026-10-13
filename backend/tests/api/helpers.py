@@ -59,4 +59,7 @@ def member(
 
 
 def token_from(message: EmailMessage) -> str:
-    return parse_qs(urlparse(message.link).query)["token"][0]
+    """The token from an email link. It sits in the fragment, never in the query."""
+    url = urlparse(message.link)
+    assert url.query == ""
+    return parse_qs(url.fragment)["token"][0]

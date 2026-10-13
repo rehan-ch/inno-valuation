@@ -173,9 +173,21 @@ class Invitation(UuidPrimaryKey, CreatedAt, Base):
 
 
 class UserToken(UuidPrimaryKey, CreatedAt, Base):
-    """A single-use token for email verification or password reset."""
+    """A single-use token for email verification or password reset.
+
+    ``requires_password`` marks a verification link from a contested sign-up (a second
+    sign-up for an email that is not verified yet). Using it needs a new password, which
+    replaces the stored one, so nobody who signed up without owning the inbox keeps a
+    password on the account.
+    """
 
     __tablename__ = "user_tokens"
+    __table_args__ = (
+        CheckConstraint(
+            "purpose = 'verify_email' OR NOT requires_password",
+            name="password_only_for_verify_email",
+        ),
+    )
 
     user_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), index=True
@@ -184,6 +196,7 @@ class UserToken(UuidPrimaryKey, CreatedAt, Base):
     token_hash: Mapped[str] = mapped_column(String(TOKEN_HASH_LENGTH), unique=True)
     expires_at: Mapped[datetime]
     used_at: Mapped[datetime | None]
+    requires_password: Mapped[bool] = mapped_column(default=False, server_default=text("false"))
 
     user: Mapped[User] = relationship()
 

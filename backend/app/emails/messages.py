@@ -55,8 +55,11 @@ class EmailMessage:
 
 
 def frontend_link(origin: str, path: str, token: str | None = None) -> str:
+    """A frontend URL. The token goes in the fragment (``#token=...``): browsers never send
+    the fragment to a server, so it stays out of access logs, proxies and Referer headers.
+    The page reads ``location.hash``, posts the token, then clears the hash."""
     base = origin.rstrip("/") + path
-    return f"{base}?{urlencode({'token': token})}" if token else base
+    return f"{base}#{urlencode({'token': token})}" if token else base
 
 
 def describe_duration(duration: timedelta) -> str:

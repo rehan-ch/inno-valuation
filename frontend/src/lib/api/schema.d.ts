@@ -66,7 +66,8 @@ export interface paths {
         put?: never;
         /**
          * Sign Out
-         * @description Ends the session in this browser. Works without a valid session too.
+         * @description Ends the session in this browser. Always clears the cookies; it is audited only with
+         *     a valid session and a passing CSRF check.
          */
         post: operations["sign_out_api_v1_auth_sign_out_post"];
         delete?: never;
@@ -295,6 +296,7 @@ export interface components {
             organisation_id: string;
             /** Organisation Name */
             organisation_name: string;
+            organisation_status: components["schemas"]["OrganisationStatus"];
             role: components["schemas"]["MembershipRole"];
         };
         /**
@@ -416,11 +418,6 @@ export interface components {
             /** Password */
             password: string;
         };
-        /** TokenIn */
-        TokenIn: {
-            /** Token */
-            token: string;
-        };
         /** ValidationError */
         ValidationError: {
             /** Context */
@@ -433,6 +430,13 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+        };
+        /** VerifyEmailIn */
+        VerifyEmailIn: {
+            /** Password */
+            password?: string | null;
+            /** Token */
+            token: string;
         };
     };
     responses: never;
@@ -604,7 +608,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["TokenIn"];
+                "application/json": components["schemas"]["VerifyEmailIn"];
             };
         };
         responses: {

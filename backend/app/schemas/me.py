@@ -3,13 +3,15 @@ import uuid
 from pydantic import BaseModel
 
 from app.models import Membership, User
-from app.models.enums import MembershipRole
+from app.models.enums import MembershipRole, OrganisationStatus
 from app.schemas.common import PersonName, RequestModel
 
 
 class MembershipOut(BaseModel):
     organisation_id: uuid.UUID
     organisation_name: str
+    # An archived organisation is view-only and cannot be chosen as the active one.
+    organisation_status: OrganisationStatus
     role: MembershipRole
 
 
@@ -43,6 +45,7 @@ def me_out(
             MembershipOut(
                 organisation_id=m.organisation_id,
                 organisation_name=m.organisation.name,
+                organisation_status=m.organisation.status,
                 role=m.role,
             )
             for m in memberships

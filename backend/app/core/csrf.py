@@ -16,7 +16,7 @@ from fastapi import Request
 
 from app.core.errors import AppError
 from app.core.security import SessionClaims, constant_time_equal
-from app.core.sessions import CSRF_COOKIE, CSRF_HEADER
+from app.core.sessions import CSRF_HEADER, csrf_cookie_name
 from app.core.settings import get_settings
 
 UNSAFE_METHODS: Final = frozenset({"POST", "PUT", "PATCH", "DELETE"})
@@ -40,6 +40,7 @@ def require_trusted_origin(request: Request) -> None:
     if request.method not in UNSAFE_METHODS:
         return
     origin = request.headers.get("origin")
+    # "null" (sandboxed frames, some redirects) never equals the frontend origin.
     if origin is not None:
         if origin.rstrip("/") != get_settings().frontend_origin.rstrip("/"):
             raise csrf_failed()
@@ -48,15 +49,20 @@ def require_trusted_origin(request: Request) -> None:
         raise csrf_failed()
 
 
-def enforce_csrf(request: Request, claims: SessionClaims) -> None:
+def csrf_valid(request: Request, claims: SessionClaims) -> bool:
+    """True for safe methods, or when header, cookie and session token all match."""
     if request.method not in UNSAFE_METHODS:
-        return
+        return True
     header = request.headers.get(CSRF_HEADER)
-    cookie = request.cookies.get(CSRF_COOKIE)
-    if (
-        not header
-        or not cookie
-        or not constant_time_equal(header, cookie)
-        or not constant_time_equal(header, claims.csrf)
-    ):
+    cookie = request.cookies.get(csrf_cookie_name())
+    return bool(
+        header
+        and cookie
+        and constant_time_equal(header, cookie)
+        and constant_time_equal(header, claims.csrf)
+    )
+
+
+def enforce_csrf(request: Request, claims: SessionClaims) -> None:
+    if not csrf_valid(request, claims):
         raise csrf_failed()

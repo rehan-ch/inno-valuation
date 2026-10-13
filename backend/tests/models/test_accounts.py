@@ -379,8 +379,8 @@ def test_throttle_count_cannot_be_negative(db: Session) -> None:
     from tests.factories import SignInThrottleFactory  # noqa: PLC0415
 
     row = SignInThrottleFactory.create()
-    with expect_violation(db, "ck_sign_in_throttles_failed_count_not_negative"):
-        row.failed_count = -1
+    with expect_violation(db, "ck_sign_in_throttles_attempt_count_not_negative"):
+        row.attempt_count = -1
 
 
 def test_throttle_key_is_unique(db: Session) -> None:
@@ -389,3 +389,23 @@ def test_throttle_key_is_unique(db: Session) -> None:
     row = SignInThrottleFactory.create()
     with expect_violation(db, "uq_sign_in_throttles_key_hash"):
         SignInThrottleFactory.create(key_hash=row.key_hash)
+
+
+def test_only_verification_tokens_can_require_a_password(db: Session) -> None:
+    user = UserFactory.create()
+    with expect_violation(db, "ck_user_tokens_password_only_for_verify_email"):
+        _insert(
+            db,
+            "user_tokens",
+            user_id=user.id,
+            purpose="reset_password",
+            token_hash=fake_token_hash(),
+            expires_at=datetime.now(UTC),
+            requires_password=True,
+        )
+
+
+def test_tokens_do_not_require_a_password_by_default(db: Session) -> None:
+    token = UserTokenFactory.create()
+    db.refresh(token)
+    assert token.requires_password is False

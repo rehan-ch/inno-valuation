@@ -24,8 +24,11 @@ class EmailIn(RequestModel):
     email: Email
 
 
-class TokenIn(RequestModel):
+class VerifyEmailIn(RequestModel):
     token: Token
+    # Needed only when the link requires a password (the API answers 400
+    # ``password_required``); ignored otherwise.
+    password: NewPassword | None = None
 
 
 class ResetPasswordIn(RequestModel):

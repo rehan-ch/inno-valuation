@@ -19,10 +19,11 @@ from app.emails.backends import (
     get_email_backend,
     override_email_backend,
 )
-from app.jobs.tasks.emails import SENT, SKIPPED, send_account_email
+from app.jobs.tasks.emails import SENT, SKIPPED, request_account_email, send_account_email
 from app.models import UserToken
 from app.models.enums import UserTokenPurpose
 from app.services import user_tokens
+from app.services.audit import AuditAction
 from tests.factories import AuditEventFactory, UserFactory
 
 
@@ -72,10 +73,48 @@ def test_skips_a_disabled_user(db: Session, outbox: MemoryEmailBackend) -> None:
 
 def test_sends_the_already_registered_notice(db: Session, outbox: MemoryEmailBackend) -> None:
     user = UserFactory.create()
-    event = AuditEventFactory.create(actor_user_id=user.id)
+    event = AuditEventFactory.create(
+        actor_user_id=user.id, action=AuditAction.SIGN_UP_EXISTING_EMAIL.value
+    )
     result = send_account_email.delay("already_registered", str(user.id), str(event.id)).get()
     assert result == SENT
     assert outbox.outbox[0].link.endswith("/sign-in")
+
+
+def test_already_registered_checks_its_audit_event(db: Session, outbox: MemoryEmailBackend) -> None:
+    user = UserFactory.create()
+    other = UserFactory.create()
+    wrong_action = AuditEventFactory.create(actor_user_id=user.id, action="user.signed_in")
+    wrong_actor = AuditEventFactory.create(
+        actor_user_id=other.id, action=AuditAction.SIGN_UP_EXISTING_EMAIL.value
+    )
+    for ref in (wrong_action.id, wrong_actor.id, uuid.uuid4()):
+        result = send_account_email.delay("already_registered", str(user.id), str(ref)).get()
+        assert result == SKIPPED
+    assert outbox.outbox == []
+
+
+def test_request_task_skips_unknown_emails(outbox: MemoryEmailBackend) -> None:
+    assert request_account_email.delay("reset_password", None).get() == SKIPPED
+    assert outbox.outbox == []
+
+
+def test_request_task_issues_and_sends_a_reset_link(
+    db: Session, outbox: MemoryEmailBackend
+) -> None:
+    user = UserFactory.create(email="reset@example.com")
+    assert request_account_email.delay("reset_password", str(user.id)).get() == SENT
+    [message] = outbox.outbox
+    assert "/reset-password#token=" in message.link
+    # A re-delivered task hits the rate limit and sends nothing more.
+    assert request_account_email.delay("reset_password", str(user.id)).get() == SKIPPED
+    assert len(outbox.outbox) == 1
+
+
+def test_request_task_refuses_other_kinds(db: Session) -> None:
+    user = UserFactory.create()
+    with pytest.raises(ValueError, match="cannot be requested"):
+        request_account_email.delay("already_registered", str(user.id)).get()
 
 
 def test_rejects_an_unknown_kind(db: Session) -> None:
@@ -105,7 +144,7 @@ def test_log_backend_in_development(
         send_account_email.delay("verify_email", user_id, token_id).get()
     [record] = [r for r in caplog.records if r.name == "app.emails.backends"]
     assert "dev@example.com" in record.getMessage()
-    assert "/verify-email?token=" in record.getMessage()
+    assert "/verify-email#token=" in record.getMessage()
 
 
 @pytest.mark.usefixtures("no_override")

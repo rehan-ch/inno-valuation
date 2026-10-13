@@ -9,10 +9,15 @@ from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from app.models import AuditEvent, ConsultantGrant, Membership, Organisation
-from app.models.enums import MembershipRole
+from app.models.enums import MembershipRole, OrganisationStatus
 from app.services.audit import AuditAction
 from tests.api.helpers import csrf, member, signed_in
-from tests.factories import ConsultantGrantFactory, OrganisationFactory, verified_user
+from tests.factories import (
+    ConsultantGrantFactory,
+    MembershipFactory,
+    OrganisationFactory,
+    verified_user,
+)
 
 ORG = "/api/v1/organisation"
 ACTIVE = "/api/v1/me/active-organisation"
@@ -257,3 +262,49 @@ def test_new_organisation_is_not_visible_to_unrelated_users(client: TestClient) 
     user, _ = member(MembershipRole.OWNER)
     signed_in(client, user)
     assert "Hidden Co" not in client.get("/api/v1/me").text
+
+
+# Archived organisations are view-only until the archive feature exists
+
+
+def test_archived_organisation_cannot_be_chosen(client: TestClient) -> None:
+    user, live = member(MembershipRole.OWNER)
+    archived = OrganisationFactory.create(status=OrganisationStatus.ARCHIVED)
+    MembershipFactory.create(user=user, organisation=archived, role=MembershipRole.OWNER)
+    signed_in(client, user)
+    response = client.post(ACTIVE, json={"organisation_id": str(archived.id)}, headers=csrf(client))
+    assert response.status_code == 409
+    assert response.json()["error"]["code"] == "organisation_archived"
+    statuses = {
+        m["organisation_id"]: m["organisation_status"]
+        for m in client.get("/api/v1/me").json()["memberships"]
+    }
+    assert statuses == {str(live.id): "active", str(archived.id): "archived"}
+
+
+def test_only_archived_membership_is_not_picked_at_sign_in(client: TestClient) -> None:
+    archived = OrganisationFactory.create(status=OrganisationStatus.ARCHIVED)
+    user, _ = member(MembershipRole.OWNER, organisation=archived)
+    signed_in(client, user)
+    assert client.get("/api/v1/me").json()["active_organisation_id"] is None
+
+
+def test_archived_while_active_is_view_only(client: TestClient, db: Session) -> None:
+    user, org = member(MembershipRole.OWNER)
+    signed_in(client, user)
+    org.status = OrganisationStatus.ARCHIVED
+    db.flush()
+    view = client.get(ORG)
+    assert view.status_code == 200
+    assert view.json()["status"] == "archived"
+    edit = _patch(client, {"name": "Changed"})
+    assert edit.status_code == 403
+    assert edit.json()["error"]["code"] == "organisation_archived"
+
+
+def test_archived_check_does_not_hide_a_missing_role(client: TestClient, db: Session) -> None:
+    user, org = member(MembershipRole.MEMBER)
+    signed_in(client, user)
+    org.status = OrganisationStatus.ARCHIVED
+    db.flush()
+    assert _patch(client, {"name": "Changed"}).json()["error"]["code"] == "forbidden"

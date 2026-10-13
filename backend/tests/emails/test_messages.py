@@ -40,7 +40,8 @@ def test_token_email(kind: AccountEmail) -> None:
         expires_in=timedelta(hours=1),
     )
     assert message.link.startswith(f"{ORIGIN}/")
-    assert message.link.endswith("?token=tok_123")
+    assert message.link.endswith("#token=tok_123")
+    assert "?" not in message.link  # never in the query string
     assert message.link in message.text
     assert "1 hour" in message.text
     assert "tok_123" not in message.subject

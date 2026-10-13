@@ -17,7 +17,8 @@ router = APIRouter(prefix="/me", tags=["me"])
 @router.get("", response_model=MeOut, status_code=status.HTTP_200_OK)
 def get_me(auth: AuthContext = Depends(current_session), db: Session = Depends(get_db)) -> MeOut:
     memberships = user_service.list_memberships(db, auth.user)
-    return me_out(auth.user, memberships, auth.claims.active_org_id)
+    active = user_service.active_organisation_id(db, auth.user, auth.claims.active_org_id)
+    return me_out(auth.user, memberships, active)
 
 
 @router.patch("", response_model=MeOut, status_code=status.HTTP_200_OK)
@@ -27,7 +28,8 @@ def update_me(
     db: Session = Depends(get_db),
 ) -> MeOut:
     user = user_service.update_name(db, auth.user, name=body.name)
-    return me_out(user, user_service.list_memberships(db, user), auth.claims.active_org_id)
+    active = user_service.active_organisation_id(db, user, auth.claims.active_org_id)
+    return me_out(user, user_service.list_memberships(db, user), active)
 
 
 @router.post("/active-organisation", response_model=MeOut, status_code=status.HTTP_200_OK)

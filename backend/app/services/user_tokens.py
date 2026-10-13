@@ -6,13 +6,18 @@ Only the SHA-256 hash is stored. The raw token is derived from the row id and th
 Issuing a token voids the user's other outstanding tokens of the same purpose, so only the
 newest link works. Using a token marks it used and voids the rest. ``used_at`` therefore
 means "no longer usable", whether clicked or replaced.
+
+A verification token from a contested sign-up has ``requires_password`` set; using it
+needs a new password (see ``app.services.auth``). Once an account has had such a token,
+every later verification token for it requires a password too, until it is verified.
 """
 
 import uuid
+from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Final
 
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
 from app.core.security import hash_token, user_token_value
@@ -24,27 +29,58 @@ TOKEN_LIFETIMES: Final[dict[UserTokenPurpose, timedelta]] = {
     UserTokenPurpose.RESET_PASSWORD: timedelta(hours=1),
 }
 
-# At most one new email of each kind per user in this time, so nobody can flood an inbox
-# through the resend and forgot-password forms.
-EMAIL_COOLDOWN: Final = timedelta(minutes=1)
+
+@dataclass(frozen=True)
+class RateLimit:
+    """At most ``count`` new tokens of one purpose per user within ``period``."""
+
+    count: int
+    period: timedelta
 
 
-def issue(db: Session, user: User, purpose: UserTokenPurpose) -> UserToken | None:
-    """A new token row, or None if one was issued within ``EMAIL_COOLDOWN``. Caller commits."""
+# Resend and forgot password: at most one email per minute, so nobody can flood an inbox.
+EMAIL_COOLDOWN: Final = RateLimit(count=1, period=timedelta(minutes=1))
+# A repeat sign-up for an unverified email always gets its own link (the previous one is
+# voided), so it skips the one-minute cooldown but is capped per hour.
+SIGN_UP_LIMIT: Final = RateLimit(count=5, period=timedelta(hours=1))
+
+
+def issue(
+    db: Session,
+    user: User,
+    purpose: UserTokenPurpose,
+    *,
+    requires_password: bool = False,
+    limit: RateLimit = EMAIL_COOLDOWN,
+) -> UserToken | None:
+    """A new token row, or None when ``limit`` is reached. Caller commits.
+
+    A verification token requires a password when asked to, or when any earlier
+    verification token of this user did (a contested account stays contested).
+    """
+    if requires_password and purpose is not UserTokenPurpose.VERIFY_EMAIL:
+        raise ValueError("Only verification tokens can require a password.")
     now = datetime.now(UTC)
     recent = db.scalar(
-        select(UserToken.id)
+        select(func.count())
+        .select_from(UserToken)
         .where(
             UserToken.user_id == user.id,
             UserToken.purpose == purpose,
-            UserToken.created_at > now - EMAIL_COOLDOWN,
+            UserToken.created_at > now - limit.period,
         )
-        .limit(1)
     )
-    if recent is not None:
+    if (recent or 0) >= limit.count:
         return None
+    if purpose is UserTokenPurpose.VERIFY_EMAIL and not requires_password:
+        requires_password = is_contested(db, user)
     _void_outstanding(db, user, purpose, now)
-    token = UserToken(user_id=user.id, purpose=purpose, expires_at=now + TOKEN_LIFETIMES[purpose])
+    token = UserToken(
+        user_id=user.id,
+        purpose=purpose,
+        expires_at=now + TOKEN_LIFETIMES[purpose],
+        requires_password=requires_password,
+    )
     # The id is set first because the stored hash is derived from it.
     token.id = uuid.uuid4()
     token.token_hash = hash_token(user_token_value(token.id))
@@ -53,14 +89,29 @@ def issue(db: Session, user: User, purpose: UserTokenPurpose) -> UserToken | Non
     return token
 
 
+def is_contested(db: Session, user: User) -> bool:
+    """True if any verification token of the user ever required a password."""
+    found = db.scalar(
+        select(UserToken.id)
+        .where(
+            UserToken.user_id == user.id,
+            UserToken.purpose == UserTokenPurpose.VERIFY_EMAIL,
+            UserToken.requires_password.is_(True),
+        )
+        .limit(1)
+    )
+    return found is not None
+
+
 def is_usable(token: UserToken, now: datetime | None = None) -> bool:
     return token.used_at is None and token.expires_at > (now or datetime.now(UTC))
 
 
-def consume(db: Session, raw: str, purpose: UserTokenPurpose) -> User | None:
-    """Use a token once. Returns its active user, or None if the token cannot be used.
+def find_usable(db: Session, raw: str, purpose: UserTokenPurpose) -> UserToken | None:
+    """The usable token for ``raw`` (its user is active), locked for update, or None.
 
-    The row is locked so two clicks at once cannot both succeed. Caller commits.
+    Does not use it: call ``mark_used``. The lock means two clicks at once cannot both
+    succeed.
     """
     now = datetime.now(UTC)
     token = db.scalar(
@@ -73,10 +124,23 @@ def consume(db: Session, raw: str, purpose: UserTokenPurpose) -> User | None:
     user = db.get(User, token.user_id)
     if user is None or not user.is_active:
         return None
+    return token
+
+
+def mark_used(db: Session, token: UserToken) -> None:
+    """Use the token and void the user's other outstanding tokens of its purpose."""
+    now = datetime.now(UTC)
     token.used_at = now
-    _void_outstanding(db, user, purpose, now)
+    _void_outstanding(db, token.user, token.purpose, now)
     db.flush()
-    return user
+
+
+def consume(db: Session, raw: str, purpose: UserTokenPurpose) -> UserToken | None:
+    """Find and use a token once. Returns the used token, or None. Caller commits."""
+    token = find_usable(db, raw, purpose)
+    if token is not None:
+        mark_used(db, token)
+    return token
 
 
 def void_outstanding(db: Session, user: User, purpose: UserTokenPurpose) -> None:

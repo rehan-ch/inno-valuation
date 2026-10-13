@@ -5,7 +5,17 @@ forgot password answer the same way for every email, and a failed sign-in gives 
 generic error. Only someone who knows the right password learns that the email is not
 verified yet or that the account is disabled.
 
-Emails are queued after the commit, so the task always finds the rows it needs.
+Emails are queued after the commit, so the task always finds the rows it needs. Resend
+verification and forgot password do only a lookup, a commit and one queued task in the
+request, whatever the email; the worker decides whether anything is sent.
+
+Pre-registration takeover: someone may sign up with another person's email, before or
+after them. A repeat sign-up for a still unverified account never carries a password and
+changes nothing; its link is marked ``requires_password``, and verifying with it needs a
+new password chosen at that moment, which replaces the stored one. Once contested, every
+later link needs a password too, until the email is verified. So only someone who reads
+the inbox can set the password that survives verification. A first sign-up's link stays
+one click and keeps the password chosen at sign-up.
 """
 
 import logging
@@ -24,9 +34,9 @@ from app.core.errors import AppError
 from app.core.security import hash_password, verify_password
 from app.core.settings import get_settings
 from app.emails.messages import AccountEmail
-from app.jobs.tasks.emails import send_account_email
-from app.models import AuditEvent, Membership, User
-from app.models.enums import UserTokenPurpose
+from app.jobs.tasks.emails import request_account_email, send_account_email
+from app.models import AuditEvent, Membership, Organisation, User
+from app.models.enums import OrganisationStatus, UserTokenPurpose
 from app.services import sign_in_throttle, user_tokens
 from app.services.audit import AuditAction, record
 
@@ -76,15 +86,24 @@ def _queue_email(kind: AccountEmail, user_id: uuid.UUID, ref_id: uuid.UUID) -> N
         logger.exception("Could not queue the %s email for user %s", kind.value, user_id)
 
 
+def _queue_request(kind: AccountEmail, user: User | None) -> None:
+    try:
+        request_account_email.delay(kind.value, str(user.id) if user else None)
+    except BrokerError:
+        logger.exception("Could not queue a %s request", kind.value)
+
+
 # Sign up and email verification
 
 
 def sign_up(db: Session, *, email: str, name: str, password: str) -> None:
     """Create an account and email a verification link. Same outcome for a known email.
 
-    For a known email nothing changes: an unverified account gets a fresh verification
-    link, a verified one gets an "already registered" notice. The password is hashed in
-    every case so the response time does not reveal which path ran.
+    For a known, verified email nothing changes and the owner gets an "already registered"
+    notice. For a known, unverified email nothing changes either: the submitted password is
+    discarded and a new verification link that requires choosing a password is sent
+    (``SIGN_UP_LIMIT`` per hour). The password is hashed in every case so the response
+    time does not reveal which path ran.
     """
     _require_password_sign_in()
     email = normalise_email(email)
@@ -120,9 +139,16 @@ def sign_up(db: Session, *, email: str, name: str, password: str) -> None:
 
 def _sign_up_known_email(db: Session, user: User) -> None:
     if not user.is_active:
+        db.commit()  # same work as the other paths
         return
     if user.email_verified_at is None:
-        token = user_tokens.issue(db, user, UserTokenPurpose.VERIFY_EMAIL)
+        token = user_tokens.issue(
+            db,
+            user,
+            UserTokenPurpose.VERIFY_EMAIL,
+            requires_password=True,
+            limit=user_tokens.SIGN_UP_LIMIT,
+        )
         db.commit()
         if token is not None:
             _queue_email(AccountEmail.VERIFY_EMAIL, user.id, token.id)
@@ -145,22 +171,37 @@ def _sign_up_known_email(db: Session, user: User) -> None:
 
 
 def resend_verification(db: Session, *, email: str) -> None:
-    """Email a new verification link if the account exists and is not verified yet."""
+    """Queue a new verification link; the worker sends it only to an unverified account."""
     user = _find_user(db, email)
-    if user is None or not user.is_active or user.email_verified_at is not None:
-        return
-    token = user_tokens.issue(db, user, UserTokenPurpose.VERIFY_EMAIL)
     db.commit()
-    if token is not None:
-        _queue_email(AccountEmail.VERIFY_EMAIL, user.id, token.id)
+    _queue_request(AccountEmail.VERIFY_EMAIL, user)
 
 
-def verify_email(db: Session, *, token: str) -> None:
-    user = user_tokens.consume(db, token, UserTokenPurpose.VERIFY_EMAIL)
-    if user is None:
+def verify_email(db: Session, *, token: str, password: str | None = None) -> None:
+    """Mark the email verified.
+
+    A link with ``requires_password`` (contested sign-up) needs ``password``: without it
+    this raises 400 ``password_required`` and leaves the link usable, so the page can ask
+    for one and resubmit. With it, the password replaces whatever the account had. Any
+    password sent with a one-click link is ignored: that link keeps the sign-up password.
+    Verifying ends every session and clears the sign-in lock.
+    """
+    found = user_tokens.find_usable(db, token, UserTokenPurpose.VERIFY_EMAIL)
+    if found is None:
         raise AppError("invalid_token", "This link is not valid or has expired.", 400)
+    if found.requires_password and password is None:
+        # Nothing is written, so the link stays usable; the row lock ends with the request.
+        raise AppError(
+            "password_required", "Choose a password to finish setting up your account.", 400
+        )
+    user_tokens.mark_used(db, found)
+    user = found.user
     if user.email_verified_at is None:
+        if found.requires_password and password is not None:
+            user.password_hash = hash_password(password)
         user.email_verified_at = datetime.now(UTC)
+        user.session_version += 1
+        sign_in_throttle.clear(db, user.email)
         record(db, AuditAction.EMAIL_VERIFIED, actor=user, target_type="user", target_id=user.id)
     db.commit()
 
@@ -173,18 +214,25 @@ def sign_in(db: Session, *, email: str, password: str) -> SignInResult:
     email = normalise_email(email)
     user = _find_user(db, email)
 
-    if sign_in_throttle.is_locked(db, email):
-        _record_failure(db, user, "locked")
+    # Count the attempt before checking the password, then commit to release the row lock
+    # during the slow hash check (see app.services.sign_in_throttle).
+    attempt = sign_in_throttle.begin_attempt(db, email)
+    if not attempt.allowed:
+        if attempt.newly_locked:
+            _record_failure(db, user, "locked")
         db.commit()
         raise _too_many_attempts()
+    db.commit()
 
     check = verify_password(user.password_hash if user else None, password)
     if user is None or not check.ok:
-        locked = sign_in_throttle.record_failure(db, email)
-        _record_failure(db, user, "invalid_credentials")
+        newly_locked = sign_in_throttle.attempt_failed(db, email)
+        _record_failure(db, user, "locked" if newly_locked else "invalid_credentials")
         db.commit()
-        raise _too_many_attempts() if locked else _invalid_credentials()
+        raise _too_many_attempts() if newly_locked else _invalid_credentials()
 
+    # The right password: forget the attempts whatever happens next.
+    sign_in_throttle.clear(db, email)
     if not user.is_active:
         _record_failure(db, user, "disabled")
         db.commit()
@@ -199,33 +247,39 @@ def sign_in(db: Session, *, email: str, password: str) -> SignInResult:
     if check.needs_rehash:
         user.password_hash = hash_password(password)
     user.last_login_at = datetime.now(UTC)
-    sign_in_throttle.clear(db, email)
     record(db, AuditAction.SIGNED_IN, actor=user, target_type="user", target_id=user.id)
     db.commit()
     return SignInResult(user=user, active_org_id=_default_org(db, user))
 
 
 def _record_failure(db: Session, user: User | None, reason: str) -> None:
-    # The email is stored only when it belongs to an account; unknown emails leave nothing.
-    details: dict[str, str] = {"reason": reason}
-    if user is not None:
-        details["email"] = user.email
+    """Audit a failed sign-in for an existing account. Unknown emails leave no row at all,
+    so guessing cannot fill the table; the actor id identifies the account, so no email is
+    stored. Throttled attempts are audited once, when the lock starts."""
+    if user is None:
+        return
     record(
         db,
         AuditAction.SIGN_IN_FAILED,
         actor=user,
-        target_type="user" if user else None,
-        target_id=user.id if user else None,
-        details=details,
+        target_type="user",
+        target_id=user.id,
+        details={"reason": reason},
     )
 
 
 def _default_org(db: Session, user: User) -> uuid.UUID | None:
-    """The organisation to start in: the only one, if the user belongs to exactly one."""
+    """The organisation to start in: the only one, if the user belongs to exactly one and
+    it is not archived."""
     org_ids = db.scalars(
         select(Membership.organisation_id).where(Membership.user_id == user.id).limit(2)
     ).all()
-    return org_ids[0] if len(org_ids) == 1 else None
+    if len(org_ids) != 1:
+        return None
+    organisation = db.get(Organisation, org_ids[0])
+    if organisation is None or organisation.status is OrganisationStatus.ARCHIVED:
+        return None
+    return org_ids[0]
 
 
 def record_sign_out(db: Session, user: User) -> None:
@@ -237,22 +291,10 @@ def record_sign_out(db: Session, user: User) -> None:
 
 
 def request_password_reset(db: Session, *, email: str) -> None:
-    """Email a reset link if an active account exists. Same outcome for every email."""
+    """Queue a reset link; the worker sends it only to an active account."""
     user = _find_user(db, email)
-    if user is None or not user.is_active:
-        return
-    token = user_tokens.issue(db, user, UserTokenPurpose.RESET_PASSWORD)
-    if token is None:
-        return
-    record(
-        db,
-        AuditAction.PASSWORD_RESET_REQUESTED,
-        actor=user,
-        target_type="user",
-        target_id=user.id,
-    )
     db.commit()
-    _queue_email(AccountEmail.RESET_PASSWORD, user.id, token.id)
+    _queue_request(AccountEmail.RESET_PASSWORD, user)
 
 
 def reset_password(db: Session, *, token: str, new_password: str) -> None:
@@ -260,9 +302,10 @@ def reset_password(db: Session, *, token: str, new_password: str) -> None:
 
     The link proves the user reads this inbox, so an unverified email becomes verified.
     """
-    user = user_tokens.consume(db, token, UserTokenPurpose.RESET_PASSWORD)
-    if user is None:
+    used = user_tokens.consume(db, token, UserTokenPurpose.RESET_PASSWORD)
+    if used is None:
         raise AppError("invalid_token", "This link is not valid or has expired.", 400)
+    user = used.user
     user.password_hash = hash_password(new_password)
     user.session_version += 1
     if user.email_verified_at is None:
@@ -283,12 +326,14 @@ def change_password(db: Session, user: User, *, current_password: str, new_passw
             "This account has no password. Use forgot password to set one.",
             400,
         )
-    if sign_in_throttle.is_locked(db, user.email):
+    attempt = sign_in_throttle.begin_attempt(db, user.email)
+    db.commit()
+    if not attempt.allowed:
         raise _too_many_attempts()
     if not verify_password(user.password_hash, current_password).ok:
-        locked = sign_in_throttle.record_failure(db, user.email)
+        newly_locked = sign_in_throttle.attempt_failed(db, user.email)
         db.commit()
-        if locked:
+        if newly_locked:
             raise _too_many_attempts()
         raise AppError("invalid_password", "The current password is not correct.", 400)
     user.password_hash = hash_password(new_password)

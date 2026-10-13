@@ -1,5 +1,6 @@
 from datetime import UTC, datetime, timedelta
 
+import pytest
 from sqlalchemy.orm import Session
 
 from app.core.security import hash_token, user_token_value
@@ -47,7 +48,9 @@ def test_new_token_voids_the_old_one(db: Session) -> None:
     db.refresh(first)
     assert not user_tokens.is_usable(first)
     assert user_tokens.consume(db, user_token_value(first.id), RESET) is None
-    assert user_tokens.consume(db, user_token_value(second.id), RESET) == user
+    used = user_tokens.consume(db, user_token_value(second.id), RESET)
+    assert used is not None
+    assert used.user == user
 
 
 def test_consume_is_single_use_and_purpose_bound(db: Session) -> None:
@@ -56,7 +59,9 @@ def test_consume_is_single_use_and_purpose_bound(db: Session) -> None:
     assert token is not None
     raw = user_token_value(token.id)
     assert user_tokens.consume(db, raw, RESET) is None
-    assert user_tokens.consume(db, raw, VERIFY) == user
+    used = user_tokens.consume(db, raw, VERIFY)
+    assert used is not None
+    assert used.user == user
     assert user_tokens.consume(db, raw, VERIFY) is None
 
 
@@ -72,3 +77,50 @@ def test_consume_refuses_expired_tokens_and_disabled_users(db: Session) -> None:
     other = user_tokens.issue(db, disabled, VERIFY)
     assert other is not None
     assert user_tokens.consume(db, user_token_value(other.id), VERIFY) is None
+
+
+def test_sign_up_limit_skips_the_minute_cooldown_but_caps_the_hour(db: Session) -> None:
+    user = UserFactory.create()
+    issued = [
+        user_tokens.issue(db, user, VERIFY, requires_password=True, limit=user_tokens.SIGN_UP_LIMIT)
+        for _ in range(user_tokens.SIGN_UP_LIMIT.count + 1)
+    ]
+    assert all(token is not None for token in issued[:-1])
+    assert issued[-1] is None
+
+
+def test_a_contested_account_stays_contested(db: Session) -> None:
+    user = UserFactory.create()
+    plain = user_tokens.issue(db, user, VERIFY)
+    assert plain is not None
+    assert not plain.requires_password
+    assert not user_tokens.is_contested(db, user)
+    contested = user_tokens.issue(
+        db, user, VERIFY, requires_password=True, limit=user_tokens.SIGN_UP_LIMIT
+    )
+    assert contested is not None
+    # Even after the contested link expires, the next link still requires a password.
+    contested.expires_at = datetime.now(UTC) - timedelta(seconds=1)
+    _age(contested, 2)
+    _age(plain, 2)
+    db.flush()
+    resent = user_tokens.issue(db, user, VERIFY)
+    assert resent is not None
+    assert resent.requires_password
+
+
+def test_only_verification_tokens_can_require_a_password(db: Session) -> None:
+    user = UserFactory.create()
+    with pytest.raises(ValueError, match="Only verification"):
+        user_tokens.issue(db, user, RESET, requires_password=True)
+
+
+def test_find_usable_does_not_use_the_token(db: Session) -> None:
+    user = UserFactory.create()
+    token = user_tokens.issue(db, user, VERIFY)
+    assert token is not None
+    raw = user_token_value(token.id)
+    assert user_tokens.find_usable(db, raw, VERIFY) is token
+    assert token.used_at is None
+    assert user_tokens.consume(db, raw, VERIFY) is token
+    assert user_tokens.find_usable(db, raw, VERIFY) is None

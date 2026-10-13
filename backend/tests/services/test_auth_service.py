@@ -23,7 +23,7 @@ def test_sign_up_then_verify(db: Session, outbox: MemoryEmailBackend) -> None:
     user = db.scalars(select(User).where(User.email == "someone@example.com")).one()
     assert user.session_version == 1
     [message] = outbox.outbox
-    token = message.link.split("token=", 1)[1]
+    token = message.link.split("#token=", 1)[1]
     auth.verify_email(db, token=token)
     assert user.email_verified_at is not None
 
@@ -36,15 +36,32 @@ def test_sign_in_picks_the_only_organisation(db: Session) -> None:
     assert result.active_org_id == membership.organisation_id
 
 
-def test_failed_sign_in_is_audited_and_kept(db: Session) -> None:
-    with pytest.raises(AppError) as info:
-        auth.sign_in(db, email="nobody@example.com", password="wrong password")
-    assert info.value.code == "invalid_credentials"
+def test_failed_sign_in_audit(db: Session) -> None:
+    user = verified_user(email="known@example.com")
+    for email in ("nobody@example.com", "known@example.com"):
+        with pytest.raises(AppError) as info:
+            auth.sign_in(db, email=email, password="wrong password")
+        assert info.value.code == "invalid_credentials"
+    # Only the real account leaves a row, and it holds no email.
     [event] = db.scalars(
         select(AuditEvent).where(AuditEvent.action == AuditAction.SIGN_IN_FAILED.value)
     )
-    assert event.actor_user_id is None
+    assert event.actor_user_id == user.id
     assert event.details == {"reason": "invalid_credentials"}
+
+
+def test_verify_email_bumps_the_session_version(db: Session, outbox: MemoryEmailBackend) -> None:
+    auth.sign_up(db, email="new@example.com", name="New", password=TEST_PASSWORD)
+    user = db.scalars(select(User).where(User.email == "new@example.com")).one()
+    auth.verify_email(db, token=outbox.outbox[0].link.split("#token=", 1)[1])
+    assert user.session_version == 2
+
+
+def test_disabled_account_sign_up_changes_nothing(db: Session, outbox: MemoryEmailBackend) -> None:
+    user = UserFactory.create(email="gone@example.com", is_active=False)
+    auth.sign_up(db, email="gone@example.com", name="Someone", password="another password")
+    assert outbox.outbox == []
+    assert user.name != "Someone"
 
 
 def test_change_password_bumps_the_session_version(db: Session) -> None:

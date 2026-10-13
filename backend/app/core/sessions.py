@@ -6,7 +6,10 @@ Two cookies:
   header on every unsafe request. The same value is inside the JWT, so a cookie planted
   by another site cannot pass the check (signed double submit).
 
-Both are ``SameSite=Lax``, ``Path=/``, and ``Secure`` in staging and production.
+Both are ``SameSite=Lax`` and ``Path=/``. In staging and production they are ``Secure``,
+have no ``Domain``, and carry the ``__Host-`` prefix (``__Host-iv_session``,
+``__Host-csrf_token``), so browsers refuse them from a sibling subdomain or plain http.
+Locally the plain names are used, because browsers reject ``__Host-`` cookies over http.
 """
 
 import uuid
@@ -27,6 +30,19 @@ from app.models import User
 SESSION_COOKIE: Final = "iv_session"
 CSRF_COOKIE: Final = "csrf_token"
 CSRF_HEADER: Final = "X-CSRF-Token"
+HOST_PREFIX: Final = "__Host-"
+
+
+def session_cookie_name() -> str:
+    return _cookie_name(SESSION_COOKIE)
+
+
+def csrf_cookie_name() -> str:
+    return _cookie_name(CSRF_COOKIE)
+
+
+def _cookie_name(base: str) -> str:
+    return f"{HOST_PREFIX}{base}" if get_settings().is_deployed else base
 
 
 def session_lifetime() -> timedelta:
@@ -68,21 +84,25 @@ def refresh_session(
 
 
 def read_session(request: Request) -> SessionClaims | None:
-    token = request.cookies.get(SESSION_COOKIE)
+    token = request.cookies.get(session_cookie_name())
     return decode_session(token) if token else None
 
 
 def clear_session(response: Response) -> None:
     secure = get_settings().is_deployed
-    response.delete_cookie(SESSION_COOKIE, path="/", secure=secure, httponly=True, samesite="lax")
-    response.delete_cookie(CSRF_COOKIE, path="/", secure=secure, httponly=False, samesite="lax")
+    response.delete_cookie(
+        session_cookie_name(), path="/", secure=secure, httponly=True, samesite="lax"
+    )
+    response.delete_cookie(
+        csrf_cookie_name(), path="/", secure=secure, httponly=False, samesite="lax"
+    )
 
 
 def _set_cookies(response: Response, claims: SessionClaims) -> None:
     secure = get_settings().is_deployed
     max_age = max(0, round((claims.expires_at - datetime.now(UTC)).total_seconds()))
     response.set_cookie(
-        SESSION_COOKIE,
+        session_cookie_name(),
         encode_session(claims),
         max_age=max_age,
         path="/",
@@ -91,7 +111,7 @@ def _set_cookies(response: Response, claims: SessionClaims) -> None:
         samesite="lax",
     )
     response.set_cookie(
-        CSRF_COOKIE,
+        csrf_cookie_name(),
         claims.csrf,
         max_age=max_age,
         path="/",

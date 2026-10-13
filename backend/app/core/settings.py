@@ -8,6 +8,7 @@ tests run without any .env file.
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal
+from urllib.parse import urlsplit
 
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -23,6 +24,8 @@ DEPLOYED_ENVIRONMENTS = frozenset({"staging", "production"})
 # Placeholder, not a secret: the validator refuses it outside development and test.
 DEFAULT_SECRET_KEY = "change-me-in-production"  # noqa: S105
 MIN_SECRET_KEY_LENGTH = 32
+
+LOCAL_HOSTS = frozenset({"localhost", "127.0.0.1", "::1", "0.0.0.0"})  # noqa: S104
 
 
 class Settings(BaseSettings):
@@ -72,6 +75,32 @@ class Settings(BaseSettings):
                 f"SECRET_KEY must be set to a non-default value of at least "
                 f"{MIN_SECRET_KEY_LENGTH} characters in {self.environment}. "
                 "For local work, set ENVIRONMENT=development in .env."
+            )
+        return self
+
+    @model_validator(mode="after")
+    def _check_frontend_origin(self) -> "Settings":
+        """Deployed sites need an https frontend origin that is not this machine.
+
+        The origin is the only browser origin allowed to make unsafe requests, and email
+        links point at it, so a local or plain-http value there would be a security hole.
+        """
+        if not self.is_deployed:
+            return self
+        url = urlsplit(self.frontend_origin)
+        host = (url.hostname or "").lower()
+        if (
+            url.scheme != "https"
+            or not host
+            or host in LOCAL_HOSTS
+            or host.endswith(".localhost")
+            or url.path not in ("", "/")
+            or url.query
+            or url.fragment
+        ):
+            raise ValueError(
+                f"FRONTEND_ORIGIN must be an https origin that is not localhost in "
+                f"{self.environment}, for example https://app.example.com."
             )
         return self
 

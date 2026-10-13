@@ -9,6 +9,8 @@ One table decides who may do what inside an organisation: `ROLE_PERMISSIONS` in 
 
 `current_org` re-checks the membership or grant on every request, so a removed member or an ended grant loses access at once (404 `not_found`).
 
+An archived organisation is view-only until the archive feature exists (Phase 8): it cannot be chosen as the active organisation, and only `organisation.view` and `team.view` still work. `require_permission(...)` enforces this; `require_role(...)` checks the role only, so routes that change data use `require_permission(...)`.
+
 ## Matrix (Phase 2)
 
 | Permission | Code | owner | admin | member | committee | investor | consultant |
@@ -27,4 +29,5 @@ Owner-only rules (for example who may make someone an owner, or remove the last 
 - No active organisation picked: 409 `no_active_organisation`.
 - Not a member and no live grant for the active organisation: 404 `not_found` (the organisation's existence is not revealed).
 - A role without the permission: 403 `forbidden`.
+- An edit in an archived organisation: 403 `organisation_archived`. Choosing an archived organisation as the active one: 409 `organisation_archived`.
 - Unsafe method without a matching `X-CSRF-Token` header: 403 `csrf_failed`.
