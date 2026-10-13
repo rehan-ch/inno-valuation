@@ -8,6 +8,7 @@ metadata:
 Status as of the pre-merge review of phase-1-scoring-engine (2026-10-12):
 
 FIXED (do not re-flag):
+- (fixed by 2026-10-13) frontend types now generated (schema.d.ts from openapi.json); ENVIRONMENT now defaults to production; `mypy tests` is clean.
 - 500s lose CORS headers: fixed by pure ASGI `UnhandledErrorMiddleware` added before CORSMiddleware, with a test.
 - `secret_key` default unguarded: validator now rejects it in staging/production (but see ENVIRONMENT item below).
 - CI Node 20: CI now uses 22 (README, `engines`, `@types/node` and the dev box still say 20).
@@ -16,12 +17,19 @@ FIXED (do not re-flag):
 - tests/scoring/test_readiness.py mypy error: gone. Stale weights docs (PROGRESS, decisions, Q22): fixed.
 
 STILL OPEN (call them repeats if seen again):
-- frontend/src/lib/api/types.ts is hand-written. bin/check already has hooks for `app.openapi_dump` and `npm run check:api`, but neither exists yet. Must be fixed before Phase 2 adds schemas.
-- `ENVIRONMENT` defaults to "development", so a deploy that forgets it skips the secret-key guard (fail-open). Becomes load-bearing once Phase 2 signs JWTs.
-- mypy is not run on tests (pyproject `files = ["app"]`). tests/core/test_settings.py (Literal arg-type) and tests/factories.py (unused ignore) have 7 errors.
 - Celery `task_acks_late=True` globally: AI tasks must be idempotent.
 - pre-push blocks any push to refs/heads/main, including the first push of main to a new remote. The repo had no git remote on 2026-10-12, so CI has never run.
 - commit-msg ATTRIBUTION_PATTERN rejects messages that mention `CLAUDE.md` (nit). User rule: no AI attribution in commits, so the pattern itself is intended.
+
+Phase 2 auth review (commit 48c168c, 2026-10-13), OPEN unless fixed later:
+- Pre-account takeover: sign_up on an existing UNVERIFIED email keeps the first (attacker's) password_hash; verify_email then trusts it. Escalates to critical when Google sign-in links by email.
+- Throttle race: services/auth.py sign_in reads is_locked unlocked, runs argon2, then record_failure, so parallel requests get far more than 5 guesses.
+- Cookies lack `__Host-` prefix in deployed envs (sibling-subdomain cookie tossing = login CSRF).
+- Email links put the token in `?token=` (Referer/analytics leak); frontend pages must use no-referrer + replaceState, or a fragment.
+- Audit amplification: every sign-in failure (unknown email, and the cheap "locked" path) writes an audit_events row; known-user failures copy the email into details.
+- forgot/resend: known email does insert+commit+enqueue, unknown returns at once (timing enumeration).
+- current_org / resolve_org_access ignore Organisation.status (archived orgs stay editable).
+Accepted in docs/decisions.md (do not re-flag): sign-out clears this browser only (JWT stays valid until exp); per-IP limits and throttle-row pruning deferred to edge/periodic task; SECRET_KEY rotation voids links and sessions.
 
 Phase 2 watch list: map `ScoringError` to an AppError 422 in services (otherwise 500); CSRF/SameSite for the cookie JWT (CORS has allow_credentials); cross-org 404 test fixture; disable /docs in production; question_set.py reads repo-root docs/methodology/dimensions.yml (Docker image must copy it or set INNO_QUESTION_SET_PATH).
 

@@ -11,6 +11,6 @@ metadata:
 - To check behaviour (for example CORS on errors), write a short `uv run python -c` script with `ENVIRONMENT=test` and `create_app()`.
 - Scratch probe scripts: run from backend with `PYTHONPATH=/home/dev/dev/inno-valuation/backend uv run python <scratch>/probe.py` (`-I` drops the path, so `app` is not found).
 - pytest-cov is not installed, so `--cov` fails.
-- Timing: `bin/test-scoring` 621 tests in about 2s, full backend 640 tests in about 2s (2026-10-12). Budget is 10s.
+- Timing: `bin/test-scoring` 621 tests in about 2s (budget 10s). Full backend 872 tests took about 20s on 2026-10-13 (argon2 hashing in auth tests); no budget on the full suite.
 
 Related: [[recurring-findings]]
