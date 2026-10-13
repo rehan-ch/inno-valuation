@@ -16,4 +16,4 @@ The client in `src/lib/api/client.ts` calls `${NEXT_PUBLIC_API_BASE_URL}/api/v1`
 (default `http://localhost:8000`) with cookies included. The variable is defined in
 the root `.env.example`. `NEXT_PUBLIC_*` values are inlined at build time.
 
-See the root `CLAUDE.md` for project rules.
+See the root `README.md` and `docs/` for project rules.

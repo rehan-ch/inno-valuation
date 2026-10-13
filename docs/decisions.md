@@ -3,7 +3,7 @@
 Engineering decisions inside the stack. One line each: date, decision, reason. Methodology decisions go through `/decision`, not here.
 
 - 2026-10-06: Local Postgres on host port 5440 and Redis on 6390 in `docker-compose.yml`. Avoids clashing with common local services on 5432 and 6379/6380.
-- 2026-10-06: Tests create a throwaway database `innovaluation_test_<random>` on `TEST_DATABASE_URL`'s server, migrate it with Alembic, and drop it after the run. Each test runs in a rolled-back transaction. Matches CLAUDE.md "throwaway Postgres database per test run".
+- 2026-10-06: Tests create a throwaway database `innovaluation_test_<random>` on `TEST_DATABASE_URL`'s server, migrate it with Alembic, and drop it after the run. Each test runs in a rolled-back transaction. Matches the project rule of a throwaway Postgres database per test run.
 - 2026-10-06: `tests/scoring` never touches the database fixtures, so `bin/test-scoring` runs without Postgres and stays fast.
 - 2026-10-06: Errors use one `AppError(code, message, status_code)` class; HTTP, validation and unhandled errors map into the same `{"error": {...}}` envelope in one module.
 - 2026-10-06: SQLAlchemy metadata uses a constraint naming convention so Alembic names stay stable across autogenerate runs.
@@ -11,7 +11,7 @@ Engineering decisions inside the stack. One line each: date, decision, reason. M
 - 2026-10-06: CI is GitHub Actions with two jobs (backend: ruff, format, mypy, scoring tests, pytest with a Postgres service; frontend: lint, typecheck, vitest, build). Redis is not needed in CI because Celery runs eagerly in tests.
 - 2026-10-06: Frontend on Next 16 + React 19 + Tailwind 4 + Vitest 4; `engines.node >= 20.19` because Vite 8 and jsdom 29 need it.
 - 2026-10-06: `npm run typecheck` runs `next typegen` before `tsc --noEmit`, since Next 16 route types are generated.
-- 2026-10-06: Keep `frontend/AGENTS.md` and `frontend/CLAUDE.md` from create-next-app; `next dev` re-creates them, and they warn agents that Next 16 differs from older docs.
+- 2026-10-06: The assistant note files that create-next-app adds to `frontend/` are kept local and ignored by git; `next dev` re-creates them.
 - 2026-10-06: Validation error responses strip submitted `input` and `ctx`, so user text never echoes into responses or logs.
 - 2026-10-06: Frontend API types are hand-written for Phase 0 (one endpoint). Switch to `openapi-typescript` generated from `/openapi.json`, with a CI drift check, in Phase 2 when the API grows.
 - 2026-10-06: CI uses Node 22 LTS (Node 20 is end of life); local `engines` stays `>=20.19` so both work.
@@ -25,7 +25,7 @@ Engineering decisions inside the stack. One line each: date, decision, reason. M
 - 2026-10-06: Commit subjects are limited to 100 characters (commitlint default); the push scan skips commits already on `main`.
 - 2026-10-06: Scoring engine runs all Decimal maths in one fixed context (`ENGINE_CONTEXT`); raw formula helpers (`_book_iq`, `_weighted_iq`, `_lowest_dimensions`, `_validated_weights`) are private, so every number comes out of a validating entry point (`score_*`, `*_priorities`, `*_categories`, `*_targets`, `vfm`); lookups such as `validate_answers`, `readiness_band`, `iq_level`, `iq_minimum`, `iq_maximum`, `load_question_set`, `question_set_for`, `WEIGHT_LIMITS` and `errors.describe` stay public. Weights are int or Decimal only (floats change IQs through binary rounding); error messages show caller values through `describe()`, which never raises. YAML loads with a libyaml `CSafeLoader` subclass when available (pure `SafeLoader` fallback), both rejecting duplicate keys.
 - 2026-10-06: The engine loads `docs/methodology/dimensions.yml` from the repo by default, overridable with `INNO_QUESTION_SET_PATH`; the Phase 8 Docker image must ship the file. Duplicate YAML keys are rejected.
-- 2026-10-08: Currency is a product setting, not a methodology rule: US dollars (`USD`) by default, and each organisation can pick another ISO 4217 currency from a dropdown in its settings. Money stays integer minor units plus the currency code (CLAUDE.md). Removed from the Q7 question to Amy; Q7 still asks what "cost" means.
+- 2026-10-08: Currency is a product setting, not a methodology rule: US dollars (`USD`) by default, and each organisation can pick another ISO 4217 currency from a dropdown in its settings. Money stays integer minor units plus the currency code (project rule). Removed from the Q7 question to Amy; Q7 still asks what "cost" means.
 - 2026-10-08: Q6 settled by the team for Version 1: one full readiness assessment, all 60 questions required to finalise, drafts may be partial (the open-questions default). Not sent to Amy. Record formally with `/decision Q6` when convenient; the `PROVISIONAL: see open-questions Q6` marker stays until then.
 - 2026-10-08: Q4 (per-dimension labels) is not being asked of Amy for now. Version 1 shows no per-dimension status label (the open-questions default); revisit if Amy or Haroon provide labels. The banned prototype label sets (grades A to E, Nascent to Leading) must not be used.
 - 2026-10-08: Amy's answers recorded (Q1, Q2, Q5, Q7, Q9, Q11, Q12, Q16; Q20 follows from Q2; new Q23). Weights never change the IQ; they only reorder priorities.
