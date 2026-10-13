@@ -9,13 +9,16 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import model_validator
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BACKEND_DIR = Path(__file__).resolve().parents[2]
 REPO_ROOT = BACKEND_DIR.parent
 
 Environment = Literal["development", "test", "staging", "production"]
+
+# Environments that serve real users over HTTPS: secure cookies, real email, strong secret.
+DEPLOYED_ENVIRONMENTS = frozenset({"staging", "production"})
 
 # Placeholder, not a secret: the validator refuses it outside development and test.
 DEFAULT_SECRET_KEY = "change-me-in-production"  # noqa: S105
@@ -54,9 +57,15 @@ class Settings(BaseSettings):
     resend_api_key: str = ""
     email_from: str = "InnoValuation <noreply@localhost>"
 
+    # Sessions. A session lasts a fixed time from sign-in; switching organisation keeps
+    # the original end time.
+    session_lifetime_days: int = Field(default=7, ge=1, le=30)
+    # The version of the terms of use a new account accepts. Change it when the terms change.
+    terms_version: str = "2026-10-13"
+
     @model_validator(mode="after")
     def _check_secret_key(self) -> "Settings":
-        if self.environment in ("staging", "production") and (
+        if self.is_deployed and (
             self.secret_key == DEFAULT_SECRET_KEY or len(self.secret_key) < MIN_SECRET_KEY_LENGTH
         ):
             raise ValueError(
@@ -69,6 +78,11 @@ class Settings(BaseSettings):
     @property
     def is_test(self) -> bool:
         return self.environment == "test"
+
+    @property
+    def is_deployed(self) -> bool:
+        """Staging or production: real users, HTTPS, real email."""
+        return self.environment in DEPLOYED_ENVIRONMENTS
 
 
 @lru_cache

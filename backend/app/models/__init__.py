@@ -13,6 +13,7 @@ from app.models.accounts import (
     UserToken,
 )
 from app.models.audit import AuditEvent
+from app.models.auth import SignInThrottle
 
 __all__ = [
     "AuditEvent",
@@ -21,6 +22,7 @@ __all__ = [
     "Invitation",
     "Membership",
     "Organisation",
+    "SignInThrottle",
     "User",
     "UserToken",
 ]

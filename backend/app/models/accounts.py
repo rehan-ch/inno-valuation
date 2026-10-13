@@ -93,6 +93,7 @@ class User(UuidPrimaryKey, Timestamps, Base):
         CheckConstraint(
             "(terms_version IS NULL) = (terms_accepted_at IS NULL)", name="terms_complete"
         ),
+        CheckConstraint("session_version >= 1", name="session_version_positive"),
     )
 
     email: Mapped[str] = mapped_column(String(EMAIL_LENGTH), unique=True)
@@ -107,6 +108,9 @@ class User(UuidPrimaryKey, Timestamps, Base):
     terms_accepted_at: Mapped[datetime | None]
     terms_version: Mapped[str | None] = mapped_column(String(50))
     last_login_at: Mapped[datetime | None]
+    # Every session JWT carries the version it was issued under. Raising it (password
+    # change, password reset, account disable) ends all existing sessions at once.
+    session_version: Mapped[int] = mapped_column(default=1, server_default=text("1"))
 
     @validates("email")
     def _normalise_email(self, _key: str, value: str) -> str:

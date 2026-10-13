@@ -358,3 +358,34 @@ def test_audit_event_without_organisation(db: Session) -> None:
     assert event.organisation_id is None
     assert event.details == {}
     assert event.created_at.tzinfo is not None
+
+
+# Sessions and sign-in throttle (0003_auth)
+
+
+def test_session_version_defaults_to_one(db: Session) -> None:
+    user = UserFactory.create()
+    db.refresh(user)
+    assert user.session_version == 1
+
+
+def test_session_version_must_be_positive(db: Session) -> None:
+    user = UserFactory.create()
+    with expect_violation(db, "ck_users_session_version_positive"):
+        user.session_version = 0
+
+
+def test_throttle_count_cannot_be_negative(db: Session) -> None:
+    from tests.factories import SignInThrottleFactory  # noqa: PLC0415
+
+    row = SignInThrottleFactory.create()
+    with expect_violation(db, "ck_sign_in_throttles_failed_count_not_negative"):
+        row.failed_count = -1
+
+
+def test_throttle_key_is_unique(db: Session) -> None:
+    from tests.factories import SignInThrottleFactory  # noqa: PLC0415
+
+    row = SignInThrottleFactory.create()
+    with expect_violation(db, "uq_sign_in_throttles_key_hash"):
+        SignInThrottleFactory.create(key_hash=row.key_hash)

@@ -14,7 +14,7 @@ celery_app = Celery(
     "innovaluation",
     broker=settings.redis_url,
     backend=settings.redis_url,
-    include=["app.jobs.tasks.ping"],
+    include=["app.jobs.tasks.ping", "app.jobs.tasks.emails"],
 )
 
 celery_app.conf.update(

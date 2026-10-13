@@ -10,6 +10,7 @@ import os
 os.environ["ENVIRONMENT"] = "test"
 
 from collections.abc import Iterator
+from contextlib import contextmanager
 
 import pytest
 from alembic import command
@@ -18,6 +19,8 @@ from sqlalchemy import Engine, create_engine
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_db
+from app.emails.backends import MemoryEmailBackend, override_email_backend
+from app.jobs.db import override_task_session
 from tests import factories
 from tests.database import alembic_config, throwaway_database
 
@@ -41,15 +44,23 @@ def db_engine(database_url: str) -> Iterator[Engine]:
 def db(db_engine: Engine) -> Iterator[Session]:
     """A session inside an outer transaction that is rolled back after the test.
 
-    Service code may call ``commit()``; it only releases a savepoint.
+    Service code may call ``commit()``; it only releases a savepoint. Celery tasks (eager in
+    tests) use this same session, so they see the rows the request just wrote.
     """
     connection = db_engine.connect()
     transaction = connection.begin()
     session = Session(bind=connection, join_transaction_mode="create_savepoint")
     factories.bind_session(session)
+
+    @contextmanager
+    def _task_session() -> Iterator[Session]:
+        yield session  # not closed here: the test owns it
+
+    override_task_session(_task_session)
     try:
         yield session
     finally:
+        override_task_session(None)
         factories.bind_session(None)
         session.close()
         transaction.rollback()
@@ -57,7 +68,18 @@ def db(db_engine: Engine) -> Iterator[Session]:
 
 
 @pytest.fixture
-def client(db: Session) -> Iterator[TestClient]:
+def outbox() -> Iterator[MemoryEmailBackend]:
+    """Emails sent during the test (Celery runs eagerly, so they arrive at once)."""
+    backend = MemoryEmailBackend()
+    override_email_backend(backend)
+    try:
+        yield backend
+    finally:
+        override_email_backend(None)
+
+
+@pytest.fixture
+def client(db: Session, outbox: MemoryEmailBackend) -> Iterator[TestClient]:
     # Imported late on purpose: ENVIRONMENT=test must be set before the app loads.
     from app.main import app  # noqa: PLC0415
 
