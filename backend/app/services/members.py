@@ -97,11 +97,26 @@ def remove_member(
 
 
 def find_membership(org: Organisation, db: Session, user_id: uuid.UUID) -> Membership | None:
+    """Read from the database even when the session already holds the row
+    (``populate_existing``), so a role changed by another request is never missed."""
     return db.scalar(
-        select(Membership).where(
-            Membership.organisation_id == org.id, Membership.user_id == user_id
-        )
+        select(Membership)
+        .where(Membership.organisation_id == org.id, Membership.user_id == user_id)
+        .execution_options(populate_existing=True)
     )
+
+
+def may_give_role(
+    org: Organisation, db: Session, user_id: uuid.UUID | None, role: MembershipRole
+) -> bool:
+    """True while ``user_id`` could still give ``role`` here: a manager, and an owner for the
+    owner role. An invitation is honoured only while its sender still may give its role."""
+    if user_id is None:
+        return False
+    membership = find_membership(org, db, user_id)
+    if membership is None or membership.role not in MANAGER_ROLES:
+        return False
+    return role is not MembershipRole.OWNER or membership.role is MembershipRole.OWNER
 
 
 def require_owner_for(manager_role: MembershipRole, role: MembershipRole) -> None:
@@ -121,9 +136,9 @@ def actor_role(org: Organisation, db: Session, ctx: OrgContext) -> MembershipRol
 
 def _find(org: Organisation, db: Session, membership_id: uuid.UUID) -> Membership:
     target = db.scalar(
-        select(Membership).where(
-            Membership.id == membership_id, Membership.organisation_id == org.id
-        )
+        select(Membership)
+        .where(Membership.id == membership_id, Membership.organisation_id == org.id)
+        .execution_options(populate_existing=True)
     )
     if target is None:
         raise AppError("not_found", "Member not found.", 404)

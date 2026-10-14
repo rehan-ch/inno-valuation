@@ -390,3 +390,62 @@ def test_switcher_lists_each_organisation_once_and_skips_member_ones(client: Tes
     listed = client.get(ME).json()["consultant_organisations"]
     assert [row["organisation_id"] for row in listed] == [str(org_a.id)]
     assert datetime.fromisoformat(listed[0]["access_ends_at"]) > _in(15)
+
+
+# Review fixes
+
+
+@pytest.mark.parametrize(
+    ("ends", "status"),
+    [
+        ("9999-12-31T23:00:00-12:00", 422),  # past year 9999 in UTC
+        ("9999-01-01T00:00:00Z", 400),
+        ("2200-01-01T00:00:00Z", 400),
+    ],
+)
+def test_end_date_too_far_ahead_is_refused(client: TestClient, ends: str, status: int) -> None:
+    admin, _ = member(MembershipRole.ADMIN)
+    signed_in(client, admin)
+    created = client.post(
+        GRANTS, json={"email": "amy@example.com", "expires_at": ends}, headers=csrf(client)
+    )
+    assert created.status_code == status
+    grant_id = _grant(client, "amy@example.com").json()["id"]
+    moved = client.patch(f"{GRANTS}/{grant_id}", json={"expires_at": ends}, headers=csrf(client))
+    assert moved.status_code == status
+    if status == 400:
+        assert (
+            created.json()["error"]["code"] == moved.json()["error"]["code"] == "invalid_end_date"
+        )
+    assert client.get(GRANTS).status_code == 200
+    signed_in(client, verified_user(email="amy@example.com"))
+    assert client.get(MY_ACCESS).status_code == 200
+
+
+def test_end_date_is_stored_in_utc(client: TestClient, db: Session) -> None:
+    admin, _ = member(MembershipRole.ADMIN)
+    signed_in(client, admin)
+    body = {"email": "amy@example.com", "expires_at": "2099-06-01T02:00:00+05:00"}
+    grant_id = client.post(GRANTS, json=body, headers=csrf(client)).json()["id"]
+    grant = db.get(ConsultantGrant, grant_id)
+    assert grant is not None
+    assert grant.expires_at == datetime(2099, 5, 31, 21, 0, tzinfo=UTC)
+
+
+def test_grants_are_limited_per_person(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(consultant_access, "GRANTER_LIMIT", 1)
+    owner, org_a = member(MembershipRole.OWNER)
+    _, org_b = member(MembershipRole.OWNER)
+    MembershipFactory.create(organisation=org_b, user=owner, role=MembershipRole.OWNER)
+    signed_in(client, owner, org_a)
+    assert _grant(client, "a@example.com").status_code == 201
+    client.post(ACTIVE, json={"organisation_id": str(org_b.id)}, headers=csrf(client))
+    assert _grant(client, "b@example.com").json()["error"]["code"] == "too_many_requests"
+
+
+def test_waiting_access_is_hidden_where_the_user_is_a_member(client: TestClient) -> None:
+    _, org = member(MembershipRole.ADMIN)
+    person, _ = member(MembershipRole.MEMBER, org)
+    ConsultantGrantFactory.create(organisation=org, consultant_email=person.email)
+    signed_in(client, person)
+    assert client.get(MY_ACCESS).json() == []

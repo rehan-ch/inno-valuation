@@ -1,7 +1,8 @@
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
+from typing import Annotated
 
-from pydantic import AwareDatetime, BaseModel
+from pydantic import AfterValidator, AwareDatetime, BaseModel
 
 from app.models import ConsultantGrant
 from app.models.enums import OrganisationStatus
@@ -9,14 +10,25 @@ from app.schemas.common import Email, RequestModel
 from app.services.consultant_access import GrantStatus, status_of
 
 
+def _in_utc(value: datetime) -> datetime:
+    try:
+        return value.astimezone(UTC)
+    except OverflowError as error:  # a date at the very end of year 9999
+        raise ValueError("The end date is too far in the future.") from error
+
+
+# When access ends, chosen by the client, sent with a time zone and stored in UTC. The
+# service checks it is in the future and within ``END_DATE_CEILING``.
+EndDate = Annotated[AwareDatetime, AfterValidator(_in_utc)]
+
+
 class ConsultantGrantIn(RequestModel):
     email: Email
-    # When access ends, chosen by the client. Must be in the future; sent with a time zone.
-    expires_at: AwareDatetime
+    expires_at: EndDate
 
 
 class ConsultantGrantUpdateIn(RequestModel):
-    expires_at: AwareDatetime
+    expires_at: EndDate
 
 
 class ConsultantGrantOut(BaseModel):

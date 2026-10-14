@@ -15,7 +15,7 @@ from enum import StrEnum
 from typing import Final
 
 from kombu.exceptions import OperationalError as BrokerError
-from sqlalchemy import and_, func, or_, select
+from sqlalchemy import and_, exists, func, or_, select
 from sqlalchemy.orm import Session, joinedload
 
 from app.core.emails import normalise_email
@@ -31,9 +31,14 @@ from app.services.organisations import lock_organisation, too_many_requests
 
 logger = logging.getLogger(__name__)
 
-# Abuse limit, not a product rule: each grant emails an address a user types in.
-GRANT_LIMIT: Final = 20
+# Abuse limits, not product rules: each grant emails an address a user types in.
+GRANT_LIMIT: Final = 20  # per organisation per day
 GRANT_LIMIT_PERIOD: Final = timedelta(days=1)
+GRANTER_LIMIT: Final = 40  # per person per day, across all their organisations
+# Technical ceiling, not a product rule: the client chooses any end date, but a date near
+# year 10000 is stored by Postgres yet cannot be read back, which would break every page
+# that lists the grant.
+END_DATE_CEILING: Final = timedelta(days=100 * 366)
 # How many grants the client's list shows, newest first.
 LIST_LIMIT: Final = 200
 
@@ -56,6 +61,8 @@ def status_of(grant: ConsultantGrant, now: datetime | None = None) -> GrantStatu
 def _check_end_date(expires_at: datetime, now: datetime) -> None:
     if expires_at <= now:
         raise AppError("invalid_end_date", "The end date must be in the future.", 400)
+    if expires_at > now + END_DATE_CEILING:
+        raise AppError("invalid_end_date", "The end date is too far in the future.", 400)
 
 
 def _queue_email(grant_id: uuid.UUID) -> None:
@@ -118,16 +125,17 @@ def grant(
         raise AppError(
             "access_exists", "This person already has access. Change the end date instead.", 409
         )
-    recent = db.scalar(
-        select(func.count())
-        .select_from(ConsultantGrant)
-        .where(
-            ConsultantGrant.organisation_id == org.id,
-            ConsultantGrant.created_at > now - GRANT_LIMIT_PERIOD,
+    for condition, limit in (
+        (ConsultantGrant.organisation_id == org.id, GRANT_LIMIT),
+        (ConsultantGrant.granted_by_user_id == ctx.user.id, GRANTER_LIMIT),
+    ):
+        recent = db.scalar(
+            select(func.count())
+            .select_from(ConsultantGrant)
+            .where(condition, ConsultantGrant.created_at > now - GRANT_LIMIT_PERIOD)
         )
-    )
-    if (recent or 0) >= GRANT_LIMIT:
-        raise too_many_requests()
+        if (recent or 0) >= limit:
+            raise too_many_requests()
     new = ConsultantGrant(
         organisation_id=org.id,
         consultant_email=email,
@@ -203,12 +211,38 @@ def revoke(
     return found
 
 
+def end_on_joining(org: Organisation, db: Session, *, user: User, now: datetime) -> None:
+    """Revoke the user's open consultant access when they join as a member, so removing
+    them from the team later leaves no access behind. The caller holds the organisation
+    lock and commits."""
+    open_grants = db.scalars(
+        select(ConsultantGrant).where(
+            ConsultantGrant.organisation_id == org.id,
+            ConsultantGrant.consultant_email == normalise_email(user.email),
+            ConsultantGrant.revoked_at.is_(None),
+            ConsultantGrant.expires_at > now,
+        )
+    ).all()
+    for found in open_grants:
+        found.revoked_at = now
+        record(
+            db,
+            AuditAction.CONSULTANT_ACCESS_REVOKED,
+            actor=user,
+            organisation_id=org.id,
+            target_type="consultant_grant",
+            target_id=found.id,
+            details={"reason": "became_member"},
+        )
+
+
 # The consultant's side
 
 
 def for_consultant(db: Session, user: User) -> list[ConsultantGrant]:
     """The consultant's access that has not ended: accepted grants, plus grants waiting for
-    their email. Organisation loaded, soonest end date first."""
+    their email, except in organisations where they are a member. Organisation loaded,
+    soonest end date first."""
     now = datetime.now(UTC)
     return list(
         db.scalars(
@@ -226,6 +260,11 @@ def for_consultant(db: Session, user: User) -> list[ConsultantGrant]:
                         ConsultantGrant.accepted_at.is_(None),
                     ),
                 ),
+                # Where the user is a member, the membership decides.
+                ~exists().where(
+                    Membership.organisation_id == ConsultantGrant.organisation_id,
+                    Membership.user_id == user.id,
+                ),
             )
             .options(joinedload(ConsultantGrant.organisation))
             .order_by(ConsultantGrant.expires_at, ConsultantGrant.id)
@@ -234,21 +273,34 @@ def for_consultant(db: Session, user: User) -> list[ConsultantGrant]:
 
 
 def accept(db: Session, user: User, *, grant_id: uuid.UUID) -> ConsultantGrant:
-    """Accept access given to the user's email. 404 for anything else. Commits."""
-    found = db.scalar(
-        select(ConsultantGrant)
-        .where(
-            ConsultantGrant.id == grant_id,
-            ConsultantGrant.consultant_email == normalise_email(user.email),
-            ConsultantGrant.accepted_at.is_(None),
-            ConsultantGrant.revoked_at.is_(None),
-            ConsultantGrant.expires_at > datetime.now(UTC),
+    """Accept access given to the user's email. 404 for anything else. Commits.
+
+    Locks the organisation, then the grant (the same order as every team change), and
+    checks again under the locks.
+    """
+
+    def waiting(lock: bool) -> ConsultantGrant | None:
+        query = (
+            select(ConsultantGrant)
+            .where(
+                ConsultantGrant.id == grant_id,
+                ConsultantGrant.consultant_email == normalise_email(user.email),
+                ConsultantGrant.accepted_at.is_(None),
+                ConsultantGrant.revoked_at.is_(None),
+                ConsultantGrant.expires_at > datetime.now(UTC),
+            )
+            .execution_options(populate_existing=True)
         )
-        .with_for_update()
-    )
+        return db.scalar(query.with_for_update() if lock else query)
+
+    found = waiting(lock=False)
     if found is None:
         raise AppError("not_found", "Consultant access not found.", 404)
     org = found.organisation
+    lock_organisation(db, org)
+    found = waiting(lock=True)
+    if found is None:
+        raise AppError("not_found", "Consultant access not found.", 404)
     if org.status is OrganisationStatus.ARCHIVED:
         raise AppError(
             "organisation_archived", "This organisation is archived and cannot be opened.", 409

@@ -1,6 +1,6 @@
 Hello,
 
-{{ granter }} has given you read-only access to the results of {{ organisation }} on {{ product }}. The access ends on {{ ends_on }}.
+{{ granter }} has given you read-only access to the results of {{ organisation }} on {{ product }}. The access ends on {{ ends_on }} (UTC).
 
 To accept, sign in with this email address and open:
 {{ link }}

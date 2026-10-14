@@ -15,7 +15,12 @@ from app.models.enums import MembershipRole, OrganisationStatus
 from app.services import invitations as invitation_service
 from app.services.audit import AuditAction
 from tests.api.helpers import csrf, member, signed_in, token_from
-from tests.factories import InvitationFactory, verified_user
+from tests.factories import (
+    ConsultantGrantFactory,
+    InvitationFactory,
+    MembershipFactory,
+    verified_user,
+)
 
 INVITATIONS = "/api/v1/organisation/invitations"
 PREVIEW = "/api/v1/invitations/preview"
@@ -346,3 +351,116 @@ def test_an_existing_member_keeps_their_role(
     found = _membership(db, org, person)
     assert found is not None
     assert found.role is MembershipRole.ADMIN
+
+
+# Review fixes
+
+
+def test_cancel_after_accept_is_not_found(
+    client: TestClient, db: Session, outbox: MemoryEmailBackend
+) -> None:
+    admin, _ = member(MembershipRole.ADMIN)
+    signed_in(client, admin)
+    token = _invited(client, outbox, "quick@example.com")
+    [row] = client.get(INVITATIONS).json()
+    person = verified_user(email="quick@example.com")
+    signed_in(client, person)
+    assert _accept(client, token).status_code == 200
+    signed_in(client, admin)
+    assert client.delete(f"{INVITATIONS}/{row['id']}", headers=csrf(client)).status_code == 404
+    invitation = db.get(Invitation, row["id"])
+    assert invitation is not None
+    assert invitation.revoked_at is None
+
+
+def test_invitation_from_a_removed_admin_is_refused(
+    client: TestClient, db: Session, outbox: MemoryEmailBackend
+) -> None:
+    admin, org = member(MembershipRole.ADMIN)
+    signed_in(client, admin)
+    token = _invited(client, outbox, "late-joiner@example.com")
+    found = _membership(db, org, admin)
+    assert found is not None
+    db.delete(found)
+    db.flush()
+    person = verified_user(email="late-joiner@example.com")
+    signed_in(client, person)
+    assert _accept(client, token).json()["error"]["code"] == "invalid_invitation"
+    assert _membership(db, org, person) is None
+
+
+def test_owner_invitation_needs_the_sender_to_still_be_an_owner(
+    client: TestClient, db: Session, outbox: MemoryEmailBackend
+) -> None:
+    owner, org = member(MembershipRole.OWNER)
+    member(MembershipRole.OWNER, org)
+    signed_in(client, owner)
+    token = _invited(client, outbox, "heir@example.com", "owner")
+    sender = _membership(db, org, owner)
+    assert sender is not None
+    sender.role = MembershipRole.ADMIN
+    db.flush()
+    heir = verified_user(email="heir@example.com")
+    signed_in(client, heir)
+    assert _accept(client, token).json()["error"]["code"] == "invalid_invitation"
+    assert _membership(db, org, heir) is None
+
+
+def test_joining_ends_consultant_access(
+    client: TestClient, db: Session, outbox: MemoryEmailBackend
+) -> None:
+    admin, org = member(MembershipRole.ADMIN)
+    amy = verified_user(email="amy-joins@example.com")
+    grant = ConsultantGrantFactory.create(
+        organisation=org,
+        consultant_email=amy.email,
+        consultant_user_id=amy.id,
+        accepted_at=datetime.now(UTC),
+    )
+    signed_in(client, admin)
+    token = _invited(client, outbox, amy.email)
+    signed_in(client, amy)
+    assert _accept(client, token).status_code == 200
+    db.refresh(grant)
+    assert grant.revoked_at is not None
+    [event] = db.scalars(
+        select(AuditEvent).where(AuditEvent.action == AuditAction.CONSULTANT_ACCESS_REVOKED.value)
+    ).all()
+    assert event.details == {"reason": "became_member"}
+
+    # Removed from the team later: no access is left behind.
+    membership = _membership(db, org, amy)
+    assert membership is not None
+    db.delete(membership)
+    db.flush()
+    assert client.get(ORG).status_code == 404
+
+
+def test_one_email_cannot_be_flooded(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch, outbox: MemoryEmailBackend
+) -> None:
+    monkeypatch.setattr(invitation_service, "RECIPIENT_LIMIT", 2)
+    admin, _ = member(MembershipRole.ADMIN)
+    signed_in(client, admin)
+    for _ in range(2):
+        assert _invite(client, "victim@example.com").status_code == 201
+    assert _invite(client, "victim@example.com").json()["error"]["code"] == "too_many_requests"
+    assert _invite(client, "someone-else@example.com").status_code == 201
+    assert len(outbox.outbox) == 3
+
+
+def test_invitations_are_limited_per_person(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(invitation_service, "INVITER_LIMIT", 1)
+    owner, org_a = member(MembershipRole.OWNER)
+    _, org_b = member(MembershipRole.OWNER)
+    MembershipFactory.create(organisation=org_b, user=owner, role=MembershipRole.OWNER)
+    signed_in(client, owner, org_a)
+    assert _invite(client, "a@example.com").status_code == 201
+    client.post(
+        "/api/v1/me/active-organisation",
+        json={"organisation_id": str(org_b.id)},
+        headers=csrf(client),
+    )
+    assert _invite(client, "b@example.com").json()["error"]["code"] == "too_many_requests"
