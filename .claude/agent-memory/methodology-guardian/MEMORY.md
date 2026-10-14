@@ -1,1 +1,0 @@
-- [Review log](project_review_log.md) — cleared files per branch (phase 0, phase 1 pre-merge 2026-10-12), marker map, open WARNs, SPEC GAPs

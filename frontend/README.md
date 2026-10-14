@@ -23,4 +23,4 @@ schema (`uv run python -m app.openapi_dump > ../frontend/openapi.json` in `backe
 and `npm run gen:api` turns it into `src/lib/api/schema.d.ts`. Import types through
 `src/lib/api/types.ts`. CI fails if either file is stale.
 
-See the root `CLAUDE.md` for project rules.
+See the root `README.md` and `docs/` for project rules.
