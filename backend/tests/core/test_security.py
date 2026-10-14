@@ -15,6 +15,7 @@ from app.core.security import (
     encode_session,
     hash_password,
     hash_token,
+    invitation_token_value,
     throttle_key,
     user_token_value,
     verify_password,
@@ -61,6 +62,15 @@ def test_user_token_is_derived_from_id_and_secret(monkeypatch: pytest.MonkeyPatc
     assert len(value) == 43  # 32 bytes, base64url without padding
     monkeypatch.setattr(get_settings(), "secret_key", "another secret key of enough length")
     assert user_token_value(token_id) != value
+
+
+def test_invitation_token_uses_its_own_key() -> None:
+    row_id = uuid.uuid4()
+    value = invitation_token_value(row_id)
+    assert value == invitation_token_value(row_id)
+    assert len(value) == 43
+    # The same row id never gives the same token for a user token and an invitation.
+    assert value != user_token_value(row_id)
 
 
 def test_hash_token_is_sha256_hex() -> None:

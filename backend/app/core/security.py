@@ -92,6 +92,13 @@ def user_token_value(token_id: uuid.UUID) -> str:
     return base64.urlsafe_b64encode(digest).rstrip(b"=").decode()
 
 
+def invitation_token_value(invitation_id: uuid.UUID) -> str:
+    """The raw token for an ``invitations`` row, derived like ``user_token_value`` under its
+    own key, so a user token can never pass as an invitation token or the reverse."""
+    digest = hmac.new(_subkey("invitation:v1"), invitation_id.bytes, hashlib.sha256).digest()
+    return base64.urlsafe_b64encode(digest).rstrip(b"=").decode()
+
+
 def throttle_key(normalised_email: str) -> str:
     """Keyed hash of an email for the sign-in throttle. No email is stored."""
     return hmac.new(

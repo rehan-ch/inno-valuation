@@ -1,10 +1,8 @@
 # Progress
 
 ## Phase and branch
-- Phase 0 (Skeleton) complete on `phase-0-skeleton`, including the git hooks.
-- Phase 1 (Scoring engine) complete on `phase-1-scoring-engine`, branched from `phase-0-skeleton`.
-- Neither is merged to `main` yet: waiting for Ninja's review. Merging `phase-1-scoring-engine` brings in both. No git remote, so nothing is pushed.
-- Next: Phase 2 (Accounts, organisations and roles) on `phase-2-accounts`.
+- Phases 0 and 1 are merged to `main`.
+- Phase 2 (Accounts, organisations and roles) is in progress on `phase-2-accounts`.
 
 ## Done
 Phase 0
@@ -24,7 +22,9 @@ Phase 1
 - Engine follow-up (next commit): weights never change the IQ (Q2). `score_iq` has no weights; weight validation moved to `app/scoring/weights.py` (`validate_weights`, read-only snapshot); priorities take optional weights as a tie-break after score and before book order (Q23). 621 engine tests. Gate: methodology-guardian 0 BLOCK, 0 WARN; code-reviewer "Ready to merge: yes".
 
 ## In progress
-- Nothing. Next step: Phase 2, starting with the `organisations`, `users` and `memberships` tables and the auth dependencies.
+Phase 2 on `phase-2-accounts`
+- Done: accounts tables and migrations (`0002` to `0005`); email and password sign-up, verification, sign-in, reset and change password; sessions, CSRF, sign-in throttling; roles and permissions; company separation; creating an organisation; team (members, roles, removal, owner rules); invitations (invite, list, cancel, preview, accept); consultant access (grant with end date, change, revoke, accept, switcher).
+- Next: the screens (sign-up, sign-in, verify email, reset password, organisation switcher, team page, invitation accept page, consultant access pages), then Google sign-in, review and merge.
 
 ## Decided by Amy (2026-10-08)
 - Q1 AI proposes IQ scores, the owner confirms or changes them. Q2 weights never change the IQ, only the priority order. Q5 a facilitator sets the agreed answer. Q7 cost is the planned or known investment; procurement VfM is total purchase value / IQ. Q9 category scores. Q11 the AI judges when to suggest a consultation (built with touchpoint 8, Phase 6). Q12 the client admin invites the consultant, with an end date. Q16 the Version 1 feature list. Q20 follows from Q2.

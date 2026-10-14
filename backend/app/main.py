@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 DOCS_ENVIRONMENTS = frozenset({"development", "test"})
 
 # Only what the frontend sends. A test fails if a route uses a method missing here.
-CORS_METHODS = ("GET", "POST", "PATCH")
+CORS_METHODS = ("GET", "POST", "PATCH", "DELETE")
 CORS_HEADERS = ("Content-Type", CSRF_HEADER)
 
 

@@ -1,12 +1,14 @@
-"""Account emails, rendered from Jinja2 templates in ``app/emails/templates/``.
+"""Account and team emails, rendered from Jinja2 templates in ``app/emails/templates/``.
 
 Each email has an HTML and a plain-text version. Emails hold no sensitive data: no
-passwords, no company details, nothing a reader of a forwarded email could misuse except
-the single-use link itself.
+passwords, no assessment content, nothing a reader of a forwarded email could misuse except
+the single-use link itself. Team emails name the organisation and the person who sent the
+invitation, nothing more. Those names are typed by users, so the subject lines stay fixed
+and the HTML version escapes them.
 """
 
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import date, timedelta
 from enum import StrEnum
 from pathlib import Path
 from typing import Final
@@ -37,11 +39,33 @@ SUBJECTS: Final[dict[AccountEmail, str]] = {
     AccountEmail.ALREADY_REGISTERED: f"You already have a {PRODUCT_NAME} account",
 }
 
+
+class OrganisationEmail(StrEnum):
+    INVITATION = "invitation"
+    CONSULTANT_ACCESS = "consultant_access"
+
+
+ORGANISATION_SUBJECTS: Final[dict[OrganisationEmail, str]] = {
+    OrganisationEmail.INVITATION: f"You are invited to join a team on {PRODUCT_NAME}",
+    OrganisationEmail.CONSULTANT_ACCESS: f"You have been given access on {PRODUCT_NAME}",
+}
+
+# How a role reads in a sentence: "join ... as a committee member".
+ROLE_PHRASES: Final[dict[str, str]] = {
+    "owner": "an owner",
+    "admin": "an admin",
+    "member": "a member",
+    "committee": "a committee member",
+    "investor": "an investor",
+}
+
 # Frontend pages the emails link to.
 VERIFY_EMAIL_PATH: Final = "/verify-email"
 RESET_PASSWORD_PATH: Final = "/reset-password"  # noqa: S105
 SIGN_IN_PATH: Final = "/sign-in"
 FORGOT_PASSWORD_PATH: Final = "/forgot-password"  # noqa: S105
+ACCEPT_INVITATION_PATH: Final = "/invitations/accept"
+CONSULTANT_ACCESS_PATH: Final = "/consultant-access"
 
 
 @dataclass(frozen=True)
@@ -63,8 +87,10 @@ def frontend_link(origin: str, path: str, token: str | None = None) -> str:
 
 
 def describe_duration(duration: timedelta) -> str:
-    """'24 hours', '1 hour', '30 minutes': for the expiry sentence in emails."""
+    """'7 days', '24 hours', '1 hour', '30 minutes': for the expiry sentence in emails."""
     minutes = int(duration.total_seconds()) // 60
+    if minutes >= 2 * 24 * 60 and minutes % (24 * 60) == 0:
+        return f"{minutes // (24 * 60)} days"
     if minutes % 60 == 0:
         hours = minutes // 60
         return f"{hours} hour" if hours == 1 else f"{hours} hours"
@@ -79,25 +105,67 @@ def render_token_email(
         AccountEmail.RESET_PASSWORD: RESET_PASSWORD_PATH,
     }[kind]
     link = frontend_link(origin, path, token)
-    return _render(kind, to=to, link=link, expires_in=describe_duration(expires_in))
+    return _render(
+        kind.value, SUBJECTS[kind], to=to, link=link, expires_in=describe_duration(expires_in)
+    )
 
 
 def render_already_registered(*, to: str, origin: str) -> EmailMessage:
     link = frontend_link(origin, SIGN_IN_PATH)
+    kind = AccountEmail.ALREADY_REGISTERED
     return _render(
-        AccountEmail.ALREADY_REGISTERED,
+        kind.value,
+        SUBJECTS[kind],
         to=to,
         link=link,
         forgot_link=frontend_link(origin, FORGOT_PASSWORD_PATH),
     )
 
 
-def _render(kind: AccountEmail, *, to: str, link: str, **context: str) -> EmailMessage:
+def render_invitation(
+    *,
+    to: str,
+    origin: str,
+    token: str,
+    organisation_name: str,
+    inviter_name: str | None,
+    role: str,
+    expires_in: timedelta,
+) -> EmailMessage:
+    kind = OrganisationEmail.INVITATION
+    return _render(
+        kind.value,
+        ORGANISATION_SUBJECTS[kind],
+        to=to,
+        link=frontend_link(origin, ACCEPT_INVITATION_PATH, token),
+        organisation=organisation_name,
+        inviter=inviter_name or "Someone",
+        role=ROLE_PHRASES[role],
+        expires_in=describe_duration(expires_in),
+    )
+
+
+def render_consultant_access(
+    *, to: str, origin: str, organisation_name: str, granter_name: str | None, ends_on: date
+) -> EmailMessage:
+    kind = OrganisationEmail.CONSULTANT_ACCESS
+    return _render(
+        kind.value,
+        ORGANISATION_SUBJECTS[kind],
+        to=to,
+        link=frontend_link(origin, CONSULTANT_ACCESS_PATH),
+        organisation=organisation_name,
+        granter=granter_name or "Someone",
+        ends_on=f"{ends_on.day} {ends_on:%B %Y}",
+    )
+
+
+def _render(template: str, subject: str, *, to: str, link: str, **context: str) -> EmailMessage:
     values = {"product": PRODUCT_NAME, "link": link, **context}
     return EmailMessage(
         to=to,
-        subject=SUBJECTS[kind],
-        text=_env.get_template(f"{kind.value}.txt").render(values),
-        html=_env.get_template(f"{kind.value}.html").render(values),
+        subject=subject,
+        text=_env.get_template(f"{template}.txt").render(values),
+        html=_env.get_template(f"{template}.html").render(values),
         link=link,
     )

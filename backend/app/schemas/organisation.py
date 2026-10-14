@@ -11,6 +11,7 @@ from pydantic import (
 )
 
 from app.core.permissions import OrgContext, OrgRole
+from app.models.accounts import DEFAULT_CURRENCY
 from app.models.enums import OrganisationStatus
 from app.schemas.common import Email, RequestModel
 
@@ -112,3 +113,14 @@ class OrganisationUpdateIn(RequestModel):
             value = getattr(self, field)
             values[field] = str(value) if isinstance(value, HttpUrl) else value
         return values
+
+
+class OrganisationCreateIn(OrganisationUpdateIn):
+    """A new organisation: a name is required, the currency defaults to US dollars."""
+
+    name: OrganisationName
+    currency: CurrencyCode = DEFAULT_CURRENCY
+
+    def values(self) -> dict[str, object]:
+        """Every field, ready to store (URLs as strings)."""
+        return {field: str(value) if isinstance(value, HttpUrl) else value for field, value in self}

@@ -206,6 +206,9 @@ class ConsultantGrant(UuidPrimaryKey, CreatedAt, Base):
 
     The client's admin invites the consultant by email and chooses when access ends
     (``expires_at`` is required). ``consultant_user_id`` is set when the consultant accepts.
+    The consultant accepts while signed in with a verified account for ``consultant_email``
+    (no link token: the verified email is the proof), so the email index serves the
+    "access waiting for you" lookup.
     """
 
     __tablename__ = "consultant_grants"
@@ -219,7 +222,7 @@ class ConsultantGrant(UuidPrimaryKey, CreatedAt, Base):
     organisation_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("organisations.id", ondelete="CASCADE"), index=True
     )
-    consultant_email: Mapped[str] = mapped_column(String(EMAIL_LENGTH))
+    consultant_email: Mapped[str] = mapped_column(String(EMAIL_LENGTH), index=True)
     consultant_user_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), index=True
     )

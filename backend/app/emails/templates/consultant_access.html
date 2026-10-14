@@ -1,0 +1,8 @@
+{% extends "_layout.html" %}
+{% block content %}
+<p style="margin:0 0 16px;">Hello,</p>
+<p style="margin:0 0 16px;">{{ granter }} has given you read-only access to the results of {{ organisation }} on {{ product }}. The access ends on {{ ends_on }}.</p>
+<p style="margin:0 0 16px;">To accept, sign in with this email address.</p>
+{% with label = "See your access" %}{% include "_button.html" %}{% endwith %}
+<p style="margin:0;">If you were not expecting this, you can ignore this email.</p>
+{% endblock %}

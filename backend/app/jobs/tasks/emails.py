@@ -1,4 +1,5 @@
-"""Send account emails (verify email, reset password, already registered).
+"""Send account emails (verify email, reset password, already registered) and team emails
+(invitation, consultant access).
 
 The task receives ids only: the email kind, the user id and a reference id (the
 ``user_tokens`` row for link emails, the audit event for the "already registered" notice).
@@ -25,6 +26,7 @@ from app.emails.backends import get_email_backend
 from app.emails.messages import (
     AccountEmail,
     EmailMessage,
+    OrganisationEmail,
     render_already_registered,
     render_token_email,
 )
@@ -32,7 +34,7 @@ from app.jobs.celery_app import celery_app
 from app.jobs.db import task_session
 from app.models import AuditEvent, User, UserToken
 from app.models.enums import UserTokenPurpose
-from app.services import account_emails, user_tokens
+from app.services import account_emails, team_emails, user_tokens
 from app.services.audit import AuditAction
 
 logger = logging.getLogger(__name__)
@@ -91,6 +93,34 @@ def request_account_email(kind: str, user_id: str | None) -> str:
     # Same worker, same process: send now rather than queueing a second task.
     result: str = send_account_email(kind, user_id, token_id)
     return result
+
+
+@celery_app.task(
+    name="emails.send_organisation_email",
+    autoretry_for=(ResendError,),
+    retry_backoff=True,
+    max_retries=3,
+)
+def send_organisation_email(kind: str, ref_id: str) -> str:
+    """An invitation (``ref_id`` is the invitation) or a consultant access notice (the grant).
+
+    The builder re-loads the row and re-checks it and its organisation, and the token is
+    rebuilt from the row id, so only ids travel through the broker. Idempotent through the
+    provider key, like account emails.
+    """
+    email_kind = OrganisationEmail(kind)
+    builders = {
+        OrganisationEmail.INVITATION: team_emails.build_invitation_email,
+        OrganisationEmail.CONSULTANT_ACCESS: team_emails.build_consultant_access_email,
+    }
+    with task_session() as db:
+        message = builders[email_kind](db, uuid.UUID(ref_id))
+    if message is None:
+        logger.info("Skipped %s email %s: no longer valid", kind, ref_id)
+        return SKIPPED
+    get_email_backend().send(message, idempotency_key=f"{kind}:{ref_id}")
+    logger.info("Sent %s email %s", kind, ref_id)
+    return SENT
 
 
 def _build(db: Session, kind: AccountEmail, user: User, ref_id: uuid.UUID) -> EmailMessage | None:

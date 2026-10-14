@@ -9,7 +9,7 @@ import pytest
 import resend
 from sqlalchemy.orm import Session
 
-from app.core.security import user_token_value
+from app.core.security import invitation_token_value, user_token_value
 from app.core.settings import get_settings
 from app.emails.backends import (
     EmailNotConfiguredError,
@@ -19,12 +19,24 @@ from app.emails.backends import (
     get_email_backend,
     override_email_backend,
 )
-from app.jobs.tasks.emails import SENT, SKIPPED, request_account_email, send_account_email
+from app.jobs.tasks.emails import (
+    SENT,
+    SKIPPED,
+    request_account_email,
+    send_account_email,
+    send_organisation_email,
+)
 from app.models import UserToken
-from app.models.enums import UserTokenPurpose
+from app.models.enums import OrganisationStatus, UserTokenPurpose
 from app.services import user_tokens
 from app.services.audit import AuditAction
-from tests.factories import AuditEventFactory, UserFactory
+from tests.factories import (
+    AuditEventFactory,
+    ConsultantGrantFactory,
+    InvitationFactory,
+    OrganisationFactory,
+    UserFactory,
+)
 
 
 def _verify_token(db: Session, **user_kwargs: Any) -> tuple[str, str]:
@@ -188,3 +200,59 @@ def test_resend_backend_when_key_is_set(monkeypatch: pytest.MonkeyPatch, db: Ses
     assert params["html"]
     assert params["text"]
     assert options == {"idempotency_key": f"verify_email:{token_id}"}
+
+
+# Team emails
+
+
+def test_sends_an_invitation(db: Session, outbox: MemoryEmailBackend) -> None:
+    invitation = InvitationFactory.create(email="guest@example.com")
+    result = send_organisation_email.delay("invitation", str(invitation.id)).get()
+    assert result == SENT
+    [message] = outbox.outbox
+    assert message.to == "guest@example.com"
+    assert invitation_token_value(invitation.id) in message.link
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"revoked_at": datetime.now(UTC)},
+        {"accepted_at": datetime.now(UTC)},
+        {"expires_at": datetime.now(UTC) - timedelta(seconds=1)},
+    ],
+)
+def test_skips_an_invitation_that_is_no_longer_pending(
+    db: Session, outbox: MemoryEmailBackend, change: dict[str, Any]
+) -> None:
+    invitation = InvitationFactory.create(**change)
+    assert send_organisation_email.delay("invitation", str(invitation.id)).get() == SKIPPED
+    assert outbox.outbox == []
+
+
+def test_skips_team_emails_for_an_archived_organisation(
+    db: Session, outbox: MemoryEmailBackend
+) -> None:
+    org = OrganisationFactory.create(status=OrganisationStatus.ARCHIVED)
+    invitation = InvitationFactory.create(organisation=org)
+    grant = ConsultantGrantFactory.create(organisation=org)
+    assert send_organisation_email.delay("invitation", str(invitation.id)).get() == SKIPPED
+    assert send_organisation_email.delay("consultant_access", str(grant.id)).get() == SKIPPED
+    assert outbox.outbox == []
+
+
+def test_sends_consultant_access_only_while_waiting(
+    db: Session, outbox: MemoryEmailBackend
+) -> None:
+    grant = ConsultantGrantFactory.create(consultant_email="amy@example.com")
+    assert send_organisation_email.delay("consultant_access", str(grant.id)).get() == SENT
+    assert outbox.outbox[0].to == "amy@example.com"
+    grant.revoked_at = datetime.now(UTC)
+    db.flush()
+    assert send_organisation_email.delay("consultant_access", str(grant.id)).get() == SKIPPED
+
+
+def test_skips_an_unknown_team_row(db: Session, outbox: MemoryEmailBackend) -> None:
+    for kind in ("invitation", "consultant_access"):
+        assert send_organisation_email.delay(kind, str(uuid.uuid4())).get() == SKIPPED
+    assert outbox.outbox == []

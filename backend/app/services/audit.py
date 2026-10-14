@@ -21,7 +21,17 @@ class AuditAction(StrEnum):
     PASSWORD_RESET = "user.password_reset"  # noqa: S105
     PASSWORD_CHANGED = "user.password_changed"  # noqa: S105
     USER_DISABLED = "user.disabled"
+    ORGANISATION_CREATED = "organisation.created"
     ORGANISATION_UPDATED = "organisation.updated"
+    MEMBER_INVITED = "member.invited"
+    INVITATION_REVOKED = "member.invitation_revoked"
+    INVITATION_ACCEPTED = "member.invitation_accepted"
+    MEMBER_ROLE_CHANGED = "member.role_changed"
+    MEMBER_REMOVED = "member.removed"
+    CONSULTANT_ACCESS_GRANTED = "consultant.access_granted"
+    CONSULTANT_ACCESS_CHANGED = "consultant.access_changed"
+    CONSULTANT_ACCESS_REVOKED = "consultant.access_revoked"
+    CONSULTANT_ACCESS_ACCEPTED = "consultant.access_accepted"
 
 
 def record(

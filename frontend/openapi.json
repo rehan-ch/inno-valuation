@@ -39,6 +39,175 @@
         "title": "ChangePasswordIn",
         "type": "object"
       },
+      "ConsultantAccessOut": {
+        "description": "Access as the consultant sees it: waiting for them to accept, or active.",
+        "properties": {
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "organisation_id": {
+            "format": "uuid",
+            "title": "Organisation Id",
+            "type": "string"
+          },
+          "organisation_name": {
+            "title": "Organisation Name",
+            "type": "string"
+          },
+          "organisation_status": {
+            "$ref": "#/components/schemas/OrganisationStatus"
+          },
+          "status": {
+            "$ref": "#/components/schemas/GrantStatus"
+          }
+        },
+        "required": [
+          "id",
+          "organisation_id",
+          "organisation_name",
+          "organisation_status",
+          "status",
+          "expires_at"
+        ],
+        "title": "ConsultantAccessOut",
+        "type": "object"
+      },
+      "ConsultantGrantIn": {
+        "additionalProperties": false,
+        "properties": {
+          "email": {
+            "format": "email",
+            "maxLength": 320,
+            "title": "Email",
+            "type": "string"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "expires_at"
+        ],
+        "title": "ConsultantGrantIn",
+        "type": "object"
+      },
+      "ConsultantGrantOut": {
+        "description": "A grant as the client's admin sees it.",
+        "properties": {
+          "accepted_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accepted At"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "revoked_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revoked At"
+          },
+          "status": {
+            "$ref": "#/components/schemas/GrantStatus"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "status",
+          "expires_at",
+          "created_at",
+          "accepted_at",
+          "revoked_at"
+        ],
+        "title": "ConsultantGrantOut",
+        "type": "object"
+      },
+      "ConsultantGrantUpdateIn": {
+        "additionalProperties": false,
+        "properties": {
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "expires_at"
+        ],
+        "title": "ConsultantGrantUpdateIn",
+        "type": "object"
+      },
+      "ConsultantOrganisationOut": {
+        "description": "An organisation the user sees as a consultant, through accepted, live access.",
+        "properties": {
+          "access_ends_at": {
+            "format": "date-time",
+            "title": "Access Ends At",
+            "type": "string"
+          },
+          "organisation_id": {
+            "format": "uuid",
+            "title": "Organisation Id",
+            "type": "string"
+          },
+          "organisation_name": {
+            "title": "Organisation Name",
+            "type": "string"
+          },
+          "organisation_status": {
+            "$ref": "#/components/schemas/OrganisationStatus"
+          }
+        },
+        "required": [
+          "organisation_id",
+          "organisation_name",
+          "organisation_status",
+          "access_ends_at"
+        ],
+        "title": "ConsultantOrganisationOut",
+        "type": "object"
+      },
       "EmailIn": {
         "additionalProperties": false,
         "properties": {
@@ -54,6 +223,16 @@
         ],
         "title": "EmailIn",
         "type": "object"
+      },
+      "GrantStatus": {
+        "enum": [
+          "waiting",
+          "active",
+          "ended",
+          "revoked"
+        ],
+        "title": "GrantStatus",
+        "type": "string"
       },
       "HTTPValidationError": {
         "properties": {
@@ -96,6 +275,122 @@
         "title": "HealthOut",
         "type": "object"
       },
+      "InvitationIn": {
+        "additionalProperties": false,
+        "properties": {
+          "email": {
+            "format": "email",
+            "maxLength": 320,
+            "title": "Email",
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/MembershipRole"
+          }
+        },
+        "required": [
+          "email",
+          "role"
+        ],
+        "title": "InvitationIn",
+        "type": "object"
+      },
+      "InvitationOut": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "expired": {
+            "title": "Expired",
+            "type": "boolean"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "invited_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invited By Name"
+          },
+          "role": {
+            "$ref": "#/components/schemas/MembershipRole"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "role",
+          "invited_by_name",
+          "created_at",
+          "expires_at",
+          "expired"
+        ],
+        "title": "InvitationOut",
+        "type": "object"
+      },
+      "InvitationPreviewOut": {
+        "properties": {
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "organisation_name": {
+            "title": "Organisation Name",
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/MembershipRole"
+          }
+        },
+        "required": [
+          "organisation_name",
+          "email",
+          "role",
+          "expires_at"
+        ],
+        "title": "InvitationPreviewOut",
+        "type": "object"
+      },
+      "InvitationTokenIn": {
+        "additionalProperties": false,
+        "properties": {
+          "token": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "token"
+        ],
+        "title": "InvitationTokenIn",
+        "type": "object"
+      },
       "MeOut": {
         "properties": {
           "active_organisation_id": {
@@ -109,6 +404,13 @@
               }
             ],
             "title": "Active Organisation Id"
+          },
+          "consultant_organisations": {
+            "items": {
+              "$ref": "#/components/schemas/ConsultantOrganisationOut"
+            },
+            "title": "Consultant Organisations",
+            "type": "array"
           },
           "email": {
             "title": "Email",
@@ -141,7 +443,8 @@
           "name",
           "email_verified",
           "active_organisation_id",
-          "memberships"
+          "memberships",
+          "consultant_organisations"
         ],
         "title": "MeOut",
         "type": "object"
@@ -160,6 +463,59 @@
           "name"
         ],
         "title": "MeUpdateIn",
+        "type": "object"
+      },
+      "MemberOut": {
+        "properties": {
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "joined_at": {
+            "format": "date-time",
+            "title": "Joined At",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/MembershipRole"
+          },
+          "user_id": {
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "user_id",
+          "name",
+          "email",
+          "role",
+          "joined_at"
+        ],
+        "title": "MemberOut",
+        "type": "object"
+      },
+      "MemberRoleIn": {
+        "additionalProperties": false,
+        "properties": {
+          "role": {
+            "$ref": "#/components/schemas/MembershipRole"
+          }
+        },
+        "required": [
+          "role"
+        ],
+        "title": "MemberRoleIn",
         "type": "object"
       },
       "MembershipOut": {
@@ -226,6 +582,140 @@
         ],
         "title": "OrgRole",
         "type": "string"
+      },
+      "OrganisationCreateIn": {
+        "additionalProperties": false,
+        "description": "A new organisation: a name is required, the currency defaults to US dollars.",
+        "properties": {
+          "country": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Z]{2}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Country"
+          },
+          "currency": {
+            "default": "USD",
+            "pattern": "^[A-Z]{3}$",
+            "title": "Currency",
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "maxLength": 5000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "founder_names": {
+            "anyOf": [
+              {
+                "maxLength": 5000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Founder Names"
+          },
+          "industry": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Industry"
+          },
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "primary_contact_email": {
+            "anyOf": [
+              {
+                "format": "email",
+                "maxLength": 320,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Contact Email"
+          },
+          "primary_contact_name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Contact Name"
+          },
+          "revenue_band": {
+            "anyOf": [
+              {
+                "maxLength": 50,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revenue Band"
+          },
+          "size_band": {
+            "anyOf": [
+              {
+                "maxLength": 50,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Size Band"
+          },
+          "website": {
+            "anyOf": [
+              {
+                "format": "uri",
+                "maxLength": 500,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Website"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "OrganisationCreateIn",
+        "type": "object"
       },
       "OrganisationOut": {
         "properties": {
@@ -967,6 +1457,90 @@
         ]
       }
     },
+    "/api/v1/invitations/accept": {
+      "post": {
+        "description": "Join the organisation, signed in with the invited email. It becomes the active one.",
+        "operationId": "accept_invitation_api_v1_invitations_accept_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvitationTokenIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Accept Invitation",
+        "tags": [
+          "team"
+        ]
+      }
+    },
+    "/api/v1/invitations/preview": {
+      "post": {
+        "description": "What the invitation is for. No session needed: the token is the proof.",
+        "operationId": "preview_invitation_api_v1_invitations_preview_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvitationTokenIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitationPreviewOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Preview Invitation",
+        "tags": [
+          "team"
+        ]
+      }
+    },
     "/api/v1/me": {
       "get": {
         "operationId": "get_me_api_v1_me_get",
@@ -1063,6 +1637,76 @@
           }
         },
         "summary": "Set Active Organisation",
+        "tags": [
+          "me"
+        ]
+      }
+    },
+    "/api/v1/me/consultant-access": {
+      "get": {
+        "description": "Access given to this user's email that has not ended: waiting or active.",
+        "operationId": "list_consultant_access_api_v1_me_consultant_access_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ConsultantAccessOut"
+                  },
+                  "title": "Response List Consultant Access Api V1 Me Consultant Access Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Consultant Access",
+        "tags": [
+          "me"
+        ]
+      }
+    },
+    "/api/v1/me/consultant-access/{grant_id}/accept": {
+      "post": {
+        "description": "Accept access given to this user's email. The organisation then appears in the\nswitcher (``consultant_organisations`` on ``/me``).",
+        "operationId": "accept_consultant_access_api_v1_me_consultant_access__grant_id__accept_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "grant_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Grant Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsultantAccessOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Accept Consultant Access",
         "tags": [
           "me"
         ]
@@ -1165,6 +1809,435 @@
           }
         },
         "summary": "Update Organisation",
+        "tags": [
+          "organisation"
+        ]
+      }
+    },
+    "/api/v1/organisation/consultants": {
+      "get": {
+        "operationId": "list_grants_api_v1_organisation_consultants_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ConsultantGrantOut"
+                  },
+                  "title": "Response List Grants Api V1 Organisation Consultants Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Grants",
+        "tags": [
+          "consultants"
+        ]
+      },
+      "post": {
+        "description": "Give a consultant read-only access until the chosen end date, and email them.",
+        "operationId": "grant_access_api_v1_organisation_consultants_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsultantGrantIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsultantGrantOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Grant Access",
+        "tags": [
+          "consultants"
+        ]
+      }
+    },
+    "/api/v1/organisation/consultants/{grant_id}": {
+      "delete": {
+        "description": "End access now.",
+        "operationId": "revoke_access_api_v1_organisation_consultants__grant_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "grant_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Grant Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsultantGrantOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Revoke Access",
+        "tags": [
+          "consultants"
+        ]
+      },
+      "patch": {
+        "operationId": "change_end_date_api_v1_organisation_consultants__grant_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "grant_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Grant Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsultantGrantUpdateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsultantGrantOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Change End Date",
+        "tags": [
+          "consultants"
+        ]
+      }
+    },
+    "/api/v1/organisation/invitations": {
+      "get": {
+        "operationId": "list_invitations_api_v1_organisation_invitations_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/InvitationOut"
+                  },
+                  "title": "Response List Invitations Api V1 Organisation Invitations Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Invitations",
+        "tags": [
+          "team"
+        ]
+      },
+      "post": {
+        "description": "Invite someone by email. Inviting the same email again replaces the old link.",
+        "operationId": "invite_api_v1_organisation_invitations_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvitationIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Invite",
+        "tags": [
+          "team"
+        ]
+      }
+    },
+    "/api/v1/organisation/invitations/{invitation_id}": {
+      "delete": {
+        "operationId": "revoke_invitation_api_v1_organisation_invitations__invitation_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "invitation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Invitation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Revoke Invitation",
+        "tags": [
+          "team"
+        ]
+      }
+    },
+    "/api/v1/organisation/members": {
+      "get": {
+        "operationId": "list_members_api_v1_organisation_members_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MemberOut"
+                  },
+                  "title": "Response List Members Api V1 Organisation Members Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Members",
+        "tags": [
+          "team"
+        ]
+      }
+    },
+    "/api/v1/organisation/members/{membership_id}": {
+      "delete": {
+        "operationId": "remove_member_api_v1_organisation_members__membership_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "membership_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Membership Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Remove Member",
+        "tags": [
+          "team"
+        ]
+      },
+      "patch": {
+        "operationId": "change_member_role_api_v1_organisation_members__membership_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "membership_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Membership Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberRoleIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Change Member Role",
+        "tags": [
+          "team"
+        ]
+      }
+    },
+    "/api/v1/organisations": {
+      "post": {
+        "description": "Any signed-in user may create an organisation. They become its owner, and it becomes\ntheir active organisation.",
+        "operationId": "create_organisation_api_v1_organisations_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrganisationCreateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganisationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Organisation",
         "tags": [
           "organisation"
         ]

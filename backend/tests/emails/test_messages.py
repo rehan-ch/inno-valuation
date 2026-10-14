@@ -1,16 +1,21 @@
 """Email templates: both versions, plain wording, escaped HTML."""
 
-from datetime import timedelta
+from datetime import date, timedelta
 
 import pytest
 
 from app.emails.messages import (
+    ROLE_PHRASES,
     TEMPLATE_DIR,
     AccountEmail,
+    OrganisationEmail,
     describe_duration,
     render_already_registered,
+    render_consultant_access,
+    render_invitation,
     render_token_email,
 )
+from app.models.enums import MembershipRole
 
 ORIGIN = "https://app.example.com"
 EM_DASH = chr(0x2014)
@@ -18,7 +23,7 @@ EN_DASH = chr(0x2013)
 
 
 def test_every_kind_has_html_and_text() -> None:
-    for kind in AccountEmail:
+    for kind in [*AccountEmail, *OrganisationEmail]:
         assert (TEMPLATE_DIR / f"{kind.value}.html").is_file()
         assert (TEMPLATE_DIR / f"{kind.value}.txt").is_file()
 
@@ -73,7 +78,83 @@ def test_already_registered_has_no_token() -> None:
         (timedelta(hours=24), "24 hours"),
         (timedelta(minutes=30), "30 minutes"),
         (timedelta(minutes=1), "1 minute"),
+        (timedelta(days=7), "7 days"),
+        (timedelta(days=2), "2 days"),
     ],
 )
 def test_describe_duration(duration: timedelta, text: str) -> None:
     assert describe_duration(duration) == text
+
+
+HOSTILE = '<a href="https://evil.example">Click</a>'
+
+
+def test_invitation_email() -> None:
+    message = render_invitation(
+        to="new@example.com",
+        origin=ORIGIN,
+        token="inv_123",
+        organisation_name="Acme Ltd",
+        inviter_name="Ada",
+        role="committee",
+        expires_in=timedelta(days=7),
+    )
+    assert message.link == f"{ORIGIN}/invitations/accept#token=inv_123"
+    assert "Ada has invited you to join Acme Ltd" in message.text
+    assert "as a committee member" in message.text
+    assert "7 days" in message.text
+    assert "Acme" not in message.subject  # typed by users, so never in the subject
+    assert EM_DASH not in message.text + message.html + message.subject
+
+
+def test_invitation_without_an_inviter() -> None:
+    message = render_invitation(
+        to="new@example.com",
+        origin=ORIGIN,
+        token="t",
+        organisation_name="Acme",
+        inviter_name=None,
+        role="member",
+        expires_in=timedelta(days=7),
+    )
+    assert message.text.startswith("Hello,\n\nSomeone has invited you")
+
+
+def test_team_emails_escape_user_typed_names() -> None:
+    invitation = render_invitation(
+        to="new@example.com",
+        origin=ORIGIN,
+        token="t",
+        organisation_name=HOSTILE,
+        inviter_name=HOSTILE,
+        role="member",
+        expires_in=timedelta(days=7),
+    )
+    access = render_consultant_access(
+        to="amy@example.com",
+        origin=ORIGIN,
+        organisation_name=HOSTILE,
+        granter_name=HOSTILE,
+        ends_on=date(2099, 1, 31),
+    )
+    for message in (invitation, access):
+        assert HOSTILE not in message.html
+        assert "&lt;a href=" in message.html
+
+
+def test_consultant_access_email() -> None:
+    message = render_consultant_access(
+        to="amy@example.com",
+        origin=ORIGIN,
+        organisation_name="Acme Ltd",
+        granter_name="Ada",
+        ends_on=date(2099, 1, 5),
+    )
+    assert message.link == f"{ORIGIN}/consultant-access"
+    assert "Ada has given you read-only access to the results of Acme Ltd" in message.text
+    assert "ends on 5 January 2099" in message.text
+    assert "token" not in message.text
+
+
+def test_every_role_reads_in_a_sentence() -> None:
+    assert set(ROLE_PHRASES) == {role.value for role in MembershipRole}

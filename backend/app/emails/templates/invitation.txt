@@ -1,0 +1,12 @@
+Hello,
+
+{{ inviter }} has invited you to join {{ organisation }} on {{ product }} as {{ role }}.
+
+Open this link to accept:
+{{ link }}
+
+Sign in, or create an account, with this email address. The link works once and expires in {{ expires_in }}.
+
+If you were not expecting this, you can ignore this email.
+
+{{ product }}

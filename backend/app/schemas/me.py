@@ -1,8 +1,9 @@
 import uuid
+from datetime import datetime
 
 from pydantic import BaseModel
 
-from app.models import Membership, User
+from app.models import ConsultantGrant, Membership, User
 from app.models.enums import MembershipRole, OrganisationStatus
 from app.schemas.common import PersonName, RequestModel
 
@@ -15,6 +16,15 @@ class MembershipOut(BaseModel):
     role: MembershipRole
 
 
+class ConsultantOrganisationOut(BaseModel):
+    """An organisation the user sees as a consultant, through accepted, live access."""
+
+    organisation_id: uuid.UUID
+    organisation_name: str
+    organisation_status: OrganisationStatus
+    access_ends_at: datetime
+
+
 class MeOut(BaseModel):
     id: uuid.UUID
     email: str
@@ -22,6 +32,8 @@ class MeOut(BaseModel):
     email_verified: bool
     active_organisation_id: uuid.UUID | None
     memberships: list[MembershipOut]
+    # For the organisation switcher, next to the memberships. Read-only access.
+    consultant_organisations: list[ConsultantOrganisationOut]
 
 
 class MeUpdateIn(RequestModel):
@@ -33,7 +45,10 @@ class ActiveOrganisationIn(RequestModel):
 
 
 def me_out(
-    user: User, memberships: list[Membership], active_organisation_id: uuid.UUID | None
+    user: User,
+    memberships: list[Membership],
+    consultant_grants: list[ConsultantGrant],
+    active_organisation_id: uuid.UUID | None,
 ) -> MeOut:
     return MeOut(
         id=user.id,
@@ -49,5 +64,14 @@ def me_out(
                 role=m.role,
             )
             for m in memberships
+        ],
+        consultant_organisations=[
+            ConsultantOrganisationOut(
+                organisation_id=g.organisation_id,
+                organisation_name=g.organisation.name,
+                organisation_status=g.organisation.status,
+                access_ends_at=g.expires_at,
+            )
+            for g in consultant_grants
         ],
     )

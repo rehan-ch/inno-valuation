@@ -4,13 +4,13 @@ the router-wide origin check; routes with a session also need the CSRF header.""
 from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.orm import Session
 
+from app.api.v1.me import me_response
 from app.core.deps import AuthContext, get_db, session_if_csrf_valid
 from app.core.sessions import clear_session, start_session
 from app.schemas.auth import EmailIn, ResetPasswordIn, SignInIn, SignUpIn, VerifyEmailIn
 from app.schemas.common import MessageOut
-from app.schemas.me import MeOut, me_out
+from app.schemas.me import MeOut
 from app.services import auth as auth_service
-from app.services import users as user_service
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -41,8 +41,7 @@ def resend_verification(body: EmailIn, db: Session = Depends(get_db)) -> Message
 def sign_in(body: SignInIn, response: Response, db: Session = Depends(get_db)) -> MeOut:
     result = auth_service.sign_in(db, email=body.email, password=body.password)
     claims = start_session(response, result.user, active_org_id=result.active_org_id)
-    memberships = user_service.list_memberships(db, result.user)
-    return me_out(result.user, memberships, claims.active_org_id)
+    return me_response(db, result.user, claims.active_org_id)
 
 
 @router.post("/sign-out", response_model=MessageOut, status_code=status.HTTP_200_OK)
