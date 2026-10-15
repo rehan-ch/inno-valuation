@@ -25,6 +25,24 @@ export function apiUrl(path: string): string {
   return `${apiBaseUrl()}${API_PREFIX}${cleanPath}`;
 }
 
+// The backend sets a readable CSRF cookie (`__Host-csrf_token` on https, `csrf_token`
+// locally) and expects its value back in this header on every unsafe request.
+const CSRF_HEADER = "X-CSRF-Token";
+const CSRF_COOKIE_NAMES = ["__Host-csrf_token", "csrf_token"];
+const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
+
+function readCsrfToken(): string | null {
+  if (typeof document === "undefined") return null;
+  for (const part of document.cookie.split("; ")) {
+    const eq = part.indexOf("=");
+    if (eq === -1) continue;
+    if (CSRF_COOKIE_NAMES.includes(part.slice(0, eq))) {
+      return decodeURIComponent(part.slice(eq + 1));
+    }
+  }
+  return null;
+}
+
 function isErrorEnvelope(value: unknown): value is ApiErrorEnvelope {
   if (typeof value !== "object" || value === null) return false;
   const error = (value as { error?: unknown }).error;
@@ -53,6 +71,11 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
   if (typeof init.body === "string" && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
+  const method = (init.method ?? "GET").toUpperCase();
+  if (!SAFE_METHODS.has(method) && !headers.has(CSRF_HEADER)) {
+    const token = readCsrfToken();
+    if (token) headers.set(CSRF_HEADER, token);
+  }
 
   let response: Response;
   try {
@@ -79,6 +102,22 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
   }
 
   return body as T;
+}
+
+export function getJson<T>(path: string, init?: RequestInit): Promise<T> {
+  return apiFetch<T>(path, { ...init, method: "GET" });
+}
+
+export function postJson<T>(path: string, body?: unknown): Promise<T> {
+  return apiFetch<T>(path, { method: "POST", body: body === undefined ? undefined : JSON.stringify(body) });
+}
+
+export function patchJson<T>(path: string, body: unknown): Promise<T> {
+  return apiFetch<T>(path, { method: "PATCH", body: JSON.stringify(body) });
+}
+
+export function deleteJson<T>(path: string): Promise<T> {
+  return apiFetch<T>(path, { method: "DELETE" });
 }
 
 export function getHealth(init?: RequestInit): Promise<HealthOut> {

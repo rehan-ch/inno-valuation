@@ -1,0 +1,94 @@
+"use client";
+
+import Link from "next/link";
+import { useState } from "react";
+import type { FormEvent } from "react";
+
+import { Alert } from "@/components/ui/Alert";
+import { Button } from "@/components/ui/Button";
+import { CheckboxField, TextField } from "@/components/ui/fields";
+import { signUp } from "@/lib/api/auth";
+import { useSubmit } from "@/lib/forms";
+
+export function SignUpForm() {
+  const { busy, error, run } = useSubmit();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [accepted, setAccepted] = useState(false);
+  const [sentMessage, setSentMessage] = useState<string | null>(null);
+
+  async function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+    if (!accepted) return;
+    const result = await run(() => signUp({ name, email, password, accepted_terms: true }));
+    if (result) setSentMessage(result.message);
+  }
+
+  if (sentMessage) {
+    return (
+      <div className="space-y-4">
+        <h1 className="text-xl font-semibold text-neutral-900">Check your inbox</h1>
+        <Alert tone="success">{sentMessage}</Alert>
+        <p className="text-sm text-neutral-600">
+          Open the link in the email to confirm your address, then{" "}
+          <Link href="/sign-in" className="underline">
+            sign in
+          </Link>
+          .
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4" noValidate>
+      <h1 className="text-xl font-semibold text-neutral-900">Create an account</h1>
+      {error && <Alert tone="error">{error.message}</Alert>}
+      <TextField
+        label="Name"
+        name="name"
+        autoComplete="name"
+        required
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+      />
+      <TextField
+        label="Email"
+        type="email"
+        name="email"
+        autoComplete="email"
+        required
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+      />
+      <TextField
+        label="Password"
+        type="password"
+        name="password"
+        autoComplete="new-password"
+        required
+        minLength={10}
+        hint="At least 10 characters."
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+      />
+      <CheckboxField
+        label="I accept the terms of service and the privacy policy."
+        name="accepted_terms"
+        required
+        checked={accepted}
+        onChange={(e) => setAccepted(e.target.checked)}
+      />
+      <Button type="submit" busy={busy} disabled={!accepted} className="w-full">
+        Create account
+      </Button>
+      <p className="text-sm">
+        Already have an account?{" "}
+        <Link href="/sign-in" className="underline">
+          Sign in
+        </Link>
+      </p>
+    </form>
+  );
+}
