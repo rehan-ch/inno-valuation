@@ -9,8 +9,10 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardTitle, PageHeader } from "@/components/ui/Card";
 import { ConfirmButton } from "@/components/ui/ConfirmButton";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { TextField } from "@/components/ui/fields";
 import { Loading } from "@/components/ui/Loading";
+import { Modal } from "@/components/ui/Modal";
 import { ApiError } from "@/lib/api/client";
 import { changeGrantEndDate, grantAccess, listGrants, revokeGrant } from "@/lib/api/consultants";
 import { getOrganisation } from "@/lib/api/organisation";
@@ -220,7 +222,11 @@ function GrantsCard({
         </div>
       )}
       {grants.length === 0 ? (
-        <p className="mt-2 text-sm text-neutral-600">No consultant has access yet.</p>
+        <div className="mt-4">
+          <EmptyState title="No consultant has access yet.">
+            Give access above and the consultant appears here.
+          </EmptyState>
+        </div>
       ) : (
         <ul className="mt-2 divide-y divide-neutral-200">
           {grants.map((grant) => {
@@ -239,38 +245,15 @@ function GrantsCard({
                 </span>
                 {open && (
                   <span className="ml-auto flex flex-wrap items-center gap-3">
-                    {editingId === grant.id ? (
-                      <form
-                        onSubmit={(e) => void handleEndDateChange(e, grant.id)}
-                        className="flex items-end gap-2"
-                        noValidate
-                      >
-                        <TextField
-                          label={`New end date for ${grant.email}`}
-                          labelHidden
-                          type="date"
-                          required
-                          value={newEndDate}
-                          onChange={(e) => setNewEndDate(e.target.value)}
-                        />
-                        <Button type="submit" busy={busy && busyId === grant.id}>
-                          Save
-                        </Button>
-                        <Button variant="secondary" onClick={() => setEditingId(null)}>
-                          Cancel
-                        </Button>
-                      </form>
-                    ) : (
-                      <Button
-                        variant="secondary"
-                        onClick={() => {
-                          setEditingId(grant.id);
-                          setNewEndDate("");
-                        }}
-                      >
-                        Change end date
-                      </Button>
-                    )}
+                    <Button
+                      variant="secondary"
+                      onClick={() => {
+                        setEditingId(grant.id);
+                        setNewEndDate("");
+                      }}
+                    >
+                      Change end date
+                    </Button>
                     <ConfirmButton
                       label="Revoke"
                       confirmLabel="End access now?"
@@ -278,6 +261,32 @@ function GrantsCard({
                       onConfirm={() => void handleRevoke(grant.id)}
                     />
                   </span>
+                )}
+                {editingId === grant.id && (
+                  <Modal open title="Change end date" onClose={() => setEditingId(null)}>
+                    <form
+                      onSubmit={(e) => void handleEndDateChange(e, grant.id)}
+                      className="space-y-4"
+                      noValidate
+                    >
+                      <TextField
+                        label={`New end date for ${grant.email}`}
+                        type="date"
+                        required
+                        hint="Access ends at the end of the chosen day (UTC)."
+                        value={newEndDate}
+                        onChange={(e) => setNewEndDate(e.target.value)}
+                      />
+                      <div className="flex justify-end gap-3">
+                        <Button variant="secondary" onClick={() => setEditingId(null)}>
+                          Cancel
+                        </Button>
+                        <Button type="submit" busy={busy && busyId === grant.id}>
+                          Save
+                        </Button>
+                      </div>
+                    </form>
+                  </Modal>
                 )}
               </li>
             );

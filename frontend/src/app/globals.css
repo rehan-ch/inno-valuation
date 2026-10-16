@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+/* Design tokens. The palette stays brand-neutral until Amy approves the brand:
+   neutral for chrome and text, red for errors and destructive actions, green for
+   success, amber for warnings.
+
+   Type scale: text-2xl page title, text-base card and dialog title, text-sm body
+   and controls, text-xs hints and badges.
+   Spacing: pages are max-w-5xl (max-w-md on auth pages) with a px-4 gutter;
+   page sections stack with space-y-6; inside a card, mt-1 under the title and
+   mt-3 or mt-4 between blocks. */
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -8,10 +18,12 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  font-family: var(--font-sans);
 }

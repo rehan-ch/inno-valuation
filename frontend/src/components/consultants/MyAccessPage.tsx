@@ -7,6 +7,7 @@ import { Alert } from "@/components/ui/Alert";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardTitle, PageHeader } from "@/components/ui/Card";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { Loading } from "@/components/ui/Loading";
 import { ApiError } from "@/lib/api/client";
 import { acceptConsultantAccess, listConsultantAccess } from "@/lib/api/me";
@@ -73,10 +74,11 @@ export function MyAccessPage() {
           </div>
         )}
         {grants.length === 0 ? (
-          <p className="mt-2 text-sm text-neutral-600">
-            No organisation has given you access yet. A client admin can invite you from their
-            consultant access page.
-          </p>
+          <div className="mt-4">
+            <EmptyState title="No organisation has given you access yet.">
+              A client admin can invite you from their consultant access page.
+            </EmptyState>
+          </div>
         ) : (
           <ul className="mt-2 divide-y divide-neutral-200">
             {grants.map((grant) => (

@@ -31,6 +31,22 @@ describe("AppShell", () => {
     expect(screen.getByLabelText("Organisation")).toHaveDisplayValue("Acme");
   });
 
+  it("marks the page the visitor is on in the navigation", async () => {
+    stubApi({ "GET /api/v1/me": fakeMe() });
+
+    render(
+      <AppShell>
+        <p>Page content</p>
+      </AppShell>,
+    );
+
+    expect(await screen.findByRole("link", { name: "Team" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    expect(screen.getByRole("link", { name: "Account" })).not.toHaveAttribute("aria-current");
+  });
+
   it("hides the manage links from a plain member", async () => {
     stubApi({
       "GET /api/v1/me": fakeMe({

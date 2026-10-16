@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 
@@ -20,6 +20,22 @@ type State =
   | { kind: "loading" }
   | { kind: "ready"; me: MeOut }
   | { kind: "error"; message: string };
+
+/** A main-navigation link that marks the page it is on for styling and screen readers. */
+function NavLink({ href, children }: { href: string; children: ReactNode }) {
+  const current = usePathname() === href;
+  return (
+    <Link
+      href={href}
+      aria-current={current ? "page" : undefined}
+      className={
+        current ? "font-medium text-neutral-900" : "hover:text-neutral-900 hover:underline"
+      }
+    >
+      {children}
+    </Link>
+  );
+}
 
 /** The signed-in frame: loads /me, sends visitors without a session to sign in, and
  * shows the navigation with the organisation switcher. */
@@ -59,7 +75,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   if (state.kind === "loading") {
     return (
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10">
+      <main id="main" className="mx-auto w-full max-w-5xl flex-1 px-4 py-10">
         <Loading>Loading your account...</Loading>
       </main>
     );
@@ -67,7 +83,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   if (state.kind === "error") {
     return (
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10">
+      <main id="main" className="mx-auto w-full max-w-5xl flex-1 px-4 py-10">
         <Alert tone="error">{state.message}</Alert>
       </main>
     );
@@ -90,24 +106,14 @@ export function AppShell({ children }: { children: ReactNode }) {
             InnoValuation
           </Link>
           <nav aria-label="Main" className="flex items-center gap-4 text-sm text-neutral-700">
-            {membership && (
-              <Link href="/team" className="hover:text-neutral-900 hover:underline">
-                Team
-              </Link>
-            )}
+            {membership && <NavLink href="/team">Team</NavLink>}
             {membership && canManage(membership.role) && (
-              <Link href="/consultants" className="hover:text-neutral-900 hover:underline">
-                Consultants
-              </Link>
+              <NavLink href="/consultants">Consultants</NavLink>
             )}
             {me.consultant_organisations.length > 0 && (
-              <Link href="/consultant-access" className="hover:text-neutral-900 hover:underline">
-                My access
-              </Link>
+              <NavLink href="/consultant-access">My access</NavLink>
             )}
-            <Link href="/account" className="hover:text-neutral-900 hover:underline">
-              Account
-            </Link>
+            <NavLink href="/account">Account</NavLink>
           </nav>
           <div className="ml-auto flex items-center gap-3">
             <OrgSwitcher />
@@ -123,7 +129,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">{children}</main>
+      <main id="main" className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
+        {children}
+      </main>
     </MeProvider>
   );
 }
