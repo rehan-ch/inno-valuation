@@ -46,12 +46,16 @@ export function MyAccessPage() {
     };
   }, []);
 
-  async function handleAccept(grants: ConsultantAccessOut[], id: string) {
+  async function handleAccept(id: string) {
     setBusyId(id);
     const accepted = await run(() => acceptConsultantAccess(id));
     setBusyId(null);
     if (accepted) {
-      setState({ kind: "ready", grants: grants.map((g) => (g.id === accepted.id ? accepted : g)) });
+      setState((prev) =>
+        prev.kind === "ready"
+          ? { ...prev, grants: prev.grants.map((g) => (g.id === accepted.id ? accepted : g)) }
+          : prev,
+      );
       await refresh(); // the organisation appears in the switcher
     }
   }
@@ -95,7 +99,7 @@ export function MyAccessPage() {
                   {grant.status === "waiting" ? (
                     <Button
                       busy={busy && busyId === grant.id}
-                      onClick={() => void handleAccept(grants, grant.id)}
+                      onClick={() => void handleAccept(grant.id)}
                     >
                       Accept
                     </Button>

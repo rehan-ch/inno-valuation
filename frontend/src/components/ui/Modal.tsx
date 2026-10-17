@@ -23,7 +23,8 @@ function BaseDialog({ open, onClose, title, children, panelClass }: DialogProps 
   }, [open]);
 
   function handleBackdropClick(event: MouseEvent<HTMLDialogElement>) {
-    // Only a click on the backdrop targets the dialog element itself.
+    // Only a click on the backdrop targets the dialog element itself. The padding
+    // lives on an inner div, so a click inside the panel never matches.
     if (event.target === ref.current) onClose();
   }
 
@@ -38,20 +39,22 @@ function BaseDialog({ open, onClose, title, children, panelClass }: DialogProps 
       onClick={handleBackdropClick}
       className={panelClass}
     >
-      <div className="flex items-start justify-between gap-4">
-        <h2 className="text-base font-semibold text-neutral-900">{title}</h2>
-        <button
-          type="button"
-          aria-label="Close"
-          onClick={onClose}
-          className="-mt-1 -mr-1 rounded-md p-1 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
-        >
-          <span aria-hidden="true" className="block text-lg leading-none">
-            &times;
-          </span>
-        </button>
+      <div className="p-6">
+        <div className="flex items-start justify-between gap-4">
+          <h2 className="text-base font-semibold text-neutral-900">{title}</h2>
+          <button
+            type="button"
+            aria-label="Close"
+            onClick={onClose}
+            className="-mt-1 -mr-1 rounded-md p-1 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
+          >
+            <span aria-hidden="true" className="block text-lg leading-none">
+              &times;
+            </span>
+          </button>
+        </div>
+        <div className="mt-4">{children}</div>
       </div>
-      <div className="mt-4">{children}</div>
     </dialog>
   );
 }
@@ -62,7 +65,7 @@ export function Modal(props: DialogProps) {
   return (
     <BaseDialog
       {...props}
-      panelClass="m-auto w-full max-w-md rounded-lg border border-neutral-200 bg-white p-6 shadow-lg backdrop:bg-neutral-900/50"
+      panelClass="m-auto w-full max-w-md rounded-lg border border-neutral-200 bg-white shadow-lg backdrop:bg-neutral-900/50"
     />
   );
 }
@@ -73,7 +76,7 @@ export function Drawer(props: DialogProps) {
   return (
     <BaseDialog
       {...props}
-      panelClass="m-0 ml-auto h-dvh max-h-none w-full max-w-sm border-l border-neutral-200 bg-white p-6 shadow-lg backdrop:bg-neutral-900/50"
+      panelClass="m-0 ml-auto h-dvh max-h-none w-full max-w-sm overflow-y-auto border-l border-neutral-200 bg-white shadow-lg backdrop:bg-neutral-900/50"
     />
   );
 }

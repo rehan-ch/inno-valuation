@@ -68,9 +68,11 @@ export function AppShell({ children }: { children: ReactNode }) {
   async function handleSignOut() {
     try {
       await signOut();
-    } finally {
-      router.push("/sign-in");
+    } catch {
+      // Go to sign-in anyway: its page loads /me, so a session that survived a
+      // failed sign-out call shows up instead of being silently kept.
     }
+    router.push("/sign-in");
   }
 
   if (state.kind === "loading") {

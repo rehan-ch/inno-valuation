@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 
 import { Alert } from "@/components/ui/Alert";
@@ -17,9 +17,11 @@ export function ResetPasswordForm() {
   const [state, setState] = useState<"checking" | { token: string | null }>("checking");
   const [password, setPassword] = useState("");
   const [doneMessage, setDoneMessage] = useState<string | null>(null);
+  const started = useRef(false);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time read of the URL fragment, only possible after mount
+    if (started.current) return; // React strict mode mounts twice; the second run would find the hash already cleared.
+    started.current = true;
     setState({ token: readHashToken() });
     clearHash();
   }, []);

@@ -62,7 +62,8 @@ export function AcceptInvitation() {
   }
 
   async function handleSwitchAccount() {
-    await run(() => signOut());
+    const result = await run(() => signOut());
+    if (!result) return; // the error shows in the alert; staying signed in must be visible
     // Keep the fragment: after signing in with the right account, the token is still there.
     router.push(`/sign-in?next=%2Finvitations%2Faccept${window.location.hash}`);
   }
@@ -133,6 +134,7 @@ export function AcceptInvitation() {
           This invitation is for {preview.email}, but you are signed in as {me.email}. Sign out and
           sign in with the invited email.
         </Alert>
+        {error && <Alert tone="error">{error.message}</Alert>}
         <Button variant="secondary" busy={busy} onClick={() => void handleSwitchAccount()}>
           Sign out and switch account
         </Button>

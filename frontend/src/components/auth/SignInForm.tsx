@@ -12,10 +12,11 @@ import { resendVerification, signIn } from "@/lib/api/auth";
 import type { MeOut } from "@/lib/api/types";
 import { useSubmit } from "@/lib/forms";
 
-/** A same-site path from ?next=, or null. Rejects absolute and scheme-relative URLs. */
+/** A same-site path from ?next=, or null. Rejects absolute and scheme-relative URLs;
+ * backslashes count as slashes because URL parsers normalise them. */
 function safeNext(): string | null {
   const next = new URLSearchParams(window.location.search).get("next");
-  return next && next.startsWith("/") && !next.startsWith("//") ? next : null;
+  return next && /^\/[^/\\]/.test(next) ? next : null;
 }
 
 function landingPage(me: MeOut): string {

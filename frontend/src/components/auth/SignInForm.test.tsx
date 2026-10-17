@@ -42,6 +42,17 @@ describe("SignInForm", () => {
     expect(routerPush).toHaveBeenCalledWith("/invitations/accept#token=tok1");
   });
 
+  it("ignores a ?next= that would leave the site, like a backslash path", async () => {
+    // URL parsers normalise backslashes, so /\evil.com is really //evil.com.
+    setLocation("/sign-in?next=%2F%5Cevil.com");
+    stubApi({ "POST /api/v1/auth/sign-in": fakeMe() });
+
+    render(<SignInForm />);
+    await fillAndSubmit();
+
+    expect(routerPush).toHaveBeenCalledWith("/team");
+  });
+
   it("sends a new user without organisations to create one", async () => {
     stubApi({
       "POST /api/v1/auth/sign-in": fakeMe({ active_organisation_id: null, memberships: [] }),

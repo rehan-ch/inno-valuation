@@ -30,6 +30,22 @@ describe("Modal", () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
+  it("stays open on a click inside the panel, including its padding", async () => {
+    const onClose = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <Modal open title="Change end date" onClose={onClose}>
+        <p>Pick a new date.</p>
+      </Modal>,
+    );
+
+    // The padding div, not the dialog itself, receives clicks inside the panel.
+    await user.click(screen.getByText("Pick a new date."));
+    await user.click(screen.getByText("Change end date"));
+
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
   it("closes when the browser cancels it, as on Escape", () => {
     const onClose = vi.fn();
     render(

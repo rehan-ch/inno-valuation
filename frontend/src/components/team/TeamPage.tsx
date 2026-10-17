@@ -111,14 +111,18 @@ export function TeamPage() {
             <InviteCard
               org={org}
               onInvited={(invitation) =>
-                setState({
-                  ...state,
-                  // Inviting the same email again replaces the old link.
-                  invitations: [
-                    invitation,
-                    ...state.invitations.filter((i) => i.email !== invitation.email),
-                  ],
-                })
+                setState((prev) =>
+                  prev.kind === "ready"
+                    ? {
+                        ...prev,
+                        // Inviting the same email again replaces the old link.
+                        invitations: [
+                          invitation,
+                          ...prev.invitations.filter((i) => i.email !== invitation.email),
+                        ],
+                      }
+                    : prev,
+                )
               }
             />
           )}
@@ -126,7 +130,11 @@ export function TeamPage() {
             <InvitationsCard
               invitations={state.invitations}
               onCancelled={(id) =>
-                setState({ ...state, invitations: state.invitations.filter((i) => i.id !== id) })
+                setState((prev) =>
+                  prev.kind === "ready"
+                    ? { ...prev, invitations: prev.invitations.filter((i) => i.id !== id) }
+                    : prev,
+                )
               }
             />
           )}
@@ -135,13 +143,18 @@ export function TeamPage() {
             manage={manage}
             members={state.members}
             onChanged={(member) =>
-              setState({
-                ...state,
-                members: state.members.map((m) => (m.id === member.id ? member : m)),
-              })
+              setState((prev) =>
+                prev.kind === "ready"
+                  ? { ...prev, members: prev.members.map((m) => (m.id === member.id ? member : m)) }
+                  : prev,
+              )
             }
             onRemoved={(id) =>
-              setState({ ...state, members: state.members.filter((m) => m.id !== id) })
+              setState((prev) =>
+                prev.kind === "ready"
+                  ? { ...prev, members: prev.members.filter((m) => m.id !== id) }
+                  : prev,
+              )
             }
           />
         </>

@@ -103,12 +103,20 @@ export function ConsultantsPage() {
         description={`Give a consultant read-only access to ${org.name}'s results, until an end date you choose.`}
       />
       <GrantCard
-        onGranted={(grant) => setState({ ...state, grants: [grant, ...grants] })}
+        onGranted={(grant) =>
+          setState((prev) =>
+            prev.kind === "ready" ? { ...prev, grants: [grant, ...prev.grants] } : prev,
+          )
+        }
       />
       <GrantsCard
         grants={grants}
         onUpdated={(grant) =>
-          setState({ ...state, grants: grants.map((g) => (g.id === grant.id ? grant : g)) })
+          setState((prev) =>
+            prev.kind === "ready"
+              ? { ...prev, grants: prev.grants.map((g) => (g.id === grant.id ? grant : g)) }
+              : prev,
+          )
         }
       />
     </div>
@@ -119,11 +127,17 @@ function GrantCard({ onGranted }: { onGranted: (grant: ConsultantGrantOut) => vo
   const { busy, error, run } = useSubmit();
   const [email, setEmail] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [dateError, setDateError] = useState<string | null>(null);
   const [grantedTo, setGrantedTo] = useState<string | null>(null);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setGrantedTo(null);
+    // Without a date, endOfDayUtc would send a malformed instant.
+    if (!endDate) {
+      setDateError("Choose an end date.");
+      return;
+    }
     const grant = await run(() => grantAccess(email, endOfDayUtc(endDate)));
     if (grant) {
       onGranted(grant);
@@ -160,8 +174,12 @@ function GrantCard({ onGranted }: { onGranted: (grant: ConsultantGrantOut) => vo
             type="date"
             name="expires_on"
             required
+            error={dateError ?? undefined}
             value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
+            onChange={(e) => {
+              setEndDate(e.target.value);
+              setDateError(null);
+            }}
           />
         </div>
         <Button type="submit" busy={busy}>
@@ -193,6 +211,7 @@ function GrantsCard({
   const [busyId, setBusyId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [newEndDate, setNewEndDate] = useState("");
+  const [dateError, setDateError] = useState<string | null>(null);
 
   async function handleRevoke(id: string) {
     setBusyId(id);
@@ -203,6 +222,11 @@ function GrantsCard({
 
   async function handleEndDateChange(event: FormEvent, id: string) {
     event.preventDefault();
+    // Without a date, endOfDayUtc would send a malformed instant.
+    if (!newEndDate) {
+      setDateError("Choose an end date.");
+      return;
+    }
     setBusyId(id);
     const grant = await run(() => changeGrantEndDate(id, endOfDayUtc(newEndDate)));
     setBusyId(null);
@@ -250,6 +274,7 @@ function GrantsCard({
                       onClick={() => {
                         setEditingId(grant.id);
                         setNewEndDate("");
+                        setDateError(null);
                       }}
                     >
                       Change end date
@@ -274,8 +299,12 @@ function GrantsCard({
                         type="date"
                         required
                         hint="Access ends at the end of the chosen day (UTC)."
+                        error={dateError ?? undefined}
                         value={newEndDate}
-                        onChange={(e) => setNewEndDate(e.target.value)}
+                        onChange={(e) => {
+                          setNewEndDate(e.target.value);
+                          setDateError(null);
+                        }}
                       />
                       <div className="flex justify-end gap-3">
                         <Button variant="secondary" onClick={() => setEditingId(null)}>
