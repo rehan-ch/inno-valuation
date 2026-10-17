@@ -29,7 +29,7 @@ import type {
   OrganisationOut,
 } from "@/lib/api/types";
 import { formatDate } from "@/lib/format";
-import { useSubmit } from "@/lib/forms";
+import { emailError, useSubmit } from "@/lib/forms";
 import { assignableRoles, canManage, roleLabel } from "@/lib/roles";
 
 type State =
@@ -172,12 +172,18 @@ function InviteCard({
 }) {
   const { busy, error, run } = useSubmit();
   const [email, setEmail] = useState("");
+  const [emailFieldError, setEmailFieldError] = useState<string | undefined>(undefined);
   const [role, setRole] = useState<MembershipRole>("member");
   const [sentTo, setSentTo] = useState<string | null>(null);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setSentTo(null);
+    const invalid = emailError(email);
+    if (invalid) {
+      setEmailFieldError(invalid);
+      return;
+    }
     const invitation = await run(() => sendInvitation(email, role));
     if (invitation) {
       onInvited(invitation);
@@ -204,8 +210,12 @@ function InviteCard({
             type="email"
             name="invite_email"
             required
+            error={emailFieldError}
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              setEmailFieldError(undefined);
+            }}
           />
         </div>
         <div className="sm:w-48">

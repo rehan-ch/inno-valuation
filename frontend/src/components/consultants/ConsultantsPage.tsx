@@ -18,7 +18,7 @@ import { changeGrantEndDate, grantAccess, listGrants, revokeGrant } from "@/lib/
 import { getOrganisation } from "@/lib/api/organisation";
 import type { ConsultantGrantOut, GrantStatus, OrganisationOut } from "@/lib/api/types";
 import { formatDate } from "@/lib/format";
-import { useSubmit } from "@/lib/forms";
+import { emailError, useSubmit } from "@/lib/forms";
 import { canManage } from "@/lib/roles";
 
 type State =
@@ -126,6 +126,7 @@ export function ConsultantsPage() {
 function GrantCard({ onGranted }: { onGranted: (grant: ConsultantGrantOut) => void }) {
   const { busy, error, run } = useSubmit();
   const [email, setEmail] = useState("");
+  const [emailFieldError, setEmailFieldError] = useState<string | undefined>(undefined);
   const [endDate, setEndDate] = useState("");
   const [dateError, setDateError] = useState<string | null>(null);
   const [grantedTo, setGrantedTo] = useState<string | null>(null);
@@ -133,9 +134,12 @@ function GrantCard({ onGranted }: { onGranted: (grant: ConsultantGrantOut) => vo
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setGrantedTo(null);
+    const invalidEmail = emailError(email);
     // Without a date, endOfDayUtc would send a malformed instant.
-    if (!endDate) {
-      setDateError("Choose an end date.");
+    const invalidDate = endDate ? null : "Choose an end date.";
+    if (invalidEmail || invalidDate) {
+      setEmailFieldError(invalidEmail);
+      setDateError(invalidDate);
       return;
     }
     const grant = await run(() => grantAccess(email, endOfDayUtc(endDate)));
@@ -164,8 +168,12 @@ function GrantCard({ onGranted }: { onGranted: (grant: ConsultantGrantOut) => vo
             type="email"
             name="consultant_email"
             required
+            error={emailFieldError}
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              setEmailFieldError(undefined);
+            }}
           />
         </div>
         <div className="sm:w-48">

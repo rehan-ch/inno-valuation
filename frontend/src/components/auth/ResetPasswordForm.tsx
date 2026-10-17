@@ -9,13 +9,14 @@ import { Button } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/fields";
 import { resetPassword } from "@/lib/api/auth";
 import { clearHash, readHashToken } from "@/lib/hash-token";
-import { useSubmit } from "@/lib/forms";
+import { newPasswordError, useSubmit } from "@/lib/forms";
 
 export function ResetPasswordForm() {
   const { busy, error, run } = useSubmit();
   // "checking" until the fragment is read; then the token, or null when the link had none.
   const [state, setState] = useState<"checking" | { token: string | null }>("checking");
   const [password, setPassword] = useState("");
+  const [fieldError, setFieldError] = useState<string | undefined>(undefined);
   const [doneMessage, setDoneMessage] = useState<string | null>(null);
   const started = useRef(false);
 
@@ -31,6 +32,11 @@ export function ResetPasswordForm() {
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     if (!token) return;
+    const invalid = newPasswordError(password);
+    if (invalid) {
+      setFieldError(invalid);
+      return;
+    }
     const result = await run(() => resetPassword(token, password));
     if (result) setDoneMessage(result.message);
   }
@@ -78,8 +84,12 @@ export function ResetPasswordForm() {
         required
         minLength={10}
         hint="At least 10 characters."
+        error={fieldError}
         value={password}
-        onChange={(e) => setPassword(e.target.value)}
+        onChange={(e) => {
+          setPassword(e.target.value);
+          setFieldError(undefined);
+        }}
       />
       <Button type="submit" busy={busy} className="w-full">
         Change password

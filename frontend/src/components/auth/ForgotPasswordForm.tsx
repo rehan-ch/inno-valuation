@@ -8,15 +8,21 @@ import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/fields";
 import { forgotPassword } from "@/lib/api/auth";
-import { useSubmit } from "@/lib/forms";
+import { emailError, useSubmit } from "@/lib/forms";
 
 export function ForgotPasswordForm() {
   const { busy, error, run } = useSubmit();
   const [email, setEmail] = useState("");
+  const [fieldError, setFieldError] = useState<string | undefined>(undefined);
   const [sentMessage, setSentMessage] = useState<string | null>(null);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
+    const invalid = emailError(email);
+    if (invalid) {
+      setFieldError(invalid);
+      return;
+    }
     const result = await run(() => forgotPassword(email));
     if (result) setSentMessage(result.message);
   }
@@ -35,8 +41,12 @@ export function ForgotPasswordForm() {
         name="email"
         autoComplete="email"
         required
+        error={fieldError}
         value={email}
-        onChange={(e) => setEmail(e.target.value)}
+        onChange={(e) => {
+          setEmail(e.target.value);
+          setFieldError(undefined);
+        }}
       />
       <Button type="submit" busy={busy} className="w-full">
         Send reset link

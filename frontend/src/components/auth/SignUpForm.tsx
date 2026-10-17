@@ -8,7 +8,13 @@ import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { CheckboxField, TextField } from "@/components/ui/fields";
 import { signUp } from "@/lib/api/auth";
-import { useSubmit } from "@/lib/forms";
+import { emailError, newPasswordError, useSubmit } from "@/lib/forms";
+
+interface FieldErrors {
+  name?: string;
+  email?: string;
+  password?: string;
+}
 
 export function SignUpForm() {
   const { busy, error, run } = useSubmit();
@@ -16,11 +22,21 @@ export function SignUpForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [accepted, setAccepted] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [sentMessage, setSentMessage] = useState<string | null>(null);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     if (!accepted) return;
+    const invalid: FieldErrors = {
+      name: name.trim() ? undefined : "Enter your name.",
+      email: emailError(email),
+      password: newPasswordError(password),
+    };
+    if (invalid.name || invalid.email || invalid.password) {
+      setFieldErrors(invalid);
+      return;
+    }
     const result = await run(() => signUp({ name, email, password, accepted_terms: true }));
     if (result) setSentMessage(result.message);
   }
@@ -50,8 +66,12 @@ export function SignUpForm() {
         name="name"
         autoComplete="name"
         required
+        error={fieldErrors.name}
         value={name}
-        onChange={(e) => setName(e.target.value)}
+        onChange={(e) => {
+          setName(e.target.value);
+          setFieldErrors((prev) => ({ ...prev, name: undefined }));
+        }}
       />
       <TextField
         label="Email"
@@ -59,8 +79,12 @@ export function SignUpForm() {
         name="email"
         autoComplete="email"
         required
+        error={fieldErrors.email}
         value={email}
-        onChange={(e) => setEmail(e.target.value)}
+        onChange={(e) => {
+          setEmail(e.target.value);
+          setFieldErrors((prev) => ({ ...prev, email: undefined }));
+        }}
       />
       <TextField
         label="Password"
@@ -70,8 +94,12 @@ export function SignUpForm() {
         required
         minLength={10}
         hint="At least 10 characters."
+        error={fieldErrors.password}
         value={password}
-        onChange={(e) => setPassword(e.target.value)}
+        onChange={(e) => {
+          setPassword(e.target.value);
+          setFieldErrors((prev) => ({ ...prev, password: undefined }));
+        }}
       />
       <CheckboxField
         label="I accept the terms of service and the privacy policy."

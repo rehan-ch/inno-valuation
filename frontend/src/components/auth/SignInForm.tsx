@@ -30,11 +30,20 @@ export function SignInForm() {
   const { busy, error, run } = useSubmit();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
   const [resent, setResent] = useState(false);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setResent(false);
+    const invalid = {
+      email: email.trim() ? undefined : "Enter your email address.",
+      password: password ? undefined : "Enter your password.",
+    };
+    if (invalid.email || invalid.password) {
+      setFieldErrors(invalid);
+      return;
+    }
     const me = await run(() => signIn(email, password));
     // The hash (e.g. an invitation token) never reaches the server; carry it along.
     if (me) router.push((safeNext() ?? landingPage(me)) + window.location.hash);
@@ -67,8 +76,12 @@ export function SignInForm() {
         name="email"
         autoComplete="email"
         required
+        error={fieldErrors.email}
         value={email}
-        onChange={(e) => setEmail(e.target.value)}
+        onChange={(e) => {
+          setEmail(e.target.value);
+          setFieldErrors((prev) => ({ ...prev, email: undefined }));
+        }}
       />
       <TextField
         label="Password"
@@ -76,8 +89,12 @@ export function SignInForm() {
         name="password"
         autoComplete="current-password"
         required
+        error={fieldErrors.password}
         value={password}
-        onChange={(e) => setPassword(e.target.value)}
+        onChange={(e) => {
+          setPassword(e.target.value);
+          setFieldErrors((prev) => ({ ...prev, password: undefined }));
+        }}
       />
       <Button type="submit" busy={busy} className="w-full">
         Sign in

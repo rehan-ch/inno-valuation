@@ -23,9 +23,20 @@ export function NewOrganisationForm() {
   const [currency, setCurrency] = useState("USD");
   const [website, setWebsite] = useState("");
   const [description, setDescription] = useState("");
+  const [nameError, setNameError] = useState<string | undefined>(undefined);
+  const [currencyError, setCurrencyError] = useState<string | undefined>(undefined);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
+    const invalidName = name.trim() ? undefined : "Enter the organisation's name.";
+    const invalidCurrency = /^[A-Za-z]{3}$/.test(currency)
+      ? undefined
+      : "Use a 3-letter code, like USD.";
+    if (invalidName || invalidCurrency) {
+      setNameError(invalidName);
+      setCurrencyError(invalidCurrency);
+      return;
+    }
     const org = await run(() =>
       createOrganisation({
         name,
@@ -57,8 +68,12 @@ export function NewOrganisationForm() {
             label="Name"
             name="name"
             required
+            error={nameError}
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => {
+              setName(e.target.value);
+              setNameError(undefined);
+            }}
           />
           <TextField
             label="Industry"
@@ -88,8 +103,12 @@ export function NewOrganisationForm() {
               maxLength={3}
               hint="3-letter code, e.g. USD."
               required
+              error={currencyError}
               value={currency}
-              onChange={(e) => setCurrency(e.target.value)}
+              onChange={(e) => {
+                setCurrency(e.target.value);
+                setCurrencyError(undefined);
+              }}
             />
           </div>
           <TextField

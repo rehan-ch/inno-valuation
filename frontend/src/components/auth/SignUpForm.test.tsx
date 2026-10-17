@@ -29,6 +29,24 @@ describe("SignUpForm", () => {
     expect(await screen.findByRole("status")).toHaveTextContent("Check your inbox.");
   });
 
+  it("explains a short password and an incomplete email instead of sending them", async () => {
+    const calls = stubApi({});
+    const user = userEvent.setup();
+
+    render(<SignUpForm />);
+    await user.type(screen.getByLabelText("Name"), "New Person");
+    await user.type(screen.getByLabelText("Email"), "new@example");
+    await user.type(screen.getByLabelText("Password"), "short");
+    await user.click(screen.getByRole("checkbox"));
+    await user.click(screen.getByRole("button", { name: "Create account" }));
+
+    expect(
+      screen.getByText("Enter a full email address, like name@company.com."),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Use at least 10 characters.")).toBeInTheDocument();
+    expect(calls).toHaveLength(0);
+  });
+
   it("does not submit until the terms are accepted", async () => {
     const calls = stubApi({});
 

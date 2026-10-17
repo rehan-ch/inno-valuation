@@ -121,11 +121,22 @@ function SettingsForm({
   const [contactName, setContactName] = useState(org.primary_contact_name ?? "");
   const [contactEmail, setContactEmail] = useState(org.primary_contact_email ?? "");
   const [currency, setCurrency] = useState(org.currency);
+  const [nameError, setNameError] = useState<string | undefined>(undefined);
+  const [currencyError, setCurrencyError] = useState<string | undefined>(undefined);
   const [saved, setSaved] = useState(false);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setSaved(false);
+    const invalidName = name.trim() ? undefined : "Enter the organisation's name.";
+    const invalidCurrency = /^[A-Za-z]{3}$/.test(currency)
+      ? undefined
+      : "Use a 3-letter code, like USD.";
+    if (invalidName || invalidCurrency) {
+      setNameError(invalidName);
+      setCurrencyError(invalidCurrency);
+      return;
+    }
     const result = await run(() =>
       updateOrganisation({
         name,
@@ -158,8 +169,12 @@ function SettingsForm({
           label="Name"
           name="name"
           required
+          error={nameError}
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={(e) => {
+            setName(e.target.value);
+            setNameError(undefined);
+          }}
         />
         <TextField
           label="Description"
@@ -233,8 +248,12 @@ function SettingsForm({
             maxLength={3}
             hint="3-letter code, e.g. USD."
             required
+            error={currencyError}
             value={currency}
-            onChange={(e) => setCurrency(e.target.value)}
+            onChange={(e) => {
+              setCurrency(e.target.value);
+              setCurrencyError(undefined);
+            }}
           />
         </div>
         <Button type="submit" busy={busy}>
