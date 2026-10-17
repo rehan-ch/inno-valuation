@@ -17,6 +17,7 @@ export type OrgRole = Schemas["OrgRole"];
 
 export type OrganisationOut = Schemas["OrganisationOut"];
 export type OrganisationCreateIn = Schemas["OrganisationCreateIn"];
+export type OrganisationUpdateIn = Schemas["OrganisationUpdateIn"];
 export type OrganisationStatus = Schemas["OrganisationStatus"];
 
 export type MemberOut = Schemas["MemberOut"];

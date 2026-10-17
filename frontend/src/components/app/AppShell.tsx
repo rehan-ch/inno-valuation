@@ -110,7 +110,10 @@ export function AppShell({ children }: { children: ReactNode }) {
           <nav aria-label="Main" className="flex items-center gap-4 text-sm text-neutral-700">
             {membership && <NavLink href="/team">Team</NavLink>}
             {membership && canManage(membership.role) && (
-              <NavLink href="/consultants">Consultants</NavLink>
+              <>
+                <NavLink href="/organisation">Organisation</NavLink>
+                <NavLink href="/consultants">Consultants</NavLink>
+              </>
             )}
             {me.consultant_organisations.length > 0 && (
               <NavLink href="/consultant-access">My access</NavLink>
