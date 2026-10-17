@@ -31,6 +31,7 @@ from sqlalchemy.orm import Session
 
 from app.core.emails import normalise_email
 from app.core.errors import AppError
+from app.core.passwords import check_new_password
 from app.core.security import hash_password, verify_password
 from app.core.settings import get_settings
 from app.emails.messages import AccountEmail
@@ -107,6 +108,9 @@ def sign_up(db: Session, *, email: str, name: str, password: str) -> None:
     """
     _require_password_sign_in()
     email = normalise_email(email)
+    # Checked against the submitted values only, so the outcome does not depend on
+    # whether the email already has an account.
+    check_new_password(password, email=email, name=name)
     password_hash = hash_password(password)
     existing = _find_user(db, email)
     if existing is None:
@@ -194,6 +198,9 @@ def verify_email(db: Session, *, token: str, password: str | None = None) -> Non
         raise AppError(
             "password_required", "Choose a password to finish setting up your account.", 400
         )
+    if found.requires_password and password is not None:
+        # Also before anything is written, so a refused password keeps the link usable.
+        check_new_password(password, email=found.user.email, name=found.user.name)
     user_tokens.mark_used(db, found)
     user = found.user
     if user.email_verified_at is None:
@@ -302,10 +309,13 @@ def reset_password(db: Session, *, token: str, new_password: str) -> None:
 
     The link proves the user reads this inbox, so an unverified email becomes verified.
     """
-    used = user_tokens.consume(db, token, UserTokenPurpose.RESET_PASSWORD)
-    if used is None:
+    found = user_tokens.find_usable(db, token, UserTokenPurpose.RESET_PASSWORD)
+    if found is None:
         raise AppError("invalid_token", "This link is not valid or has expired.", 400)
-    user = used.user
+    user = found.user
+    # Before the token is used, so a refused password keeps the link usable.
+    check_new_password(new_password, email=user.email, name=user.name)
+    user_tokens.mark_used(db, found)
     user.password_hash = hash_password(new_password)
     user.session_version += 1
     if user.email_verified_at is None:
@@ -326,6 +336,8 @@ def change_password(db: Session, user: User, *, current_password: str, new_passw
             "This account has no password. Use forgot password to set one.",
             400,
         )
+    # Before the throttle, so a refused new password does not cost an attempt.
+    check_new_password(new_password, email=user.email, name=user.name)
     attempt = sign_in_throttle.begin_attempt(db, user.email)
     db.commit()
     if not attempt.allowed:

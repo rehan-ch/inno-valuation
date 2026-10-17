@@ -93,7 +93,7 @@ export function SignUpForm() {
         autoComplete="new-password"
         required
         minLength={10}
-        hint="At least 10 characters."
+        hint="At least 10 characters; a few random words make a strong one."
         error={fieldErrors.password}
         value={password}
         onChange={(e) => {

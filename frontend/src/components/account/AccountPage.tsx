@@ -102,7 +102,7 @@ function PasswordCard() {
           autoComplete="new-password"
           required
           minLength={10}
-          hint="At least 10 characters."
+          hint="At least 10 characters; a few random words make a strong one."
           value={next}
           onChange={(e) => setNext(e.target.value)}
         />

@@ -83,7 +83,7 @@ export function ResetPasswordForm() {
         autoComplete="new-password"
         required
         minLength={10}
-        hint="At least 10 characters."
+        hint="At least 10 characters; a few random words make a strong one."
         error={fieldError}
         value={password}
         onChange={(e) => {

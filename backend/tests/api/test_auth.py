@@ -150,7 +150,12 @@ def test_sign_up_requires_terms_field(client: TestClient) -> None:
 
 @pytest.mark.parametrize("length", [10, 128])
 def test_sign_up_password_length_bounds_accepted(client: TestClient, length: int) -> None:
-    assert client.post(SIGN_UP, json=_sign_up_body(password="p" * length)).status_code == 202
+    assert (
+        client.post(
+            SIGN_UP, json=_sign_up_body(password=("odd pelican vault 42 " * 7)[:length])
+        ).status_code
+        == 202
+    )
 
 
 def test_sign_up_with_registered_email_looks_the_same_and_changes_nothing(
@@ -160,7 +165,10 @@ def test_sign_up_with_registered_email_looks_the_same_and_changes_nothing(
     original_hash = existing.password_hash
     fresh = client.post(SIGN_UP, json=_sign_up_body(email="fresh@example.com"))
     taken = client.post(
-        SIGN_UP, json=_sign_up_body(email="TAKEN@example.com", name="Intruder", password="x" * 12)
+        SIGN_UP,
+        json=_sign_up_body(
+            email="TAKEN@example.com", name="Intruder", password="a different pass 12"
+        ),
     )
     assert (taken.status_code, taken.json()) == (fresh.status_code, fresh.json())
 
@@ -645,8 +653,8 @@ def test_change_password_needs_csrf(client: TestClient) -> None:
 
 # Pre-registration takeover
 
-ATTACKER_PASSWORD = "attacker password 1"
-VICTIM_PASSWORD = "victim password 22"
+ATTACKER_PASSWORD = "first signup secret 1"
+VICTIM_PASSWORD = "rightful choice 22"
 CHOSEN_PASSWORD = "chosen at verify 333"
 
 
