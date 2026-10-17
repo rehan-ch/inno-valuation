@@ -126,7 +126,7 @@ def test_sign_up_does_not_put_the_raw_token_in_the_task(
     [
         {"accepted_terms": False},
         {"accepted_terms": None},
-        {"password": "x" * 9},
+        {"password": "x" * 7},
         {"password": "x" * 129},
         {"email": "not-an-email"},
         {"name": "   "},
@@ -148,7 +148,7 @@ def test_sign_up_requires_terms_field(client: TestClient) -> None:
     assert client.post(SIGN_UP, json=body).status_code == 422
 
 
-@pytest.mark.parametrize("length", [10, 128])
+@pytest.mark.parametrize("length", [8, 128])
 def test_sign_up_password_length_bounds_accepted(client: TestClient, length: int) -> None:
     assert (
         client.post(

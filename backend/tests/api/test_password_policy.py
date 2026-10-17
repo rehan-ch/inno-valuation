@@ -26,7 +26,7 @@ def test_the_list_is_loaded_and_passes_the_length_rule() -> None:
     passwords = common_passwords()
     assert COMMON in passwords
     assert len(passwords) > 5_000
-    assert all(len(p) >= 10 for p in passwords)
+    assert all(len(p) >= 8 for p in passwords)
 
 
 def test_sign_up_refuses_a_common_password(client: TestClient) -> None:

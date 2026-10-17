@@ -20,7 +20,7 @@ from argon2.exceptions import InvalidHashError, VerificationError
 
 from app.core.settings import get_settings
 
-PASSWORD_MIN_LENGTH: Final = 10
+PASSWORD_MIN_LENGTH: Final = 8
 PASSWORD_MAX_LENGTH: Final = 128
 
 # argon2id with the library defaults (RFC 9106 low-memory profile). When the defaults

@@ -43,7 +43,7 @@ describe("SignUpForm", () => {
     expect(
       screen.getByText("Enter a full email address, like name@company.com."),
     ).toBeInTheDocument();
-    expect(screen.getByText("Use at least 10 characters.")).toBeInTheDocument();
+    expect(screen.getByText("Use at least 8 characters.")).toBeInTheDocument();
     expect(calls).toHaveLength(0);
   });
 
