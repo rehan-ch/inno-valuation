@@ -65,7 +65,7 @@ export function Modal(props: DialogProps) {
   return (
     <BaseDialog
       {...props}
-      panelClass="m-auto w-full max-w-md rounded-lg border border-neutral-200 bg-white shadow-lg backdrop:bg-neutral-900/50"
+      panelClass="m-auto w-full max-w-md rounded-2xl border border-neutral-200 bg-white shadow-lg backdrop:bg-neutral-900/50"
     />
   );
 }

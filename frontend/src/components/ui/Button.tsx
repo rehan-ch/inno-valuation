@@ -3,16 +3,17 @@ import type { ButtonHTMLAttributes } from "react";
 type Variant = "primary" | "secondary" | "danger";
 
 const BASE =
-  "inline-flex items-center justify-center rounded-md px-3 py-2 text-sm font-medium " +
-  "focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed";
+  "inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-medium " +
+  "transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 " +
+  "disabled:cursor-not-allowed";
 
 const VARIANTS: Record<Variant, string> = {
   primary:
-    "bg-neutral-900 text-white hover:bg-neutral-700 focus-visible:outline-neutral-900 " +
+    "bg-primary text-white hover:bg-primary-strong focus-visible:outline-primary " +
     "disabled:bg-neutral-400",
   secondary:
     "border border-neutral-300 bg-white text-neutral-900 hover:bg-neutral-50 " +
-    "focus-visible:outline-neutral-900 disabled:text-neutral-400",
+    "focus-visible:outline-primary disabled:text-neutral-400",
   danger:
     "border border-red-300 bg-white text-red-700 hover:bg-red-50 " +
     "focus-visible:outline-red-700 disabled:text-red-300",

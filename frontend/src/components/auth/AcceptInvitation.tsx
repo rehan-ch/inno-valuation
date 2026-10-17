@@ -111,13 +111,13 @@ export function AcceptInvitation() {
         <div className="flex gap-3">
           <Link
             href={`/sign-in?next=%2Finvitations%2Faccept#token=${encodeURIComponent(token)}`}
-            className="inline-flex items-center justify-center rounded-md bg-neutral-900 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-700"
+            className="inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-strong"
           >
             Sign in
           </Link>
           <Link
             href="/sign-up"
-            className="inline-flex items-center justify-center rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm font-medium text-neutral-900 hover:bg-neutral-50"
+            className="inline-flex items-center justify-center rounded-full border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-900 transition-colors hover:bg-neutral-50"
           >
             Create an account
           </Link>

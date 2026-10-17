@@ -36,6 +36,7 @@ Phase 2 on `phase-2-accounts`
 
 ## PROVISIONAL markers in code
 - Q8: `backend/app/scoring/targets.py` (per dimension, both scales).
+- Q17: `frontend/src/app/globals.css` (ice-blue and emerald palette from the compass mark, pending Amy's approval).
 - Q11: `backend/config/ai.yml` (consultation nudge off until touchpoint 8 is built; Q11 itself is decided).
 - Q18: `backend/app/scoring/_rounding.py` (half up), `vfm.py` (uses the rounded IQ), `categories.py` (category IQ 1 decimal).
 - Q19: `backend/app/scoring/priorities.py` (ties in book order).

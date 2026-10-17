@@ -1,29 +1,57 @@
 @import "tailwindcss";
 
-/* Design tokens. The palette stays brand-neutral until Amy approves the brand:
-   neutral for chrome and text, red for errors and destructive actions, green for
-   success, amber for warnings.
+/* Design tokens. PROVISIONAL Q17: the ice-blue and emerald palette proposed from
+   the compass mark (and the prototype's final stylesheet), pending Amy's approval.
+   Red, green and amber stay reserved for error, success and warning states.
 
-   Type scale: text-2xl page title, text-base card and dialog title, text-sm body
-   and controls, text-xs hints and badges.
+   The neutral scale is cooled towards the brand navy, so every text and border
+   utility picks up the palette without per-component changes.
+
+   Type scale: text-2xl page title, text-base card and dialog title (headings use
+   the serif display face), text-sm body and controls, text-xs hints and badges.
    Spacing: pages are max-w-5xl (max-w-md on auth pages) with a px-4 gutter;
    page sections stack with space-y-6; inside a card, mt-1 under the title and
    mt-3 or mt-4 between blocks. */
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: hsl(196 60% 97%);
+  --foreground: hsl(212 45% 12%);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans:
-    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-display), Georgia, serif;
+
+  /* Brand */
+  --color-primary: hsl(207 85% 44%);
+  --color-primary-strong: hsl(207 85% 36%);
+  --color-accent: hsl(159 80% 38%);
+
+  /* Ink: Tailwind's neutral scale, tinted to the compass navy */
+  --color-neutral-50: hsl(196 50% 96%);
+  --color-neutral-100: hsl(196 45% 93%);
+  --color-neutral-200: hsl(200 42% 88%);
+  --color-neutral-300: hsl(202 32% 80%);
+  --color-neutral-400: hsl(206 20% 60%);
+  --color-neutral-500: hsl(208 16% 48%);
+  --color-neutral-600: hsl(209 20% 38%);
+  --color-neutral-700: hsl(210 26% 28%);
+  --color-neutral-800: hsl(211 35% 19%);
+  --color-neutral-900: hsl(212 45% 12%);
+  --color-neutral-950: hsl(213 50% 8%);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+}
+
+/* The display face for headings, as in the approved mark's styling. */
+h1,
+h2,
+h3 {
+  font-family: var(--font-serif);
 }

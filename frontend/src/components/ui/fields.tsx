@@ -4,14 +4,12 @@ import { useId } from "react";
 import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes } from "react";
 
 const INPUT =
-  "block w-full rounded-md border px-3 py-2 text-sm text-neutral-900 " +
+  "block w-full rounded-lg border bg-white px-3 py-2 text-sm text-neutral-900 " +
   "focus:outline-2 focus:-outline-offset-1 disabled:bg-neutral-100 disabled:text-neutral-500";
 
 function inputClass(error: boolean): string {
   return `${INPUT} ${
-    error
-      ? "border-red-400 focus:outline-red-700"
-      : "border-neutral-300 focus:outline-neutral-900"
+    error ? "border-red-400 focus:outline-red-700" : "border-neutral-300 focus:outline-accent"
   }`;
 }
 
