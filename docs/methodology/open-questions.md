@@ -157,7 +157,7 @@ How to use this file:
 - Status: OPEN
 - Why it matters: Qnr 11.4 was left blank; the prototype changed palette twice. The compass logo exists.
 - Options: Amy supplies brand guide; we propose one from the compass mark for approval.
-- Provisional default: InnoValuation wordmark + compass mark, neutral palette until approved.
+- Provisional default: InnoValuation wordmark + compass mark, with the ice-blue and emerald palette and serif display headings proposed from the compass mark (the prototype's final stylesheet), until approved.
 - Affects: design tokens, PDF header, emails.
 - Decision:
 - Decided by / on:

@@ -1,10 +1,8 @@
 # Progress
 
 ## Phase and branch
-- Phase 0 (Skeleton) complete on `phase-0-skeleton`, including the git hooks.
-- Phase 1 (Scoring engine) complete on `phase-1-scoring-engine`, branched from `phase-0-skeleton`.
-- Neither is merged to `main` yet: waiting for Ninja's review. Merging `phase-1-scoring-engine` brings in both. No git remote, so nothing is pushed.
-- Next: Phase 2 (Accounts, organisations and roles) on `phase-2-accounts`.
+- Phases 0 and 1 are merged to `main`.
+- Phase 2 (Accounts, organisations and roles) is in progress on `phase-2-accounts`.
 
 ## Done
 Phase 0
@@ -24,7 +22,13 @@ Phase 1
 - Engine follow-up (next commit): weights never change the IQ (Q2). `score_iq` has no weights; weight validation moved to `app/scoring/weights.py` (`validate_weights`, read-only snapshot); priorities take optional weights as a tie-break after score and before book order (Q23). 621 engine tests. Gate: methodology-guardian 0 BLOCK, 0 WARN; code-reviewer "Ready to merge: yes".
 
 ## In progress
-- Nothing. Next step: Phase 2, starting with the `organisations`, `users` and `memberships` tables and the auth dependencies.
+Phase 2 on `phase-2-accounts`
+- Done: accounts tables and migrations (`0002` to `0005`); email and password sign-up, verification, sign-in, reset and change password; sessions, CSRF, sign-in throttling; roles and permissions; company separation; creating an organisation; team (members, roles, removal, owner rules); invitations (invite, list, cancel, preview, accept); consultant access (grant with end date, change, revoke, accept, switcher).
+- Done (screens): shared UI components (`frontend/src/components/ui/`), API client with the CSRF header and typed wrappers per backend router (`frontend/src/lib/api/`), and the pages: sign-up, sign-in, verify email (including choose-a-password links), forgot and reset password, invitation accept, the signed-in shell with the organisation switcher, team (invite, cancel, change role, remove), consultant access (client admin side and the consultant's own page), account, create organisation, and organisation settings (profile and currency). Email-link tokens travel in the URL fragment and the sign-in redirect preserves it. 61 frontend tests; the whole flow (sign-up to consultant grant) exercised by hand against the live API.
+- Done (design system, P2.08): design tokens and the documented type and spacing scale in `globals.css`; Table, Modal, Drawer and EmptyState components; a spinner in Loading; skip-to-content link, `aria-current` navigation and `id="main"` landmarks.
+- Day 4 review of the screens applied: open-redirect guard on `?next=`, strict-mode-safe reset-password token read, Modal padding clicks, UTC date rendering, functional list state updates, a re-entry guard in `useSubmit`, sign-out failure handling, and client-side guards on the consultant end-date fields.
+- Google sign-in: dropped from the MVP (Haroon's call on the P2.02 card); the backend user model keeps the sign-in-method column, so it can be added later without a migration.
+- Next: merge to main and give Amy the Phase 2 demo (sign in, invite a team).
 
 ## Decided by Amy (2026-10-08)
 - Q1 AI proposes IQ scores, the owner confirms or changes them. Q2 weights never change the IQ, only the priority order. Q5 a facilitator sets the agreed answer. Q7 cost is the planned or known investment; procurement VfM is total purchase value / IQ. Q9 category scores. Q11 the AI judges when to suggest a consultation (built with touchpoint 8, Phase 6). Q12 the client admin invites the consultant, with an end date. Q16 the Version 1 feature list. Q20 follows from Q2.
@@ -32,6 +36,7 @@ Phase 1
 
 ## PROVISIONAL markers in code
 - Q8: `backend/app/scoring/targets.py` (per dimension, both scales).
+- Q17: `frontend/src/app/globals.css` (ice-blue and emerald palette from the compass mark, pending Amy's approval).
 - Q11: `backend/config/ai.yml` (consultation nudge off until touchpoint 8 is built; Q11 itself is decided).
 - Q18: `backend/app/scoring/_rounding.py` (half up), `vfm.py` (uses the rounded IQ), `categories.py` (category IQ 1 decimal).
 - Q19: `backend/app/scoring/priorities.py` (ties in book order).
@@ -45,7 +50,6 @@ Phase 1
 
 ## Known gaps
 - `.env.example` has `EMAIL_FROM=InnoValuation <no-reply@example.com>` unquoted. Harmless now (nothing shell-sources `.env`), but it should be quoted. Agents cannot edit `.env.*` (project permission rule), so a human must change it.
-- Frontend API types are hand-written; switch to generated types in Phase 2 (see `docs/decisions.md`).
 - CI workflow is written but has never run (no remote).
 - `npm audit`: 5 high findings in dev-only lint dependencies (eslint-config-next). Production dependencies have none; the pre-push and CI audits check production only.
 - Starlette prints a deprecation warning about `httpx` in the TestClient. Harmless.

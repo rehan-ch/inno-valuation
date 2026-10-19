@@ -1,0 +1,8 @@
+{% extends "_layout.html" %}
+{% block content %}
+<p style="margin:0 0 16px;">Hello,</p>
+<p style="margin:0 0 16px;">{{ inviter }} has invited you to join {{ organisation }} on {{ product }} as {{ role }}.</p>
+{% with label = "Accept the invitation" %}{% include "_button.html" %}{% endwith %}
+<p style="margin:0 0 16px;">Sign in, or create an account, with this email address. The link works once and expires in {{ expires_in }}.</p>
+<p style="margin:0;">If you were not expecting this, you can ignore this email.</p>
+{% endblock %}

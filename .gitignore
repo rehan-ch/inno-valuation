@@ -18,9 +18,11 @@ docs/*.docx
 .env.*
 !.env.example
 
-# Claude Code local state
-.claude/settings.local.json
-.claude/.spec-edit-unlocked
+# Claude Code configuration (agents, skills, hooks, workflows, memory), kept local
+.claude/
+CLAUDE.md
+**/CLAUDE.md
+**/AGENTS.md
 
 # Python
 __pycache__/

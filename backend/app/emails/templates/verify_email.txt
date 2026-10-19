@@ -1,0 +1,12 @@
+Hello,
+
+Please confirm your email address to finish setting up your {{ product }} account.
+
+Open this link to confirm:
+{{ link }}
+
+The link works once and expires in {{ expires_in }}.
+
+If you did not sign up, you can ignore this email.
+
+{{ product }}

@@ -9,49 +9,28 @@ import os
 
 os.environ["ENVIRONMENT"] = "test"
 
-import uuid
 from collections.abc import Iterator
-from pathlib import Path
+from contextlib import contextmanager
 
 import pytest
 from alembic import command
-from alembic.config import Config
 from fastapi.testclient import TestClient
-from sqlalchemy import Engine, create_engine, text
-from sqlalchemy.engine import make_url
+from sqlalchemy import Engine, create_engine
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_db
-from app.core.settings import get_settings
+from app.emails.backends import MemoryEmailBackend, override_email_backend
+from app.jobs.db import override_task_session
 from tests import factories
-
-BACKEND_DIR = Path(__file__).resolve().parents[1]
+from tests.database import alembic_config, throwaway_database
 
 
 @pytest.fixture(scope="session")
 def database_url() -> Iterator[str]:
     """Create a throwaway database on TEST_DATABASE_URL's server, migrate it, drop it after."""
-    base_url = make_url(get_settings().test_database_url)
-    name = f"innovaluation_test_{uuid.uuid4().hex[:12]}"
-    admin = create_engine(
-        base_url.set(database="postgres"), isolation_level="AUTOCOMMIT", pool_pre_ping=True
-    )
-    try:
-        with admin.connect() as conn:
-            conn.execute(text(f'CREATE DATABASE "{name}"'))
-        url = base_url.set(database=name).render_as_string(hide_password=False)
-        try:
-            cfg = Config(str(BACKEND_DIR / "alembic.ini"))
-            cfg.set_main_option("script_location", str(BACKEND_DIR / "alembic"))
-            cfg.attributes["database_url"] = url
-            cfg.attributes["configure_logger"] = False
-            command.upgrade(cfg, "head")
-            yield url
-        finally:
-            with admin.connect() as conn:
-                conn.execute(text(f'DROP DATABASE IF EXISTS "{name}" WITH (FORCE)'))
-    finally:
-        admin.dispose()
+    with throwaway_database() as url:
+        command.upgrade(alembic_config(url), "head")
+        yield url
 
 
 @pytest.fixture(scope="session")
@@ -65,15 +44,23 @@ def db_engine(database_url: str) -> Iterator[Engine]:
 def db(db_engine: Engine) -> Iterator[Session]:
     """A session inside an outer transaction that is rolled back after the test.
 
-    Service code may call ``commit()``; it only releases a savepoint.
+    Service code may call ``commit()``; it only releases a savepoint. Celery tasks (eager in
+    tests) use this same session, so they see the rows the request just wrote.
     """
     connection = db_engine.connect()
     transaction = connection.begin()
     session = Session(bind=connection, join_transaction_mode="create_savepoint")
     factories.bind_session(session)
+
+    @contextmanager
+    def _task_session() -> Iterator[Session]:
+        yield session  # not closed here: the test owns it
+
+    override_task_session(_task_session)
     try:
         yield session
     finally:
+        override_task_session(None)
         factories.bind_session(None)
         session.close()
         transaction.rollback()
@@ -81,7 +68,18 @@ def db(db_engine: Engine) -> Iterator[Session]:
 
 
 @pytest.fixture
-def client(db: Session) -> Iterator[TestClient]:
+def outbox() -> Iterator[MemoryEmailBackend]:
+    """Emails sent during the test (Celery runs eagerly, so they arrive at once)."""
+    backend = MemoryEmailBackend()
+    override_email_backend(backend)
+    try:
+        yield backend
+    finally:
+        override_email_backend(None)
+
+
+@pytest.fixture
+def client(db: Session, outbox: MemoryEmailBackend) -> Iterator[TestClient]:
     # Imported late on purpose: ENVIRONMENT=test must be set before the app loads.
     from app.main import app  # noqa: PLC0415
 

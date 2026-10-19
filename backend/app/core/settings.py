@@ -8,8 +8,9 @@ tests run without any .env file.
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal
+from urllib.parse import urlsplit
 
-from pydantic import model_validator
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BACKEND_DIR = Path(__file__).resolve().parents[2]
@@ -17,9 +18,14 @@ REPO_ROOT = BACKEND_DIR.parent
 
 Environment = Literal["development", "test", "staging", "production"]
 
+# Environments that serve real users over HTTPS: secure cookies, real email, strong secret.
+DEPLOYED_ENVIRONMENTS = frozenset({"staging", "production"})
+
 # Placeholder, not a secret: the validator refuses it outside development and test.
 DEFAULT_SECRET_KEY = "change-me-in-production"  # noqa: S105
 MIN_SECRET_KEY_LENGTH = 32
+
+LOCAL_HOSTS = frozenset({"localhost", "127.0.0.1", "::1", "0.0.0.0"})  # noqa: S104
 
 
 class Settings(BaseSettings):
@@ -54,9 +60,15 @@ class Settings(BaseSettings):
     resend_api_key: str = ""
     email_from: str = "InnoValuation <noreply@localhost>"
 
+    # Sessions. A session lasts a fixed time from sign-in; switching organisation keeps
+    # the original end time.
+    session_lifetime_days: int = Field(default=7, ge=1, le=30)
+    # The version of the terms of use a new account accepts. Change it when the terms change.
+    terms_version: str = "2026-10-13"
+
     @model_validator(mode="after")
     def _check_secret_key(self) -> "Settings":
-        if self.environment in ("staging", "production") and (
+        if self.is_deployed and (
             self.secret_key == DEFAULT_SECRET_KEY or len(self.secret_key) < MIN_SECRET_KEY_LENGTH
         ):
             raise ValueError(
@@ -66,9 +78,40 @@ class Settings(BaseSettings):
             )
         return self
 
+    @model_validator(mode="after")
+    def _check_frontend_origin(self) -> "Settings":
+        """Deployed sites need an https frontend origin that is not this machine.
+
+        The origin is the only browser origin allowed to make unsafe requests, and email
+        links point at it, so a local or plain-http value there would be a security hole.
+        """
+        if not self.is_deployed:
+            return self
+        url = urlsplit(self.frontend_origin)
+        host = (url.hostname or "").lower()
+        if (
+            url.scheme != "https"
+            or not host
+            or host in LOCAL_HOSTS
+            or host.endswith(".localhost")
+            or url.path not in ("", "/")
+            or url.query
+            or url.fragment
+        ):
+            raise ValueError(
+                f"FRONTEND_ORIGIN must be an https origin that is not localhost in "
+                f"{self.environment}, for example https://app.example.com."
+            )
+        return self
+
     @property
     def is_test(self) -> bool:
         return self.environment == "test"
+
+    @property
+    def is_deployed(self) -> bool:
+        """Staging or production: real users, HTTPS, real email."""
+        return self.environment in DEPLOYED_ENVIRONMENTS
 
 
 @lru_cache

@@ -1,9 +1,28 @@
 """SQLAlchemy models, one module per table group.
 
 Import every model module here so ``Base.metadata`` is complete for Alembic.
-No models yet (Phase 0).
 """
 
 from app.db.base import Base
+from app.models.accounts import (
+    ConsultantGrant,
+    Invitation,
+    Membership,
+    Organisation,
+    User,
+    UserToken,
+)
+from app.models.audit import AuditEvent
+from app.models.auth import SignInThrottle
 
-__all__ = ["Base"]
+__all__ = [
+    "AuditEvent",
+    "Base",
+    "ConsultantGrant",
+    "Invitation",
+    "Membership",
+    "Organisation",
+    "SignInThrottle",
+    "User",
+    "UserToken",
+]

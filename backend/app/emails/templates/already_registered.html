@@ -1,0 +1,8 @@
+{% extends "_layout.html" %}
+{% block content %}
+<p style="margin:0 0 16px;">Hello,</p>
+<p style="margin:0 0 16px;">Someone tried to create a {{ product }} account with this email address. You already have an account, so nothing has changed.</p>
+{% with label = "Sign in" %}{% include "_button.html" %}{% endwith %}
+<p style="margin:0 0 16px;">Forgot your password? You can <a href="{{ forgot_link }}" style="color:#1f4fd1;">reset it here</a>.</p>
+<p style="margin:0;">If this was not you, you can ignore this email.</p>
+{% endblock %}

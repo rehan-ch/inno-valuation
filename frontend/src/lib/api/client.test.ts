@@ -61,4 +61,19 @@ describe("apiFetch", () => {
 
     await expect(apiFetch("/x")).rejects.toMatchObject({ code: "network_error", status: 0 });
   });
+
+  it("echoes the CSRF cookie in the X-CSRF-Token header on unsafe requests", async () => {
+    document.cookie = "csrf_token=abc123";
+    const fetchMock = vi.fn().mockImplementation(async () => jsonResponse({ message: "ok" }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await apiFetch("/auth/sign-out", { method: "POST" });
+    await apiFetch("/me", { method: "GET" });
+
+    const postHeaders = new Headers((fetchMock.mock.calls[0] as [string, RequestInit])[1].headers);
+    expect(postHeaders.get("X-CSRF-Token")).toBe("abc123");
+    const getHeaders = new Headers((fetchMock.mock.calls[1] as [string, RequestInit])[1].headers);
+    expect(getHeaders.get("X-CSRF-Token")).toBeNull();
+    document.cookie = "csrf_token=; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+  });
 });
