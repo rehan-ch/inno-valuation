@@ -380,7 +380,7 @@ function MembersCard({
                   </SelectField>
                   <ConfirmButton
                     label="Remove"
-                    confirmLabel="Remove member?"
+                    confirmLabel={`Remove ${roleLabel(member.role).toLowerCase()}?`}
                     busy={busy && busyId === member.id}
                     onConfirm={() => void handleRemove(member)}
                   />

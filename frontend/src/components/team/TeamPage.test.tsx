@@ -103,6 +103,30 @@ describe("TeamPage", () => {
     expect(screen.queryByText("Mia Member")).not.toBeInTheDocument();
   });
 
+  it("names the person's role when confirming a removal", async () => {
+    stubApi({
+      "GET /api/v1/organisation": fakeOrganisation(),
+      "GET /api/v1/organisation/members": [
+        fakeMember(),
+        fakeMember({ id: "o2", user_id: "u2", name: "Otto Owner", role: "owner" }),
+        fakeMember({ id: "c1", user_id: "u3", name: "Cleo Committee", role: "committee" }),
+      ],
+      "GET /api/v1/organisation/invitations": [],
+    });
+    const user = userEvent.setup();
+
+    renderWithMe(<TeamPage />, fakeMe());
+    const owner = (await screen.findByText("Otto Owner")).closest("li") as HTMLElement;
+    await user.click(within(owner).getByRole("button", { name: "Remove" }));
+    expect(within(owner).getByRole("button", { name: "Remove owner?" })).toBeInTheDocument();
+
+    const committee = screen.getByText("Cleo Committee").closest("li") as HTMLElement;
+    await user.click(within(committee).getByRole("button", { name: "Remove" }));
+    expect(
+      within(committee).getByRole("button", { name: "Remove committee member?" }),
+    ).toBeInTheDocument();
+  });
+
   it("shows a member the team without any management controls", async () => {
     stubApi({
       "GET /api/v1/organisation": fakeOrganisation({ role: "member" }),
