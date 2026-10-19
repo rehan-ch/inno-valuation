@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardTitle, PageHeader } from "@/components/ui/Card";
 import { TextField } from "@/components/ui/fields";
 import { changePassword, updateName } from "@/lib/api/me";
-import { useSubmit } from "@/lib/forms";
+import { newPasswordError, useSubmit } from "@/lib/forms";
 
 export function AccountPage() {
   return (
@@ -64,11 +64,17 @@ function PasswordCard() {
   const { busy, error, run } = useSubmit();
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
+  const [nextError, setNextError] = useState<string | undefined>(undefined);
   const [doneMessage, setDoneMessage] = useState<string | null>(null);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setDoneMessage(null);
+    const invalid = newPasswordError(next);
+    if (invalid) {
+      setNextError(invalid);
+      return;
+    }
     const result = await run(() => changePassword(current, next));
     if (result) {
       setDoneMessage(result.message);
@@ -101,10 +107,15 @@ function PasswordCard() {
           name="new_password"
           autoComplete="new-password"
           required
-          minLength={10}
-          hint="At least 10 characters; a few random words make a strong one."
+          minLength={8}
+          error={nextError}
           value={next}
-          onChange={(e) => setNext(e.target.value)}
+          onChange={(e) => {
+            const value = e.target.value;
+            setNext(value);
+            // Once shown, the length message stays until the password reaches 8.
+            setNextError((prev) => (prev ? newPasswordError(value) : undefined));
+          }}
         />
         <Button type="submit" busy={busy}>
           Change password

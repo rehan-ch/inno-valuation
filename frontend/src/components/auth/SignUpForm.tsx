@@ -92,13 +92,16 @@ export function SignUpForm() {
         name="password"
         autoComplete="new-password"
         required
-        minLength={10}
-        hint="At least 10 characters; a few random words make a strong one."
+        minLength={8}
         error={fieldErrors.password}
         value={password}
         onChange={(e) => {
-          setPassword(e.target.value);
-          setFieldErrors((prev) => ({ ...prev, password: undefined }));
+          const next = e.target.value;
+          setPassword(next);
+          // Once shown, the length message stays until the password reaches 8.
+          setFieldErrors((prev) =>
+            prev.password ? { ...prev, password: newPasswordError(next) } : prev,
+          );
         }}
       />
       <CheckboxField

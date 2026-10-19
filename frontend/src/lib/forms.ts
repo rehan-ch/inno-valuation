@@ -9,7 +9,7 @@ import { ApiError } from "@/lib/api/client";
 // The shapes mirror backend/app/schemas/common.py.
 
 const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-export const PASSWORD_MIN_LENGTH = 10;
+export const PASSWORD_MIN_LENGTH = 8;
 
 export function emailError(email: string): string | undefined {
   if (!email.trim()) return "Enter an email address.";
@@ -17,8 +17,9 @@ export function emailError(email: string): string | undefined {
   return undefined;
 }
 
+/** Shown only while the password is under the minimum, never as a standing hint. */
 export function newPasswordError(password: string): string | undefined {
-  if (password.length < PASSWORD_MIN_LENGTH) return "Use at least 10 characters.";
+  if (password.length < PASSWORD_MIN_LENGTH) return "Use at least 8 characters.";
   return undefined;
 }
 

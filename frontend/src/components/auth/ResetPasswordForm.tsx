@@ -82,13 +82,14 @@ export function ResetPasswordForm() {
         name="new_password"
         autoComplete="new-password"
         required
-        minLength={10}
-        hint="At least 10 characters; a few random words make a strong one."
+        minLength={8}
         error={fieldError}
         value={password}
         onChange={(e) => {
-          setPassword(e.target.value);
-          setFieldError(undefined);
+          const next = e.target.value;
+          setPassword(next);
+          // Once shown, the length message stays until the password reaches 8.
+          setFieldError((prev) => (prev ? newPasswordError(next) : undefined));
         }}
       />
       <Button type="submit" busy={busy} className="w-full">

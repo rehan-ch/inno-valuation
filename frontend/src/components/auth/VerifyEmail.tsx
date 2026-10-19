@@ -11,7 +11,7 @@ import { resendVerification, verifyEmail } from "@/lib/api/auth";
 import { ApiError } from "@/lib/api/client";
 import { Loading } from "@/components/ui/Loading";
 import { clearHash, readHashToken } from "@/lib/hash-token";
-import { useSubmit } from "@/lib/forms";
+import { newPasswordError, useSubmit } from "@/lib/forms";
 
 type State =
   | { kind: "checking" }
@@ -24,6 +24,7 @@ export function VerifyEmail() {
   const [state, setState] = useState<State>({ kind: "checking" });
   const { busy, error, run } = useSubmit();
   const [password, setPassword] = useState("");
+  const [passwordError, setPasswordError] = useState<string | undefined>(undefined);
   const [email, setEmail] = useState("");
   const [resent, setResent] = useState(false);
   const started = useRef(false);
@@ -54,6 +55,11 @@ export function VerifyEmail() {
 
   async function submitPassword(event: FormEvent, token: string) {
     event.preventDefault();
+    const invalid = newPasswordError(password);
+    if (invalid) {
+      setPasswordError(invalid);
+      return;
+    }
     const result = await run(() => verifyEmail({ token, password }));
     if (result) setState({ kind: "done", message: result.message });
   }
@@ -96,10 +102,15 @@ export function VerifyEmail() {
           name="password"
           autoComplete="new-password"
           required
-          minLength={10}
-          hint="At least 10 characters; a few random words make a strong one."
+          minLength={8}
+          error={passwordError}
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={(e) => {
+            const next = e.target.value;
+            setPassword(next);
+            // Once shown, the length message stays until the password reaches 8.
+            setPasswordError((prev) => (prev ? newPasswordError(next) : undefined));
+          }}
         />
         <Button type="submit" busy={busy} className="w-full">
           Confirm email
