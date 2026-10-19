@@ -3,17 +3,27 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
     <title>{{ product }}</title>
   </head>
-  <body style="margin:0;padding:24px;background:#f6f7f9;font-family:Arial,Helvetica,sans-serif;color:#1f2933;">
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+  <body style="margin:0;padding:0;background:#f2f8fa;font-family:'Plus Jakarta Sans',Arial,Helvetica,sans-serif;color:#11202c;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f2f8fa;">
       <tr>
-        <td align="center">
-          <table role="presentation" width="560" cellspacing="0" cellpadding="0" style="max-width:560px;background:#ffffff;border-radius:8px;padding:32px;">
+        <td align="center" style="padding:32px 16px;">
+          <table role="presentation" width="560" cellspacing="0" cellpadding="0" style="max-width:560px;width:100%;">
             <tr>
-              <td style="font-size:16px;line-height:24px;">
+              <td style="padding:0 4px 16px;font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:bold;color:#1272d1;letter-spacing:-0.3px;">
+                {{ product }}
+              </td>
+            </tr>
+            <tr>
+              <td style="background:#ffffff;border:1px solid #d5e3ea;border-top:3px solid #0fa776;border-radius:14px;padding:32px;font-size:16px;line-height:24px;">
                 {% block content %}{% endblock %}
-                <p style="margin:32px 0 0;color:#616e7c;font-size:14px;">{{ product }}</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:16px 4px 0;font-size:12px;line-height:18px;color:#6b7c87;">
+                {{ product }}, the innovation diagnostic built on the 12 Dimensions of Innovation.
               </td>
             </tr>
           </table>

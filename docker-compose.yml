@@ -26,5 +26,18 @@ services:
       timeout: 3s
       retries: 10
 
+  # Local mail catcher: development emails are delivered here instead of being sent.
+  # Web UI on http://localhost:8025, SMTP on localhost:1026.
+  mailpit:
+    image: axllent/mailpit:v1.21
+    ports:
+      - "127.0.0.1:8025:8025"
+      - "127.0.0.1:1026:1025"
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
 volumes:
   pgdata:

@@ -1,9 +1,10 @@
 """Email delivery backends.
 
 - ``ResendEmailBackend`` when ``RESEND_API_KEY`` is set.
-- ``LogEmailBackend`` otherwise, only in development and test: it writes the recipient,
-  subject and link to the application log at INFO. The link holds a live token, which is
-  acceptable only on a developer's machine.
+- ``DevSmtpEmailBackend`` in development without a key: logs the line, then delivers
+  the email to the local mail catcher (Mailpit, web UI on http://localhost:8025). The
+  link holds a live token, which is acceptable only on a developer's machine.
+- ``LogEmailBackend`` in test without a key: the log line only.
 - In staging or production without a key, ``get_email_backend`` raises
   ``EmailNotConfiguredError``, so the send task fails loudly instead of dropping the email.
 
@@ -11,6 +12,9 @@ Tests swap in ``MemoryEmailBackend`` with ``override_email_backend``.
 """
 
 import logging
+import smtplib
+from email.message import EmailMessage as MimeMessage
+from email.utils import make_msgid
 from typing import Protocol
 
 import resend
@@ -39,6 +43,44 @@ class LogEmailBackend:
             message.subject,
             message.link,
         )
+
+
+def mime_message(message: EmailMessage, sender: str) -> MimeMessage:
+    """The email as a multipart message: plain text first, HTML as the alternative."""
+    mime = MimeMessage()
+    mime["From"] = sender
+    mime["To"] = message.to
+    mime["Subject"] = message.subject
+    mime["Message-ID"] = make_msgid(domain="innovaluation.local")
+    mime.set_content(message.text)
+    mime.add_alternative(message.html, subtype="html")
+    return mime
+
+
+class DevSmtpEmailBackend(LogEmailBackend):
+    """The log line, then delivery to the local mail catcher, for development.
+
+    A catcher that is not running only costs a warning: the log line already holds the
+    link, so a developer is never stuck.
+    """
+
+    def __init__(self, host: str, port: int, sender: str) -> None:
+        self._host = host
+        self._port = port
+        self._sender = sender
+
+    def send(self, message: EmailMessage, *, idempotency_key: str) -> None:
+        super().send(message, idempotency_key=idempotency_key)
+        try:
+            with smtplib.SMTP(self._host, self._port, timeout=5) as smtp:
+                smtp.send_message(mime_message(message, self._sender))
+        except OSError:
+            logger.warning(
+                "The local mail catcher is not reachable on %s:%s, so this email is only "
+                "in the log line above. Start it with: docker compose up -d mailpit",
+                self._host,
+                self._port,
+            )
 
 
 class ResendEmailBackend:
@@ -87,5 +129,9 @@ def get_email_backend() -> EmailBackend:
     if settings.is_deployed:
         raise EmailNotConfiguredError(
             f"RESEND_API_KEY is not set in {settings.environment}; emails cannot be sent."
+        )
+    if settings.environment == "development":
+        return DevSmtpEmailBackend(
+            settings.dev_smtp_host, settings.dev_smtp_port, settings.email_from
         )
     return LogEmailBackend()

@@ -59,6 +59,10 @@ class Settings(BaseSettings):
     google_client_secret: str = ""
     resend_api_key: str = ""
     email_from: str = "InnoValuation <noreply@localhost>"
+    # The local mail catcher (Mailpit, from docker-compose) that development emails are
+    # delivered to when there is no Resend key. Never used deployed.
+    dev_smtp_host: str = "localhost"
+    dev_smtp_port: int = 1026
 
     # Sessions. A session lasts a fixed time from sign-in; switching organisation keeps
     # the original end time.

@@ -13,7 +13,13 @@ bin/dev          # API on :8000, Celery worker, Next.js on :3000
 
 Then open http://localhost:3000/health (the page calls `GET /api/v1/health`).
 
-Services from `docker-compose.yml`: Postgres on `localhost:5440`, Redis on `localhost:6390`.
+Services from `docker-compose.yml`: Postgres on `localhost:5440`, Redis on `localhost:6390`, and Mailpit (the local mail catcher) with its inbox at http://localhost:8025.
+
+## Emails in development
+
+Without `RESEND_API_KEY`, development never sends real email. Every email (sign-up confirmation, password reset, team invitation, consultant access) is delivered to Mailpit instead: open http://localhost:8025 to read it and click its link. The link is also printed in the worker log, so nothing is lost if Mailpit is stopped. Tests use an in-memory outbox and never touch Mailpit.
+
+Templates live in `backend/app/emails/templates/`: each email has an HTML version (extending `_layout.html`, with the call to action in `_button.html`) and a plain-text version. Keep the HTML to tables and inline styles, because most email clients ignore stylesheets and strip CSS gradients. Mailpit's HTML Check tab scores how well an email works across clients.
 
 ## Git hooks
 

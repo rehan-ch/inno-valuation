@@ -36,5 +36,5 @@ trap 'trap - EXIT INT TERM; kill 0 2>/dev/null' EXIT INT TERM
 (cd backend && uv run celery -A app.jobs.celery_app worker --loglevel=info) &
 (cd frontend && npm run dev) &
 
-echo "API http://localhost:8000/api/v1/health  |  Web http://localhost:3000/health"
+echo "API http://localhost:8000/api/v1/health  |  Web http://localhost:3000  |  Mail http://localhost:8025"
 wait -n

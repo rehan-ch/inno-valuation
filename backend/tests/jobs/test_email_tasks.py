@@ -3,7 +3,7 @@
 import logging
 import uuid
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from typing import Any, ClassVar
 
 import pytest
 import resend
@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from app.core.security import invitation_token_value, user_token_value
 from app.core.settings import get_settings
 from app.emails.backends import (
+    DevSmtpEmailBackend,
     EmailNotConfiguredError,
     LogEmailBackend,
     MemoryEmailBackend,
@@ -200,6 +201,75 @@ def test_resend_backend_when_key_is_set(monkeypatch: pytest.MonkeyPatch, db: Ses
     assert params["html"]
     assert params["text"]
     assert options == {"idempotency_key": f"verify_email:{token_id}"}
+
+
+class _FakeSmtp:
+    """Stands in for smtplib.SMTP and records what would have reached the mail catcher."""
+
+    delivered: ClassVar[list[Any]] = []
+
+    def __init__(self, host: str, port: int, timeout: float) -> None:
+        self.address = (host, port)
+
+    def __enter__(self) -> "_FakeSmtp":
+        return self
+
+    def __exit__(self, *exc: object) -> None:
+        return None
+
+    def send_message(self, mime: Any) -> None:
+        _FakeSmtp.delivered.append((self.address, mime))
+
+
+@pytest.mark.usefixtures("no_override")
+def test_development_delivers_to_the_local_mail_catcher(
+    monkeypatch: pytest.MonkeyPatch, db: Session
+) -> None:
+    monkeypatch.setattr(get_settings(), "resend_api_key", "")
+    monkeypatch.setattr(get_settings(), "environment", "development")
+    monkeypatch.setattr("smtplib.SMTP", _FakeSmtp)
+    _FakeSmtp.delivered = []
+    assert isinstance(get_email_backend(), DevSmtpEmailBackend)
+
+    user_id, token_id = _verify_token(db, email="dev@example.com")
+    send_account_email.delay("verify_email", user_id, token_id).get()
+
+    [(address, mime)] = _FakeSmtp.delivered
+    assert address == (get_settings().dev_smtp_host, get_settings().dev_smtp_port)
+    assert mime["To"] == "dev@example.com"
+    assert mime["Subject"].startswith("Confirm your email")
+    parts = {part.get_content_type(): part.get_content() for part in mime.iter_parts()}
+    assert set(parts) == {"text/plain", "text/html"}
+    assert "/verify-email#token=" in parts["text/plain"]
+    assert "/verify-email#token=" in parts["text/html"]
+
+
+@pytest.mark.usefixtures("no_override")
+def test_a_stopped_mail_catcher_only_warns(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    from app.emails.messages import render_already_registered  # noqa: PLC0415
+
+    def refuse(*args: object, **kwargs: object) -> None:
+        raise ConnectionRefusedError
+
+    monkeypatch.setattr("smtplib.SMTP", refuse)
+    message = render_already_registered(to="a@example.com", origin="http://localhost:3000")
+    with caplog.at_level(logging.INFO, logger="app.emails.backends"):
+        DevSmtpEmailBackend("localhost", 1026, "x@localhost").send(message, idempotency_key="k")
+
+    levels = [r.levelname for r in caplog.records if r.name == "app.emails.backends"]
+    assert levels == ["INFO", "WARNING"]  # the link is still in the log line
+
+
+@pytest.mark.usefixtures("no_override")
+def test_dev_smtp_backend_refuses_to_run_when_deployed(monkeypatch: pytest.MonkeyPatch) -> None:
+    from app.emails.messages import render_already_registered  # noqa: PLC0415
+
+    monkeypatch.setattr(get_settings(), "environment", "production")
+    message = render_already_registered(to="a@example.com", origin="https://app.example.com")
+    with pytest.raises(EmailNotConfiguredError):
+        DevSmtpEmailBackend("localhost", 1026, "x@localhost").send(message, idempotency_key="k")
 
 
 # Team emails
