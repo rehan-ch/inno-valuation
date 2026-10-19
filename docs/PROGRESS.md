@@ -3,7 +3,12 @@
 ## Phase and branch
 - Phases 0 to 2 are merged to `main` (Phase 2 through PR 1).
 - One Phase 2 follow-up rode after the merge and is on `password-minimum-8` (PR 2): the password minimum is 8 with the regenerated API contract.
-- Phase 3 (Readiness questions) is next.
+- Phase 3 (Readiness questions) is in progress on `phase-3-readiness`.
+
+## In progress
+Phase 3 on `phase-3-readiness`
+- Done: readiness tables and reversible migration `0006_readiness` (P3.01): assessments, per-person responses, consensus with per-question notes, results; answers checked 1 to 5 in the database (strict jsonpath); assessment permissions added to the matrix (`assessments.view` for every role including consultants, `assessments.answer` for owner/admin/member/committee, `assessments.manage` for owner/admin).
+- Next: assessment services and API (start, answer with autosave, submit), then the questionnaire screens (P3.02).
 
 ## Done
 Phase 0

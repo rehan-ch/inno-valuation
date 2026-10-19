@@ -39,10 +39,16 @@ class Permission(StrEnum):
     CHANGE_ROLES = "members.change_role"
     MANAGE_CONSULTANT_ACCESS = "consultants.manage"
     VIEW_TEAM = "team.view"
+    VIEW_ASSESSMENTS = "assessments.view"  # assessments and their results
+    ANSWER_ASSESSMENT = "assessments.answer"  # one's own readiness answers
+    MANAGE_ASSESSMENTS = "assessments.manage"  # start, consensus, finalise (facilitator, Q5)
 
 
 _MANAGE: Final = frozenset(Permission)
-_VIEW: Final = frozenset({Permission.VIEW_ORGANISATION, Permission.VIEW_TEAM})
+_VIEW: Final = frozenset(
+    {Permission.VIEW_ORGANISATION, Permission.VIEW_TEAM, Permission.VIEW_ASSESSMENTS}
+)
+_PARTICIPATE: Final = _VIEW | {Permission.ANSWER_ASSESSMENT}
 
 # What anyone may still do in an archived organisation (view-only until the archive
 # feature exists; see docs/decisions.md 2026-10-13).
@@ -51,10 +57,10 @@ READ_ONLY_PERMISSIONS: Final = _VIEW
 ROLE_PERMISSIONS: Final[dict[OrgRole, frozenset[Permission]]] = {
     OrgRole.OWNER: _MANAGE,
     OrgRole.ADMIN: _MANAGE,
-    OrgRole.MEMBER: _VIEW,
-    OrgRole.COMMITTEE: _VIEW,
+    OrgRole.MEMBER: _PARTICIPATE,
+    OrgRole.COMMITTEE: _PARTICIPATE,
     OrgRole.INVESTOR: _VIEW,
-    OrgRole.CONSULTANT: frozenset({Permission.VIEW_ORGANISATION}),
+    OrgRole.CONSULTANT: frozenset({Permission.VIEW_ORGANISATION, Permission.VIEW_ASSESSMENTS}),
 }
 
 

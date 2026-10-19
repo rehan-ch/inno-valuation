@@ -28,10 +28,12 @@ Rule: routers get the organisation from the `current_org` dependency (resolved f
 - `docs/methodology/dimensions.yml` is loaded once by `app.scoring.question_set` into a `QuestionSet` with `version`. Assessments store `question_set_version`. Changing wording bumps the version; old assessments keep theirs.
 
 ## Readiness (organisation)
-- `ReadinessAssessment`: organisation, question_set_version, status (`draft`, `collecting`, `consensus`, `final`), weights_snapshot, started_at, finalised_at.
-- `ReadinessResponse`: assessment, user, answers (jsonb `{question_id: 1..5}`), submitted_at. One per respondent.
-- `ReadinessConsensus`: assessment, answers (jsonb), set_by, set_at. Provisional, see Q5.
-- `ReadinessResult`: assessment, per_dimension (jsonb `{key: score}`), category_scores, total, band_key, priorities (jsonb), computed_at. Immutable once the assessment is final (enforced in the service layer and by a test).
+Built in migration `0006_readiness` (`app/models/readiness.py`). Every table carries its own `organisation_id` (indexed), and the database checks every JSONB answer value is a whole number 1 to 5 (strict jsonpath, so arrays and strings fail too). Question ids are checked against the question set in the service layer.
+
+- `ReadinessAssessment`: organisation, question_set_version, status (`draft`, `collecting`, `consensus`, `final`), weights_snapshot, created_by, started_at, finalised_at.
+- `ReadinessResponse`: assessment, user, answers (jsonb `{question_id: 1..5}`), submitted_at. One per respondent; deleted with the participant.
+- `ReadinessConsensus`: assessment, answers (jsonb), notes (jsonb `{question_id: text}`, the facilitator's reasoning), set_by (NULL when that user is deleted). One per assessment. Provisional, see Q5.
+- `ReadinessResult`: assessment, per_dimension (jsonb `{key: score}`), category_scores, total (0..300 checked), band_key, priorities (jsonb), computed_at. One per assessment. Immutable once the assessment is final (enforced in the service layer and by a test).
 
 ## IQ (idea)
 - `Idea`: organisation, title, summary, problem, target_market, uniqueness, team, risks, investment_minor, currency, expected_value_minor, stage, created_by.

@@ -5,7 +5,16 @@ from sqlalchemy import DateTime, PrimaryKeyConstraint, Table, UniqueConstraint
 import app.models  # noqa: F401  (registers every model)
 from app.db.base import Base
 
-CLIENT_TABLES = {"memberships", "invitations", "consultant_grants", "audit_events"}
+CLIENT_TABLES = {
+    "memberships",
+    "invitations",
+    "consultant_grants",
+    "audit_events",
+    "readiness_assessments",
+    "readiness_responses",
+    "readiness_consensus",
+    "readiness_results",
+}
 
 
 def _tables() -> list[Table]:
