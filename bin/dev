@@ -33,7 +33,10 @@ fi
 trap 'trap - EXIT INT TERM; kill 0 2>/dev/null' EXIT INT TERM
 
 (cd backend && uv run uvicorn app.main:app --reload --port 8000) &
-(cd backend && uv run celery -A app.jobs.celery_app worker --loglevel=info) &
+# Celery has no reload of its own, so watchfiles restarts the worker when backend Python
+# code changes, the way uvicorn --reload does for the API.
+(cd backend && uv run watchfiles --filter python --target-type command \
+  "celery -A app.jobs.celery_app worker --loglevel=info" app) &
 (cd frontend && npm run dev) &
 
 echo "API http://localhost:8000/api/v1/health  |  Web http://localhost:3000  |  Mail http://localhost:8025"
