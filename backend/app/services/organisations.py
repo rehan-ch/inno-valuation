@@ -5,10 +5,11 @@ Team changes (members, invitations, consultant access) lock the organisation row
 other and leave the organisation without an owner.
 """
 
+import math
 from datetime import UTC, datetime, timedelta
 from typing import Any, Final
 
-from sqlalchemy import func, select
+from sqlalchemy import Select, func, select
 from sqlalchemy.orm import Session
 
 from app.core.errors import AppError
@@ -38,8 +39,31 @@ CREATE_LIMIT: Final = 10
 CREATE_LIMIT_PERIOD: Final = timedelta(days=1)
 
 
-def too_many_requests() -> AppError:
-    return AppError("too_many_requests", "Too many requests. Please try again later.", 429)
+_MINUTES_PER_HOUR: Final = 60
+
+
+def describe_wait(delta: timedelta) -> str:
+    """'in 7 minutes', 'in about 3 hours': rounded up, so the person never retries early."""
+    minutes = max(1, math.ceil(delta.total_seconds() / 60))
+    if minutes < _MINUTES_PER_HOUR:
+        return "in 1 minute" if minutes == 1 else f"in {minutes} minutes"
+    hours = math.ceil(minutes / _MINUTES_PER_HOUR)
+    return "in about 1 hour" if hours == 1 else f"in about {hours} hours"
+
+
+def too_many_requests(rule: str, retry_in: timedelta) -> AppError:
+    """A refused abuse limit, saying which rule and when the next request is allowed.
+
+    ``rule`` is a full sentence; ``retry_in`` is when the oldest counted request leaves
+    the rolling window.
+    """
+    return AppError("too_many_requests", f"{rule} Try again {describe_wait(retry_in)}.", 429)
+
+
+def oldest_in_window(db: Session, stmt: Select[datetime]) -> datetime:
+    """The oldest timestamp a limit query counted (``stmt`` selects ``min(created_at)``)."""
+    oldest: datetime | None = db.scalar(stmt)
+    return oldest if oldest is not None else datetime.now(UTC)
 
 
 def lock_organisation(db: Session, org: Organisation) -> None:
@@ -52,16 +76,18 @@ def create_organisation(db: Session, *, creator: User, values: dict[str, Any]) -
     unknown = set(values) - EDITABLE_FIELDS
     if unknown:
         raise ValueError(f"Not settable: {sorted(unknown)}")
-    recent = db.scalar(
-        select(func.count())
-        .select_from(Organisation)
-        .where(
-            Organisation.created_by_user_id == creator.id,
-            Organisation.created_at > datetime.now(UTC) - CREATE_LIMIT_PERIOD,
-        )
+    now = datetime.now(UTC)
+    in_window = (
+        Organisation.created_by_user_id == creator.id,
+        Organisation.created_at > now - CREATE_LIMIT_PERIOD,
     )
+    recent = db.scalar(select(func.count()).select_from(Organisation).where(*in_window))
     if (recent or 0) >= CREATE_LIMIT:
-        raise too_many_requests()
+        oldest = oldest_in_window(db, select(func.min(Organisation.created_at)).where(*in_window))
+        raise too_many_requests(
+            f"You have created {CREATE_LIMIT} organisations in the last day, the most allowed.",
+            oldest + CREATE_LIMIT_PERIOD - now,
+        )
     org = Organisation(created_by_user_id=creator.id, **values)
     db.add(org)
     db.flush()

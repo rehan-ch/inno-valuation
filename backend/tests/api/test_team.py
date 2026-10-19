@@ -115,6 +115,10 @@ def test_create_is_limited_per_user(client: TestClient, monkeypatch: pytest.Monk
     response = client.post(CREATE, json={"name": "Three"}, headers=csrf(client))
     assert response.status_code == 429
     assert response.json()["error"]["code"] == "too_many_requests"
+    assert response.json()["error"]["message"] == (
+        "You have created 2 organisations in the last day, the most allowed. "
+        "Try again in about 24 hours."
+    )
 
 
 # List members

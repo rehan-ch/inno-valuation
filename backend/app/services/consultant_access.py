@@ -27,7 +27,7 @@ from app.models import ConsultantGrant, Membership, Organisation, User
 from app.models.enums import ConsultantGrantScope, OrganisationStatus
 from app.services import members
 from app.services.audit import AuditAction, record
-from app.services.organisations import lock_organisation, too_many_requests
+from app.services.organisations import lock_organisation, oldest_in_window, too_many_requests
 
 logger = logging.getLogger(__name__)
 
@@ -125,17 +125,27 @@ def grant(
         raise AppError(
             "access_exists", "This person already has access. Change the end date instead.", 409
         )
-    for condition, limit in (
-        (ConsultantGrant.organisation_id == org.id, GRANT_LIMIT),
-        (ConsultantGrant.granted_by_user_id == ctx.user.id, GRANTER_LIMIT),
+    for condition, limit, rule in (
+        (
+            ConsultantGrant.organisation_id == org.id,
+            GRANT_LIMIT,
+            f"This organisation has given consultant access {GRANT_LIMIT} times in the last "
+            "day, the most allowed.",
+        ),
+        (
+            ConsultantGrant.granted_by_user_id == ctx.user.id,
+            GRANTER_LIMIT,
+            f"You have given consultant access {GRANTER_LIMIT} times in the last day, "
+            "the most allowed.",
+        ),
     ):
-        recent = db.scalar(
-            select(func.count())
-            .select_from(ConsultantGrant)
-            .where(condition, ConsultantGrant.created_at > now - GRANT_LIMIT_PERIOD)
-        )
+        in_window = (condition, ConsultantGrant.created_at > now - GRANT_LIMIT_PERIOD)
+        recent = db.scalar(select(func.count()).select_from(ConsultantGrant).where(*in_window))
         if (recent or 0) >= limit:
-            raise too_many_requests()
+            oldest = oldest_in_window(
+                db, select(func.min(ConsultantGrant.created_at)).where(*in_window)
+            )
+            raise too_many_requests(rule, oldest + GRANT_LIMIT_PERIOD - now)
     new = ConsultantGrant(
         organisation_id=org.id,
         consultant_email=email,
