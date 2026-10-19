@@ -105,13 +105,14 @@ export function AppShell({ children }: { children: ReactNode }) {
     >
       <header className="sticky top-0 z-10 border-b border-neutral-200/70 bg-white/80 backdrop-blur-xl">
         <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center gap-x-6 gap-y-3 px-4 py-3">
-          <Link href="/team" className="flex items-center gap-2">
+          <Link href="/dashboard" className="flex items-center gap-2">
             <Image src="/innovaluation-mark.png" alt="" width={28} height={27} />
             <span className="bg-linear-to-r from-primary to-accent bg-clip-text font-serif text-lg font-semibold tracking-tight text-transparent">
               InnoValuation
             </span>
           </Link>
           <nav aria-label="Main" className="flex items-center gap-4 text-sm text-neutral-700">
+            <NavLink href="/dashboard">Dashboard</NavLink>
             {membership && <NavLink href="/team">Team</NavLink>}
             {membership && canManage(membership.role) && (
               <>

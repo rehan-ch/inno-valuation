@@ -38,7 +38,7 @@ describe("AcceptInvitation", () => {
       path: "/api/v1/invitations/accept",
       body: { token: "inv1" },
     });
-    expect(routerPush).toHaveBeenCalledWith("/team");
+    expect(routerPush).toHaveBeenCalledWith("/dashboard");
   });
 
   it("asks a signed-out visitor to sign in, keeping the token in the fragment", async () => {

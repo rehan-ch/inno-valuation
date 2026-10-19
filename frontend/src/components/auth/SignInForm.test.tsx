@@ -29,7 +29,7 @@ describe("SignInForm", () => {
     await fillAndSubmit();
 
     expect(calls[0]?.body).toEqual({ email: "owner@example.com", password: "a-long-password" });
-    expect(routerPush).toHaveBeenCalledWith("/team");
+    expect(routerPush).toHaveBeenCalledWith("/dashboard");
   });
 
   it("follows a safe ?next= path and keeps the fragment", async () => {
@@ -50,7 +50,7 @@ describe("SignInForm", () => {
     render(<SignInForm />);
     await fillAndSubmit();
 
-    expect(routerPush).toHaveBeenCalledWith("/team");
+    expect(routerPush).toHaveBeenCalledWith("/dashboard");
   });
 
   it("sends a new user without organisations to create one", async () => {

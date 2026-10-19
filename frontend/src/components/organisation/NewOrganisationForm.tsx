@@ -51,7 +51,7 @@ export function NewOrganisationForm() {
     if (org) {
       // The new organisation became the active one in the session; re-read /me, then go.
       await refresh();
-      router.push("/team");
+      router.push("/dashboard");
     }
   }
 
