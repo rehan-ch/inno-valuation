@@ -5,6 +5,15 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
+# Next.js needs Node 20+. An old node (for example nvm's ancient default) fails with a
+# cryptic SyntaxError, so refuse it here with a clear message instead.
+node_major="$(node -p 'process.versions.node.split(".")[0]' 2>/dev/null || echo 0)"
+if [ "$node_major" -lt 20 ]; then
+  echo "bin/dev: Node 20 or newer is required, found $(node -v 2>/dev/null || echo none)." >&2
+  echo "bin/dev: check which node is first on your PATH (mise, nvm, system)." >&2
+  exit 1
+fi
+
 # The backend defaults to ENVIRONMENT=production so a deploy can never skip the secret
 # key check. Local runs use development unless the shell or .env already sets it.
 if [ -z "${ENVIRONMENT:-}" ] && ! grep -qE '^ENVIRONMENT=' .env 2>/dev/null; then
