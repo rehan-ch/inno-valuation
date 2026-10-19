@@ -63,6 +63,10 @@ class Settings(BaseSettings):
     # delivered to when there is no Resend key. Never used deployed.
     dev_smtp_host: str = "localhost"
     dev_smtp_port: int = 1026
+    # Mailpit's web address, and whether each development email opens there in a new
+    # browser tab as soon as it is sent (set DEV_EMAIL_OPEN_BROWSER=false to stop it).
+    dev_mail_web_url: str = "http://localhost:8025"
+    dev_email_open_browser: bool = True
 
     # Sessions. A session lasts a fixed time from sign-in; switching organisation keeps
     # the original end time.

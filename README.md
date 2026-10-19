@@ -17,7 +17,9 @@ Services from `docker-compose.yml`: Postgres on `localhost:5440`, Redis on `loca
 
 ## Emails in development
 
-Without `RESEND_API_KEY`, development never sends real email. Every email (sign-up confirmation, password reset, team invitation, consultant access) is delivered to Mailpit instead: open http://localhost:8025 to read it and click its link. The link is also printed in the worker log, so nothing is lost if Mailpit is stopped. Tests use an in-memory outbox and never touch Mailpit.
+Without `RESEND_API_KEY`, development never sends real email. Every email (sign-up confirmation, password reset, team invitation, consultant access) is delivered to Mailpit instead, and opens there in a new browser tab the moment it is sent, so you can click its link straight away. All of them stay in the inbox at http://localhost:8025. To stop the tabs, put `DEV_EMAIL_OPEN_BROWSER=false` in `.env`. The link is also printed in the worker log, so nothing is lost if Mailpit is stopped. Tests use an in-memory outbox, never touch Mailpit and never open a browser.
+
+The Celery worker does not reload on code changes (the API does), so restart `bin/dev` after changing email code.
 
 Templates live in `backend/app/emails/templates/`: each email has an HTML version (extending `_layout.html`, with the call to action in `_button.html`) and a plain-text version. Keep the HTML to tables and inline styles, because most email clients ignore stylesheets and strip CSS gradients. Mailpit's HTML Check tab scores how well an email works across clients.
 

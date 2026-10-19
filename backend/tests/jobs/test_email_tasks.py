@@ -1,7 +1,11 @@
 """The account email task, run eagerly (task_always_eager in tests)."""
 
+import io
+import json
 import logging
+import urllib.parse
 import uuid
+import webbrowser
 from datetime import UTC, datetime, timedelta
 from typing import Any, ClassVar
 
@@ -221,14 +225,33 @@ class _FakeSmtp:
         _FakeSmtp.delivered.append((self.address, mime))
 
 
+def _fake_mailpit(monkeypatch: pytest.MonkeyPatch, *, found: bool = True) -> list[str]:
+    """Answer Mailpit's search API from memory; returns the searches and the tabs opened."""
+    events: list[str] = []
+
+    def urlopen(url: str, timeout: float) -> io.BytesIO:
+        events.append(f"search {url}")
+        hits = [{"ID": "MSG123"}] if found else []
+        return io.BytesIO(json.dumps({"messages": hits}).encode())
+
+    def open_new_tab(url: str) -> bool:
+        events.append(f"tab {url}")
+        return True
+
+    monkeypatch.setattr("urllib.request.urlopen", urlopen)
+    monkeypatch.setattr("webbrowser.open_new_tab", open_new_tab)
+    return events
+
+
 @pytest.mark.usefixtures("no_override")
-def test_development_delivers_to_the_local_mail_catcher(
+def test_development_delivers_to_the_local_mail_catcher_and_opens_it(
     monkeypatch: pytest.MonkeyPatch, db: Session
 ) -> None:
     monkeypatch.setattr(get_settings(), "resend_api_key", "")
     monkeypatch.setattr(get_settings(), "environment", "development")
     monkeypatch.setattr("smtplib.SMTP", _FakeSmtp)
     _FakeSmtp.delivered = []
+    events = _fake_mailpit(monkeypatch)
     assert isinstance(get_email_backend(), DevSmtpEmailBackend)
 
     user_id, token_id = _verify_token(db, email="dev@example.com")
@@ -242,6 +265,53 @@ def test_development_delivers_to_the_local_mail_catcher(
     assert set(parts) == {"text/plain", "text/html"}
     assert "/verify-email#token=" in parts["text/plain"]
     assert "/verify-email#token=" in parts["text/html"]
+
+    # Found by its own Message-ID, then opened in a new tab: this email, not just the newest.
+    search, tab = events
+    assert urllib.parse.quote(mime["Message-ID"]) in search
+    assert tab == f"tab {get_settings().dev_mail_web_url}/view/MSG123"
+
+
+def _already_registered() -> Any:
+    from app.emails.messages import render_already_registered  # noqa: PLC0415
+
+    return render_already_registered(to="a@example.com", origin="http://localhost:3000")
+
+
+@pytest.mark.usefixtures("no_override")
+def test_no_tab_when_opening_is_switched_off(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("smtplib.SMTP", _FakeSmtp)
+    events = _fake_mailpit(monkeypatch)
+    backend = DevSmtpEmailBackend("localhost", 1026, "x@localhost", open_in_browser=False)
+
+    backend.send(_already_registered(), idempotency_key="k")
+
+    assert events == []
+
+
+@pytest.mark.usefixtures("no_override")
+def test_an_email_mailpit_cannot_find_opens_no_tab(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("smtplib.SMTP", _FakeSmtp)
+    events = _fake_mailpit(monkeypatch, found=False)
+    backend = DevSmtpEmailBackend("localhost", 1026, "x@localhost", open_in_browser=True)
+
+    backend.send(_already_registered(), idempotency_key="k")
+
+    assert [e.split()[0] for e in events] == ["search"]
+
+
+@pytest.mark.usefixtures("no_override")
+def test_a_failing_browser_never_breaks_the_send(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("smtplib.SMTP", _FakeSmtp)
+    _fake_mailpit(monkeypatch)
+
+    def no_browser(url: str) -> bool:
+        raise webbrowser.Error("no runnable browser")
+
+    monkeypatch.setattr("webbrowser.open_new_tab", no_browser)
+    backend = DevSmtpEmailBackend("localhost", 1026, "x@localhost", open_in_browser=True)
+
+    backend.send(_already_registered(), idempotency_key="k")  # does not raise
 
 
 @pytest.mark.usefixtures("no_override")
