@@ -16,6 +16,389 @@
         "title": "ActiveOrganisationIn",
         "type": "object"
       },
+      "AnswersIn": {
+        "additionalProperties": false,
+        "properties": {
+          "answers": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "maxProperties": 100,
+            "title": "Answers",
+            "type": "object"
+          }
+        },
+        "required": [
+          "answers"
+        ],
+        "title": "AnswersIn",
+        "type": "object"
+      },
+      "AssessmentOut": {
+        "properties": {
+          "band_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Band Name"
+          },
+          "can_answer": {
+            "title": "Can Answer",
+            "type": "boolean"
+          },
+          "can_manage": {
+            "title": "Can Manage",
+            "type": "boolean"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By Name"
+          },
+          "finalised_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finalised At"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "my_answers": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "integer"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "My Answers"
+          },
+          "my_status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "not_started",
+                  "in_progress",
+                  "submitted"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "My Status"
+          },
+          "my_submitted_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "My Submitted At"
+          },
+          "participants": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ParticipantOut"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Participants"
+          },
+          "question_count": {
+            "title": "Question Count",
+            "type": "integer"
+          },
+          "question_set_version": {
+            "title": "Question Set Version",
+            "type": "integer"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ReadinessStatus"
+          },
+          "submitted_count": {
+            "title": "Submitted Count",
+            "type": "integer"
+          },
+          "total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "question_set_version",
+          "created_at",
+          "started_at",
+          "finalised_at",
+          "created_by_name",
+          "submitted_count",
+          "my_status",
+          "total",
+          "band_name",
+          "my_answers",
+          "my_submitted_at",
+          "question_count",
+          "can_answer",
+          "can_manage",
+          "participants"
+        ],
+        "title": "AssessmentOut",
+        "type": "object"
+      },
+      "AssessmentSummaryOut": {
+        "properties": {
+          "band_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Band Name"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By Name"
+          },
+          "finalised_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finalised At"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "my_status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "not_started",
+                  "in_progress",
+                  "submitted"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "My Status"
+          },
+          "question_set_version": {
+            "title": "Question Set Version",
+            "type": "integer"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ReadinessStatus"
+          },
+          "submitted_count": {
+            "title": "Submitted Count",
+            "type": "integer"
+          },
+          "total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "question_set_version",
+          "created_at",
+          "started_at",
+          "finalised_at",
+          "created_by_name",
+          "submitted_count",
+          "my_status",
+          "total",
+          "band_name"
+        ],
+        "title": "AssessmentSummaryOut",
+        "type": "object"
+      },
+      "BandOut": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "name",
+          "text"
+        ],
+        "title": "BandOut",
+        "type": "object"
+      },
+      "CategoryOut": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "order": {
+            "title": "Order",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "key",
+          "name",
+          "order"
+        ],
+        "title": "CategoryOut",
+        "type": "object"
+      },
+      "CategoryScoreOut": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "maximum": {
+            "title": "Maximum",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "score": {
+            "title": "Score",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "key",
+          "name",
+          "score",
+          "maximum"
+        ],
+        "title": "CategoryScoreOut",
+        "type": "object"
+      },
       "ChangePasswordIn": {
         "additionalProperties": false,
         "properties": {
@@ -37,6 +420,87 @@
           "new_password"
         ],
         "title": "ChangePasswordIn",
+        "type": "object"
+      },
+      "ConsensusIn": {
+        "additionalProperties": false,
+        "properties": {
+          "answers": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "maxProperties": 100,
+            "title": "Answers",
+            "type": "object"
+          },
+          "notes": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "maxProperties": 100,
+            "title": "Notes",
+            "type": "object"
+          }
+        },
+        "title": "ConsensusIn",
+        "type": "object"
+      },
+      "ConsensusOut": {
+        "properties": {
+          "agreed_count": {
+            "title": "Agreed Count",
+            "type": "integer"
+          },
+          "assessment_id": {
+            "format": "uuid",
+            "title": "Assessment Id",
+            "type": "string"
+          },
+          "participants": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Participants",
+            "type": "array"
+          },
+          "question_count": {
+            "title": "Question Count",
+            "type": "integer"
+          },
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/QuestionConsensusOut"
+            },
+            "title": "Questions",
+            "type": "array"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ReadinessStatus"
+          }
+        },
+        "required": [
+          "assessment_id",
+          "status",
+          "participants",
+          "agreed_count",
+          "question_count",
+          "questions"
+        ],
+        "title": "ConsensusOut",
         "type": "object"
       },
       "ConsultantAccessOut": {
@@ -206,6 +670,85 @@
           "access_ends_at"
         ],
         "title": "ConsultantOrganisationOut",
+        "type": "object"
+      },
+      "DimensionOut": {
+        "properties": {
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "order": {
+            "title": "Order",
+            "type": "integer"
+          },
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/QuestionOut"
+            },
+            "title": "Questions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "key",
+          "name",
+          "order",
+          "category",
+          "description",
+          "questions"
+        ],
+        "title": "DimensionOut",
+        "type": "object"
+      },
+      "DimensionScoreOut": {
+        "properties": {
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "maximum": {
+            "title": "Maximum",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "order": {
+            "title": "Order",
+            "type": "integer"
+          },
+          "score": {
+            "title": "Score",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "key",
+          "name",
+          "order",
+          "category",
+          "score",
+          "maximum"
+        ],
+        "title": "DimensionScoreOut",
         "type": "object"
       },
       "EmailIn": {
@@ -1009,6 +1552,234 @@
         "title": "OrganisationUpdateIn",
         "type": "object"
       },
+      "ParticipantOut": {
+        "properties": {
+          "answered": {
+            "title": "Answered",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "submitted_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Submitted At"
+          }
+        },
+        "required": [
+          "name",
+          "answered",
+          "submitted_at"
+        ],
+        "title": "ParticipantOut",
+        "type": "object"
+      },
+      "PersonAnswerOut": {
+        "properties": {
+          "answer": {
+            "title": "Answer",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "answer"
+        ],
+        "title": "PersonAnswerOut",
+        "type": "object"
+      },
+      "PriorityOut": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "maximum": {
+            "title": "Maximum",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "next_steps": {
+            "title": "Next Steps",
+            "type": "string"
+          },
+          "rank": {
+            "title": "Rank",
+            "type": "integer"
+          },
+          "score": {
+            "title": "Score",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "rank",
+          "key",
+          "name",
+          "score",
+          "maximum",
+          "next_steps"
+        ],
+        "title": "PriorityOut",
+        "type": "object"
+      },
+      "QuestionConsensusOut": {
+        "properties": {
+          "agreed": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agreed"
+          },
+          "answers": {
+            "items": {
+              "$ref": "#/components/schemas/PersonAnswerOut"
+            },
+            "title": "Answers",
+            "type": "array"
+          },
+          "dimension_key": {
+            "title": "Dimension Key",
+            "type": "string"
+          },
+          "mean": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mean"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "question_id": {
+            "title": "Question Id",
+            "type": "string"
+          },
+          "spread": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Spread"
+          },
+          "wide_spread": {
+            "title": "Wide Spread",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "question_id",
+          "dimension_key",
+          "answers",
+          "mean",
+          "spread",
+          "wide_spread",
+          "agreed",
+          "note"
+        ],
+        "title": "QuestionConsensusOut",
+        "type": "object"
+      },
+      "QuestionOut": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "text"
+        ],
+        "title": "QuestionOut",
+        "type": "object"
+      },
+      "QuestionSetOut": {
+        "properties": {
+          "categories": {
+            "items": {
+              "$ref": "#/components/schemas/CategoryOut"
+            },
+            "title": "Categories",
+            "type": "array"
+          },
+          "dimensions": {
+            "items": {
+              "$ref": "#/components/schemas/DimensionOut"
+            },
+            "title": "Dimensions",
+            "type": "array"
+          },
+          "scale": {
+            "$ref": "#/components/schemas/ScaleOut"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version",
+          "scale",
+          "categories",
+          "dimensions"
+        ],
+        "title": "QuestionSetOut",
+        "type": "object"
+      },
+      "ReadinessStatus": {
+        "description": "The life of a readiness assessment, left to right. It never moves backwards.\n\n``draft`` is just created; ``collecting`` takes each person's answers; ``consensus``\nis the facilitator setting the agreed answers (Amy Q5); ``final`` is scored and\nimmutable.",
+        "enum": [
+          "draft",
+          "collecting",
+          "consensus",
+          "final"
+        ],
+        "title": "ReadinessStatus",
+        "type": "string"
+      },
       "ResetPasswordIn": {
         "additionalProperties": false,
         "properties": {
@@ -1030,6 +1801,108 @@
           "new_password"
         ],
         "title": "ResetPasswordIn",
+        "type": "object"
+      },
+      "ResultOut": {
+        "properties": {
+          "assessment_id": {
+            "format": "uuid",
+            "title": "Assessment Id",
+            "type": "string"
+          },
+          "band": {
+            "$ref": "#/components/schemas/BandOut"
+          },
+          "categories": {
+            "items": {
+              "$ref": "#/components/schemas/CategoryScoreOut"
+            },
+            "title": "Categories",
+            "type": "array"
+          },
+          "dimensions": {
+            "items": {
+              "$ref": "#/components/schemas/DimensionScoreOut"
+            },
+            "title": "Dimensions",
+            "type": "array"
+          },
+          "finalised_at": {
+            "format": "date-time",
+            "title": "Finalised At",
+            "type": "string"
+          },
+          "priorities": {
+            "items": {
+              "$ref": "#/components/schemas/PriorityOut"
+            },
+            "title": "Priorities",
+            "type": "array"
+          },
+          "question_set_version": {
+            "title": "Question Set Version",
+            "type": "integer"
+          },
+          "strengths": {
+            "items": {
+              "$ref": "#/components/schemas/DimensionScoreOut"
+            },
+            "title": "Strengths",
+            "type": "array"
+          },
+          "submitted_count": {
+            "title": "Submitted Count",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          },
+          "total_maximum": {
+            "title": "Total Maximum",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "assessment_id",
+          "question_set_version",
+          "total",
+          "total_maximum",
+          "band",
+          "dimensions",
+          "categories",
+          "priorities",
+          "strengths",
+          "submitted_count",
+          "finalised_at"
+        ],
+        "title": "ResultOut",
+        "type": "object"
+      },
+      "ScaleOut": {
+        "properties": {
+          "labels": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Labels",
+            "type": "object"
+          },
+          "max": {
+            "title": "Max",
+            "type": "integer"
+          },
+          "min": {
+            "title": "Min",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "min",
+          "max",
+          "labels"
+        ],
+        "title": "ScaleOut",
         "type": "object"
       },
       "SignInIn": {
@@ -2240,6 +3113,465 @@
         "summary": "Create Organisation",
         "tags": [
           "organisation"
+        ]
+      }
+    },
+    "/api/v1/readiness/assessments": {
+      "get": {
+        "operationId": "list_assessments_api_v1_readiness_assessments_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AssessmentSummaryOut"
+                  },
+                  "title": "Response List Assessments Api V1 Readiness Assessments Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Assessments",
+        "tags": [
+          "readiness"
+        ]
+      },
+      "post": {
+        "operationId": "start_assessment_api_v1_readiness_assessments_post",
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssessmentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Start Assessment",
+        "tags": [
+          "readiness"
+        ]
+      }
+    },
+    "/api/v1/readiness/assessments/{assessment_id}": {
+      "get": {
+        "operationId": "get_assessment_api_v1_readiness_assessments__assessment_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "assessment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Assessment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssessmentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Assessment",
+        "tags": [
+          "readiness"
+        ]
+      }
+    },
+    "/api/v1/readiness/assessments/{assessment_id}/consensus": {
+      "get": {
+        "description": "Everyone's submitted answers, the mean and spread, and the agreed answers so far.\nThe facilitator's view; individual answers are never shown to anyone else.",
+        "operationId": "get_consensus_api_v1_readiness_assessments__assessment_id__consensus_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "assessment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Assessment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsensusOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Consensus",
+        "tags": [
+          "readiness"
+        ]
+      },
+      "patch": {
+        "operationId": "save_consensus_api_v1_readiness_assessments__assessment_id__consensus_patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "assessment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Assessment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsensusIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsensusOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Save Consensus",
+        "tags": [
+          "readiness"
+        ]
+      }
+    },
+    "/api/v1/readiness/assessments/{assessment_id}/consensus/begin": {
+      "post": {
+        "operationId": "begin_consensus_api_v1_readiness_assessments__assessment_id__consensus_begin_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "assessment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Assessment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsensusOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Begin Consensus",
+        "tags": [
+          "readiness"
+        ]
+      }
+    },
+    "/api/v1/readiness/assessments/{assessment_id}/finalise": {
+      "post": {
+        "operationId": "finalise_api_v1_readiness_assessments__assessment_id__finalise_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "assessment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Assessment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Finalise",
+        "tags": [
+          "readiness"
+        ]
+      }
+    },
+    "/api/v1/readiness/assessments/{assessment_id}/my-answers": {
+      "patch": {
+        "description": "Autosave: merge these answers into the caller's own; null clears one.",
+        "operationId": "save_my_answers_api_v1_readiness_assessments__assessment_id__my_answers_patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "assessment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Assessment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnswersIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssessmentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Save My Answers",
+        "tags": [
+          "readiness"
+        ]
+      }
+    },
+    "/api/v1/readiness/assessments/{assessment_id}/my-answers/submit": {
+      "post": {
+        "operationId": "submit_my_answers_api_v1_readiness_assessments__assessment_id__my_answers_submit_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "assessment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Assessment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssessmentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Submit My Answers",
+        "tags": [
+          "readiness"
+        ]
+      }
+    },
+    "/api/v1/readiness/assessments/{assessment_id}/result": {
+      "get": {
+        "description": "The final result: total out of 300 and its band in the book's words, the 12 dimension\nscores, category totals, priorities with the book's next steps, and strengths.",
+        "operationId": "get_result_api_v1_readiness_assessments__assessment_id__result_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "assessment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Assessment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Result",
+        "tags": [
+          "readiness"
+        ]
+      }
+    },
+    "/api/v1/readiness/question-set": {
+      "get": {
+        "description": "The 60 readiness questions, verbatim from the book, grouped by dimension in book order.",
+        "operationId": "get_question_set_api_v1_readiness_question_set_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "version",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Version"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionSetOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Question Set",
+        "tags": [
+          "readiness"
         ]
       }
     }
