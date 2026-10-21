@@ -109,7 +109,8 @@ def _assert_golden_190(result: dict[str, Any]) -> None:
         result["priorities"][0]["next_steps"]
         == QUESTION_SET.dimension("channel_navigation").next_steps
     )
-    assert [s["key"] for s in result["strengths"]][:2] == ["customer_journey", "brand_magnetism"]
+    # Strengths score above every priority: the tied 15s are never strengths.
+    assert [s["key"] for s in result["strengths"]] == ["customer_journey", "brand_magnetism"]
     assert result["submitted_count"] == 3
 
 
@@ -205,6 +206,8 @@ def test_a_final_result_cannot_be_changed(client: TestClient, db: Session) -> No
     assert stored is not None
     assert (stored.total, dict(stored.per_dimension), stored.computed_at) == before
     assert stored.total == 180
+    # Every dimension ties, so none stands out as a strength.
+    assert client.get(f"{BASE}/assessments/{assessment_id}/result").json()["strengths"] == []
 
 
 # Answering

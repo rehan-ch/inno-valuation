@@ -38,8 +38,9 @@ from app.services import readiness
 
 router = APIRouter(prefix="/readiness", tags=["readiness"])
 
-# PROVISIONAL (display only): how many top-scoring dimensions the result calls strengths.
-# Amy has set the priorities list (lowest 5); she has not set a count for strengths.
+# PROVISIONAL (display only): the result calls up to this many top-scoring dimensions
+# strengths. Amy has set the priorities list (lowest 5); she has not set strengths. A
+# strength must score above every priority, so no dimension is ever both.
 STRENGTH_COUNT: Final = 3
 
 
@@ -296,7 +297,12 @@ def _result_out(db: Session, assessment: ReadinessAssessment) -> ResultOut:
         )
         for d in question_set.dimensions
     ]
-    strongest = sorted(dimensions, key=lambda d: (-d.score, d.order))[:STRENGTH_COUNT]
+    highest_priority = max((int(p["score"]) for p in result.priorities), default=-1)
+    strongest = [
+        d
+        for d in sorted(dimensions, key=lambda d: (-d.score, d.order))
+        if d.score > highest_priority
+    ][:STRENGTH_COUNT]
     return ResultOut(
         assessment_id=assessment.id,
         question_set_version=assessment.question_set_version,

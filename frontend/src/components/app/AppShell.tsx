@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
 import { MeProvider } from "@/components/app/me-context";
@@ -24,7 +24,8 @@ type State =
 
 /** A main-navigation link that marks the page it is on for styling and screen readers. */
 function NavLink({ href, children }: { href: string; children: ReactNode }) {
-  const current = usePathname() === href;
+  const pathname = usePathname();
+  const current = pathname === href || pathname.startsWith(`${href}/`);
   return (
     <Link
       href={href}
@@ -43,6 +44,24 @@ function NavLink({ href, children }: { href: string; children: ReactNode }) {
 export function AppShell({ children }: { children: ReactNode }) {
   const [state, setState] = useState<State>({ kind: "loading" });
   const router = useRouter();
+  const header = useRef<HTMLElement>(null);
+  const ready = state.kind === "ready";
+
+  // Sticky page panels sit just below the header (top: var(--app-header-h)), and the
+  // header grows when its navigation wraps, so its real height is published here.
+  useEffect(() => {
+    const element = header.current;
+    if (!element) return;
+    const publish = () =>
+      document.documentElement.style.setProperty(
+        "--app-header-h",
+        `${element.offsetHeight}px`,
+      );
+    publish();
+    const observer = new ResizeObserver(publish);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [ready]);
 
   const load = useCallback(async () => {
     try {
@@ -103,7 +122,10 @@ export function AppShell({ children }: { children: ReactNode }) {
         refresh: load,
       }}
     >
-      <header className="sticky top-0 z-10 border-b border-neutral-200/70 bg-white/80 backdrop-blur-xl">
+      <header
+        ref={header}
+        className="sticky top-0 z-30 border-b border-neutral-200/70 bg-white/80 backdrop-blur-xl"
+      >
         <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center gap-x-6 gap-y-3 px-4 py-3">
           <Link href="/dashboard" className="flex items-center gap-2">
             <Image src="/innovaluation-mark.png" alt="" width={28} height={27} />
@@ -113,6 +135,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           </Link>
           <nav aria-label="Main" className="flex items-center gap-4 text-sm text-neutral-700">
             <NavLink href="/dashboard">Dashboard</NavLink>
+            {(membership || me.consultant_organisations.length > 0) && (
+              <NavLink href="/readiness">Readiness</NavLink>
+            )}
             {membership && <NavLink href="/team">Team</NavLink>}
             {membership && canManage(membership.role) && (
               <>

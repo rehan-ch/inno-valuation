@@ -8,7 +8,9 @@
 ## In progress
 Phase 3 on `phase-3-readiness`
 - Done: readiness tables and reversible migration `0006_readiness` (P3.01): assessments, per-person responses, consensus with per-question notes, results; answers checked 1 to 5 in the database (strict jsonpath); assessment permissions added to the matrix (`assessments.view` for every role including consultants, `assessments.answer` for owner/admin/member/committee, `assessments.manage` for owner/admin).
-- Next: assessment services and API (start, answer with autosave, submit), then the questionnaire screens (P3.02).
+- Done: the readiness flow, backend and screens (P3.02 to P3.04). API `/api/v1/readiness`: the question set verbatim from the book; start an assessment (one open per organisation); each person saves their own answers as they go and submits all 60; the facilitator starts consensus, sees every submitted answer with the mean (2 decimals) and spread, sets agreed answers and notes, and finalises; the engine scores the agreed answers only and the result is written once. Screens: `/readiness` (list and start), `/readiness/[id]` (questionnaire with autosave, per-dimension progress, submit; the facilitator's team progress and start consensus), `/readiness/[id]/consensus`, `/readiness/[id]/result` (total out of 300 with the band in the book's words, categories with maximums, the 12 dimensions, priorities with the book's next steps, strengths). The dashboard's readiness card and checklist use the real status.
+- Done (P3.07): request tests for the golden flow (three people, agreed total 190, Building Blocks), immutability, missing participants, rounding, permissions and cross-organisation isolation; exercised end to end against the running stack.
+- Next: the AI foundation and "explain a question" (P3.05, P3.06, recorded responses only until the AI key arrives), then review, merge and Amy's first demo (P3.08).
 
 ## Done
 Phase 0

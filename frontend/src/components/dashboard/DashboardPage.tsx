@@ -11,9 +11,11 @@ import { Card, CardTitle, PageHeader } from "@/components/ui/Card";
 import { Loading } from "@/components/ui/Loading";
 import { ApiError } from "@/lib/api/client";
 import { listGrants } from "@/lib/api/consultants";
+import { assessmentHref, listAssessments } from "@/lib/api/readiness";
 import { getOrganisation } from "@/lib/api/organisation";
 import { listInvitations, listMembers } from "@/lib/api/team";
 import type {
+  AssessmentSummaryOut,
   ConsultantGrantOut,
   InvitationOut,
   MemberOut,
@@ -31,6 +33,7 @@ type State =
       members: MemberOut[];
       invitations: InvitationOut[];
       grants: ConsultantGrantOut[];
+      assessments: AssessmentSummaryOut[];
     };
 
 const TEAM_PREVIEW = 5;
@@ -51,12 +54,15 @@ export function DashboardPage() {
         const org = await getOrganisation();
         const consultant = org.role === "consultant";
         const manage = canManage(org.role) && org.status === "active";
-        const [members, invitations, grants] = await Promise.all([
+        const [members, invitations, grants, assessments] = await Promise.all([
           consultant ? Promise.resolve([]) : listMembers(),
           manage ? listInvitations() : Promise.resolve([]),
           manage ? listGrants() : Promise.resolve([]),
+          listAssessments(),
         ]);
-        if (!cancelled) setState({ kind: "ready", org, members, invitations, grants });
+        if (!cancelled) {
+          setState({ kind: "ready", org, members, invitations, grants, assessments });
+        }
       } catch (err) {
         if (!cancelled) {
           setState({
@@ -113,7 +119,7 @@ export function DashboardPage() {
           You have read-only consultant access to {org.name}
           {access ? ` until ${formatDate(access.access_ends_at)}` : ""}.
         </Alert>
-        <ReadinessCard consultant />
+        <ReadinessCard latest={state.assessments[0]} manage={false} consultant />
         <Card>
           <CardTitle>Your consulting access</CardTitle>
           <p className="mt-1 text-sm text-neutral-600">
@@ -184,11 +190,16 @@ export function DashboardPage() {
                 hint="Optional. Read-only, until an end date you choose."
                 href="/consultants"
               />
-              <Step done={false} label="Run the readiness assessment" soon />
+              <Step
+                done={state.assessments.some((a) => a.status === "final")}
+                label="Run the readiness assessment"
+                hint="Your team answers 60 questions and agrees a score out of 300."
+                href="/readiness"
+              />
             </ol>
           </Card>
         ) : (
-          <ReadinessCard />
+          <ReadinessCard latest={state.assessments[0]} manage={false} />
         )}
 
         <Card>
@@ -217,7 +228,7 @@ export function DashboardPage() {
         </Card>
       </div>
 
-      {manage && <ReadinessCard />}
+      {manage && <ReadinessCard latest={state.assessments[0]} manage />}
 
       <Card>
         <CardTitle>Quick actions</CardTitle>
@@ -252,13 +263,11 @@ function Step({
   label,
   hint,
   href,
-  soon = false,
 }: {
   done: boolean;
   label: string;
   hint?: string;
   href?: string;
-  soon?: boolean;
 }) {
   return (
     <li className="flex items-start gap-3">
@@ -280,7 +289,6 @@ function Step({
             <span className={done ? "text-neutral-500 line-through" : "font-medium"}>{label}</span>
           )}
           <span className="sr-only">{done ? "(done)" : "(to do)"}</span>
-          {soon && <Badge>Coming soon</Badge>}
         </span>
         {hint && !done && <span className="mt-0.5 block text-xs text-neutral-500">{hint}</span>}
       </span>
@@ -288,18 +296,86 @@ function Step({
   );
 }
 
-function ReadinessCard({ consultant = false }: { consultant?: boolean }) {
+/** The latest readiness assessment's real state, and the one link that moves it forward. */
+function ReadinessCard({
+  latest,
+  manage,
+  consultant = false,
+}: {
+  latest: AssessmentSummaryOut | undefined;
+  manage: boolean;
+  consultant?: boolean;
+}) {
+  let body: ReactNode;
+  let action: ReactNode = null;
+  if (!latest) {
+    body = consultant
+      ? "The team's readiness result out of 300, with its band and the 12 dimension scores, will appear here once it is final."
+      : "Your team answers 60 questions across the 12 Dimensions of Innovation and agrees a score out of 300.";
+    if (manage) {
+      action = (
+        <ActionLink href="/readiness" primary>
+          Start a readiness assessment
+        </ActionLink>
+      );
+    } else if (!consultant) {
+      body = `${body} An owner or admin starts it.`;
+    }
+  } else if (latest.status === "final") {
+    body = (
+      <>
+        <span className="block font-serif text-3xl font-semibold text-neutral-900">
+          {latest.total}
+          <span className="ml-1 text-lg text-neutral-500">/ 300</span>
+        </span>
+        <span className="mt-1 block font-medium text-primary">{latest.band_name}</span>
+        <span className="mt-1 block">
+          Final on {formatDate(latest.finalised_at ?? latest.created_at)}.
+        </span>
+      </>
+    );
+    action = (
+      <ActionLink href={assessmentHref(latest, manage)} primary>
+        See the result
+      </ActionLink>
+    );
+  } else if (latest.status === "consensus") {
+    body = manage
+      ? `Answers are closed with ${latest.submitted_count} submitted. Agree the team's answers to finish.`
+      : "The team's answers are being agreed. The result appears here once it is final.";
+    if (manage) {
+      action = (
+        <ActionLink href={assessmentHref(latest, manage)} primary>
+          Agree the answers
+        </ActionLink>
+      );
+    }
+  } else {
+    const mine =
+      latest.my_status === "submitted"
+        ? "You have submitted your answers."
+        : latest.my_status === "in_progress"
+          ? "Your answers are in progress."
+          : latest.my_status === "not_started"
+            ? "You have not started yet."
+            : "";
+    body = `Collecting answers: ${latest.submitted_count} submitted so far. ${mine}`.trim();
+    if (latest.my_status && latest.my_status !== "submitted") {
+      action = (
+        <ActionLink href={assessmentHref(latest, manage)} primary>
+          Answer the questions
+        </ActionLink>
+      );
+    } else if (manage) {
+      action = <ActionLink href={assessmentHref(latest, manage)}>See the team&apos;s progress</ActionLink>;
+    }
+  }
+
   return (
     <Card>
-      <div className="flex flex-wrap items-center gap-2">
-        <CardTitle>Readiness assessment</CardTitle>
-        <Badge>Coming soon</Badge>
-      </div>
-      <p className="mt-1 text-sm text-neutral-600">
-        {consultant
-          ? "The team's readiness result out of 300, with its band and the 12 dimension scores, will appear here once it is final."
-          : "Your team answers 60 questions across the 12 Dimensions of Innovation and agrees a score out of 300, with its band and the 12 dimension scores."}
-      </p>
+      <CardTitle>Readiness assessment</CardTitle>
+      <div className="mt-2 text-sm text-neutral-600">{body}</div>
+      {action && <div className="mt-4">{action}</div>}
     </Card>
   );
 }

@@ -2,6 +2,7 @@ import { screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  fakeAssessmentSummary,
   fakeGrant,
   fakeInvitation,
   fakeMe,
@@ -34,6 +35,7 @@ describe("DashboardPage", () => {
         fakeInvitation({ id: "i2", email: "old@example.com", expired: true }),
       ],
       "GET /api/v1/organisation/consultants": [fakeGrant({ status: "active" })],
+      "GET /api/v1/readiness/assessments": [],
     });
 
     renderWithMe(<DashboardPage />, fakeMe());
@@ -55,7 +57,11 @@ describe("DashboardPage", () => {
     );
     // Two members means the team is invited; a live grant means the consultant has access.
     expect(checklist.queryByRole("link", { name: "Invite your team" })).not.toBeInTheDocument();
-    expect(checklist.getByText("Run the readiness assessment")).toBeInTheDocument();
+    expect(checklist.getByRole("link", { name: "Run the readiness assessment" })).toHaveAttribute(
+      "href",
+      "/readiness",
+    );
+    expect(screen.getByRole("link", { name: "Start a readiness assessment" })).toBeInTheDocument();
 
     expect(screen.getByText("(you)")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Invite a team member" })).toHaveAttribute(
@@ -68,6 +74,7 @@ describe("DashboardPage", () => {
     stubApi({
       "GET /api/v1/organisation": fakeOrganisation({ role: "member" }),
       "GET /api/v1/organisation/members": [fakeMember()],
+      "GET /api/v1/readiness/assessments": [],
     });
 
     renderWithMe(
@@ -92,7 +99,10 @@ describe("DashboardPage", () => {
   });
 
   it("gives a consultant a read-only welcome with the access end date", async () => {
-    stubApi({ "GET /api/v1/organisation": fakeOrganisation({ role: "consultant" }) });
+    stubApi({
+      "GET /api/v1/organisation": fakeOrganisation({ role: "consultant" }),
+      "GET /api/v1/readiness/assessments": [],
+    });
 
     renderWithMe(
       <DashboardPage />,
@@ -113,6 +123,25 @@ describe("DashboardPage", () => {
       await screen.findByText("You have read-only consultant access to Acme until Dec 31, 2026."),
     ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "My access" })).toBeInTheDocument();
+  });
+
+  it("shows the latest final readiness result", async () => {
+    stubApi({
+      "GET /api/v1/organisation": fakeOrganisation({ role: "member" }),
+      "GET /api/v1/organisation/members": [fakeMember()],
+      "GET /api/v1/readiness/assessments": [
+        fakeAssessmentSummary({ status: "final", total: 190, band_name: "Building Blocks" }),
+      ],
+    });
+
+    renderWithMe(<DashboardPage />, fakeMe());
+
+    expect(await screen.findByText("Building Blocks")).toBeInTheDocument();
+    expect(screen.getByText("190")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "See the result" })).toHaveAttribute(
+      "href",
+      "/readiness/77777777-7777-7777-7777-777777777777/result",
+    );
   });
 
   it("asks someone without an organisation to create one", () => {

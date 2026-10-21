@@ -16,6 +16,8 @@
 :root {
   --background: hsl(196 60% 97%);
   --foreground: hsl(212 45% 12%);
+  /* The signed-in header's height; AppShell keeps it current as the header wraps. */
+  --app-header-h: 4rem;
 }
 
 @theme inline {
