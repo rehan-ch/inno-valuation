@@ -136,6 +136,7 @@ class ReadinessResult(UuidPrimaryKey, Base):
     __table_args__ = (
         UniqueConstraint("assessment_id"),
         CheckConstraint("total >= 0 AND total <= 300", name="total_0_to_300"),
+        CheckConstraint("participant_count >= 1", name="participant_count_positive"),
         Index("ix_readiness_results_organisation_id", "organisation_id"),
     )
 
@@ -150,6 +151,8 @@ class ReadinessResult(UuidPrimaryKey, Base):
     # {category key: total}, as scoring.categories.readiness_categories returns.
     category_scores: Mapped[dict[str, Any]] = mapped_column(JSONB)
     total: Mapped[int]
+    # How many people's submitted answers the agreed answers were set from.
+    participant_count: Mapped[int]
     band_key: Mapped[str] = mapped_column(String(50))
     # The priority list as scored (lowest five, spec 7), already ordered.
     priorities: Mapped[list[Any]] = mapped_column(JSONB)

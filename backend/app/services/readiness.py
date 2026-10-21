@@ -24,7 +24,7 @@ from typing import Final
 
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, contains_eager
 
 from app.core.errors import AppError
 from app.core.permissions import OrgContext, OrgRole, Permission, has_permission
@@ -101,22 +101,26 @@ def get_assessment(
 
 
 def own_response(
-    db: Session, assessment: ReadinessAssessment, user_id: uuid.UUID
+    db: Session, assessment: ReadinessAssessment, user_id: uuid.UUID, *, lock: bool = False
 ) -> ReadinessResponse | None:
-    return db.scalar(
-        select(ReadinessResponse).where(
-            ReadinessResponse.assessment_id == assessment.id,
-            ReadinessResponse.user_id == user_id,
-        )
+    """The person's own response. ``lock`` takes the row ``FOR UPDATE`` and re-reads it, so
+    two saves (two tabs) or a save racing a submit cannot overwrite each other."""
+    stmt = select(ReadinessResponse).where(
+        ReadinessResponse.assessment_id == assessment.id,
+        ReadinessResponse.user_id == user_id,
     )
+    if lock:
+        stmt = stmt.with_for_update().execution_options(populate_existing=True)
+    return db.scalar(stmt)
 
 
 def responses(db: Session, assessment: ReadinessAssessment) -> list[ReadinessResponse]:
-    """Every response with its person, in the order people started."""
+    """Every response with its person loaded, in the order people started."""
     return list(
         db.scalars(
             select(ReadinessResponse)
-            .join(User, User.id == ReadinessResponse.user_id)
+            .join(ReadinessResponse.user)
+            .options(contains_eager(ReadinessResponse.user))
             .where(ReadinessResponse.assessment_id == assessment.id)
             .order_by(ReadinessResponse.created_at)
         )
@@ -133,6 +137,62 @@ def submitted_count(db: Session, assessment: ReadinessAssessment) -> int:
         )
     )
     return int(count or 0)
+
+
+@dataclass(frozen=True, slots=True)
+class Overview:
+    """What a list row needs about one assessment, loaded in a few batched queries."""
+
+    submitted_count: int
+    result: ReadinessResult | None
+    creator_name: str | None
+    own: ReadinessResponse | None
+
+
+def overviews(
+    db: Session, user_id: uuid.UUID, assessments: list[ReadinessAssessment]
+) -> dict[uuid.UUID, Overview]:
+    """Overviews for many assessments at once: a fixed number of queries, not a few per row."""
+    ids = [a.id for a in assessments]
+    if not ids:
+        return {}
+    counts: dict[uuid.UUID, int] = dict(
+        db.execute(
+            select(ReadinessResponse.assessment_id, func.count())
+            .where(
+                ReadinessResponse.assessment_id.in_(ids),
+                ReadinessResponse.submitted_at.is_not(None),
+            )
+            .group_by(ReadinessResponse.assessment_id)
+        ).all()
+    )
+    results = {
+        r.assessment_id: r
+        for r in db.scalars(select(ReadinessResult).where(ReadinessResult.assessment_id.in_(ids)))
+    }
+    creator_ids = {a.created_by_user_id for a in assessments if a.created_by_user_id}
+    names: dict[uuid.UUID, str] = (
+        dict(db.execute(select(User.id, User.name).where(User.id.in_(creator_ids))).all())
+        if creator_ids
+        else {}
+    )
+    own = {
+        r.assessment_id: r
+        for r in db.scalars(
+            select(ReadinessResponse).where(
+                ReadinessResponse.assessment_id.in_(ids), ReadinessResponse.user_id == user_id
+            )
+        )
+    }
+    return {
+        a.id: Overview(
+            submitted_count=counts.get(a.id, 0),
+            result=results.get(a.id),
+            creator_name=names.get(a.created_by_user_id) if a.created_by_user_id else None,
+            own=own.get(a.id),
+        )
+        for a in assessments
+    }
 
 
 # Starting
@@ -208,23 +268,24 @@ def save_answers(
     except ScoringError as error:
         raise _invalid_answers(error) from error
 
-    response = own_response(db, assessment, ctx.user.id)
-    if response is None:
-        response = ReadinessResponse(
-            organisation_id=ctx.organisation_id,
-            assessment_id=assessment.id,
-            user_id=ctx.user.id,
-            answers={},
-        )
+    if own_response(db, assessment, ctx.user.id) is None:
         try:
             with db.begin_nested():
-                db.add(response)
+                db.add(
+                    ReadinessResponse(
+                        organisation_id=ctx.organisation_id,
+                        assessment_id=assessment.id,
+                        user_id=ctx.user.id,
+                        answers={},
+                    )
+                )
                 db.flush()
         except IntegrityError:
-            # A save from another tab created it a moment ago.
-            response = own_response(db, assessment, ctx.user.id)
-            if response is None:
-                raise
+            pass  # a save from another tab created it a moment ago
+    # Merge under the row lock: a parallel save waits and then sees this one's answers.
+    response = own_response(db, assessment, ctx.user.id, lock=True)
+    if response is None:  # deleted between the insert and the lock: user gone
+        raise _not_found()
     if response.submitted_at is not None:
         raise _wrong_status("Your answers are already submitted.")
 
@@ -245,7 +306,8 @@ def submit_answers(db: Session, ctx: OrgContext, assessment_id: uuid.UUID) -> Re
     if assessment.status is not ReadinessStatus.COLLECTING:
         raise _wrong_status("Answers are closed: the team is agreeing its answers now.")
     _require_can_answer(db, ctx)
-    response = own_response(db, assessment, ctx.user.id)
+    # Locked, so a save still in flight finishes first and is counted.
+    response = own_response(db, assessment, ctx.user.id, lock=True)
     question_set = question_set_for(assessment.question_set_version)
     answered = response.answers if response is not None else {}
     missing = [q for q in question_set.all_question_ids() if q not in answered]
@@ -315,6 +377,7 @@ def consensus_of(db: Session, assessment: ReadinessAssessment) -> ReadinessConse
 
 @dataclass(frozen=True, slots=True)
 class PersonAnswer:
+    user_id: uuid.UUID
     name: str
     answer: int
 
@@ -339,11 +402,12 @@ def mean_of(values: list[int]) -> Decimal:
     return (Decimal(sum(values)) / Decimal(len(values))).quantize(_MEAN_PLACES, ROUND_HALF_UP)
 
 
-def consensus_table(db: Session, assessment: ReadinessAssessment) -> list[QuestionConsensus]:
+def consensus_table(
+    db: Session, assessment: ReadinessAssessment, submitted: list[ReadinessResponse]
+) -> list[QuestionConsensus]:
     """Per question, in book order: each submitted answer, the mean, the spread, and the
-    agreed answer and note so far."""
+    agreed answer and note so far. ``submitted`` is the submitted responses, people loaded."""
     question_set: QuestionSet = question_set_for(assessment.question_set_version)
-    submitted = [r for r in responses(db, assessment) if r.submitted_at is not None]
     consensus = consensus_of(db, assessment)
     agreed = consensus.answers if consensus is not None else {}
     notes = consensus.notes if consensus is not None else {}
@@ -351,7 +415,9 @@ def consensus_table(db: Session, assessment: ReadinessAssessment) -> list[Questi
     for dimension in question_set.dimensions:
         for question in dimension.questions:
             given = [
-                PersonAnswer(name=r.user.name, answer=int(r.answers[question.id]))
+                PersonAnswer(
+                    user_id=r.user_id, name=r.user.name, answer=int(r.answers[question.id])
+                )
                 for r in submitted
                 if question.id in r.answers
             ]
@@ -448,6 +514,8 @@ def finalise(db: Session, ctx: OrgContext, assessment_id: uuid.UUID) -> Readines
         total=scored.total,
         band_key=scored.band.key,
         priorities=[{"rank": p.rank, "key": p.key, "score": p.score} for p in ranked.items],
+        # Stored, not counted later: responses go when their person is deleted.
+        participant_count=submitted_count(db, assessment),
         computed_at=now,
     )
     db.add(result)

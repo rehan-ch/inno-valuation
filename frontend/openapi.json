@@ -1573,9 +1573,15 @@
               }
             ],
             "title": "Submitted At"
+          },
+          "user_id": {
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
           }
         },
         "required": [
+          "user_id",
           "name",
           "answered",
           "submitted_at"
@@ -1592,9 +1598,15 @@
           "name": {
             "title": "Name",
             "type": "string"
+          },
+          "user_id": {
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
           }
         },
         "required": [
+          "user_id",
           "name",
           "answer"
         ],

@@ -193,5 +193,6 @@ class ReadinessResultFactory(BaseFactory[ReadinessResult]):
     per_dimension = LazyFunction(dict)
     category_scores = LazyFunction(dict)
     total = 0
+    participant_count = 1
     band_key = "foundation"
     priorities = LazyFunction(list)

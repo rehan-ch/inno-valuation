@@ -8,8 +8,8 @@ from sqlalchemy.orm import Session
 
 from app.core.deps import get_db, require_permission
 from app.core.errors import AppError
-from app.core.permissions import OrgContext, Permission
-from app.models import ReadinessAssessment, User
+from app.core.permissions import OrgContext, Permission, has_permission
+from app.models import ReadinessAssessment, ReadinessResponse
 from app.models.enums import ReadinessStatus
 from app.schemas.readiness import (
     AnswersIn,
@@ -44,25 +44,27 @@ router = APIRouter(prefix="/readiness", tags=["readiness"])
 STRENGTH_COUNT: Final = 3
 
 
-def _my_status(db: Session, ctx: OrgContext, assessment: ReadinessAssessment) -> MyStatus | None:
-    if not ctx.can(Permission.ANSWER_ASSESSMENT):
+def _answers_by_role(ctx: OrgContext) -> bool:
+    """The caller's role answers assessments. Unlike ``ctx.can``, this ignores an archived
+    organisation, so people still see their own past answers there."""
+    return has_permission(ctx.role, Permission.ANSWER_ASSESSMENT)
+
+
+def _my_status(ctx: OrgContext, own: ReadinessResponse | None) -> MyStatus | None:
+    if not _answers_by_role(ctx):
         return None
-    response = readiness.own_response(db, assessment, ctx.user.id)
-    if response is None or not response.answers:
+    if own is None or not own.answers:
         return "not_started"
-    return "submitted" if response.submitted_at else "in_progress"
+    return "submitted" if own.submitted_at else "in_progress"
 
 
-def _summary(db: Session, ctx: OrgContext, assessment: ReadinessAssessment) -> AssessmentSummaryOut:
-    result = readiness.result_of(db, assessment)
+def _summary(
+    ctx: OrgContext, assessment: ReadinessAssessment, overview: readiness.Overview
+) -> AssessmentSummaryOut:
     band_name = None
-    if result is not None:
+    if overview.result is not None:
         bands = question_set_for(assessment.question_set_version).readiness_bands
-        band_name = next(b.name for b in bands if b.key == result.band_key)
-    creator = None
-    if assessment.created_by_user_id is not None:
-        creator_user = db.get(User, assessment.created_by_user_id)
-        creator = creator_user.name if creator_user else None
+        band_name = next(b.name for b in bands if b.key == overview.result.band_key)
     return AssessmentSummaryOut(
         id=assessment.id,
         status=assessment.status,
@@ -70,32 +72,38 @@ def _summary(db: Session, ctx: OrgContext, assessment: ReadinessAssessment) -> A
         created_at=assessment.created_at,
         started_at=assessment.started_at,
         finalised_at=assessment.finalised_at,
-        created_by_name=creator,
-        submitted_count=readiness.submitted_count(db, assessment),
-        my_status=_my_status(db, ctx, assessment),
-        total=result.total if result else None,
+        created_by_name=overview.creator_name,
+        submitted_count=overview.submitted_count,
+        my_status=_my_status(ctx, overview.own),
+        total=overview.result.total if overview.result else None,
         band_name=band_name,
     )
 
 
 def _detail(db: Session, ctx: OrgContext, assessment: ReadinessAssessment) -> AssessmentOut:
-    summary = _summary(db, ctx, assessment)
+    overview = readiness.overviews(db, ctx.user.id, [assessment])[assessment.id]
     question_set = question_set_for(assessment.question_set_version)
-    can_answer = ctx.can(Permission.ANSWER_ASSESSMENT)
+    answers_by_role = _answers_by_role(ctx)
+    own = overview.own if answers_by_role else None
     can_manage = ctx.can(Permission.MANAGE_ASSESSMENTS)
-    own = readiness.own_response(db, assessment, ctx.user.id) if can_answer else None
     participants = None
     if can_manage:
         participants = [
-            ParticipantOut(name=r.user.name, answered=len(r.answers), submitted_at=r.submitted_at)
+            ParticipantOut(
+                user_id=r.user_id,
+                name=r.user.name,
+                answered=len(r.answers),
+                submitted_at=r.submitted_at,
+            )
             for r in readiness.responses(db, assessment)
         ]
     return AssessmentOut(
-        **summary.model_dump(),
-        my_answers=dict(own.answers) if own else ({} if can_answer else None),
+        **_summary(ctx, assessment, overview).model_dump(),
+        my_answers=dict(own.answers) if own else ({} if answers_by_role else None),
         my_submitted_at=own.submitted_at if own else None,
         question_count=len(question_set.all_question_ids()),
-        can_answer=can_answer,
+        # May answer now: an answering role in an organisation that is not archived.
+        can_answer=ctx.can(Permission.ANSWER_ASSESSMENT),
         can_manage=can_manage,
         participants=participants,
     )
@@ -142,7 +150,9 @@ def list_assessments(
     ctx: OrgContext = Depends(require_permission(Permission.VIEW_ASSESSMENTS)),
     db: Session = Depends(get_db),
 ) -> list[AssessmentSummaryOut]:
-    return [_summary(db, ctx, a) for a in readiness.list_assessments(db, ctx)]
+    assessments = readiness.list_assessments(db, ctx)
+    found = readiness.overviews(db, ctx.user.id, assessments)
+    return [_summary(ctx, a, found[a.id]) for a in assessments]
 
 
 @router.post("/assessments", response_model=AssessmentOut, status_code=status.HTTP_201_CREATED)
@@ -195,8 +205,8 @@ def submit_my_answers(
 
 
 def _consensus_out(db: Session, assessment: ReadinessAssessment) -> ConsensusOut:
-    table = readiness.consensus_table(db, assessment)
     submitted = [r for r in readiness.responses(db, assessment) if r.submitted_at is not None]
+    table = readiness.consensus_table(db, assessment, submitted)
     return ConsensusOut(
         assessment_id=assessment.id,
         status=assessment.status,
@@ -207,7 +217,10 @@ def _consensus_out(db: Session, assessment: ReadinessAssessment) -> ConsensusOut
             QuestionConsensusOut(
                 question_id=row.question_id,
                 dimension_key=row.dimension_key,
-                answers=[PersonAnswerOut(name=p.name, answer=p.answer) for p in row.answers],
+                answers=[
+                    PersonAnswerOut(user_id=p.user_id, name=p.name, answer=p.answer)
+                    for p in row.answers
+                ],
                 mean=str(row.mean) if row.mean is not None else None,
                 spread=row.spread,
                 wide_spread=row.wide_spread,
@@ -331,7 +344,7 @@ def _result_out(db: Session, assessment: ReadinessAssessment) -> ResultOut:
             for p in result.priorities
         ],
         strengths=strongest,
-        submitted_count=readiness.submitted_count(db, assessment),
+        submitted_count=result.participant_count,
         finalised_at=assessment.finalised_at,
     )
 

@@ -71,6 +71,7 @@ class AssessmentSummaryOut(BaseModel):
 
 
 class ParticipantOut(BaseModel):
+    user_id: uuid.UUID
     name: str
     answered: int
     submitted_at: datetime | None
@@ -91,6 +92,7 @@ class AnswersIn(RequestModel):
 
 
 class PersonAnswerOut(BaseModel):
+    user_id: uuid.UUID
     name: str
     answer: int
 

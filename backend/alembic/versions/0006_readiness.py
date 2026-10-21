@@ -210,6 +210,7 @@ def upgrade() -> None:
         sa.Column("per_dimension", postgresql.JSONB(astext_type=sa.Text()), nullable=False),
         sa.Column("category_scores", postgresql.JSONB(astext_type=sa.Text()), nullable=False),
         sa.Column("total", sa.Integer(), nullable=False),
+        sa.Column("participant_count", sa.Integer(), nullable=False),
         sa.Column("band_key", sa.String(length=50), nullable=False),
         sa.Column("priorities", postgresql.JSONB(astext_type=sa.Text()), nullable=False),
         sa.Column(
@@ -217,6 +218,9 @@ def upgrade() -> None:
             sa.DateTime(timezone=True),
             server_default=sa.text("now()"),
             nullable=False,
+        ),
+        sa.CheckConstraint(
+            "participant_count >= 1", name=op.f("ck_readiness_results_participant_count_positive")
         ),
         sa.CheckConstraint(
             "total >= 0 AND total <= 300", name=op.f("ck_readiness_results_total_0_to_300")

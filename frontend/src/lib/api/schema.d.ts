@@ -1156,6 +1156,11 @@ export interface components {
             name: string;
             /** Submitted At */
             submitted_at: string | null;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
         };
         /** PersonAnswerOut */
         PersonAnswerOut: {
@@ -1163,6 +1168,11 @@ export interface components {
             answer: number;
             /** Name */
             name: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
         };
         /** PriorityOut */
         PriorityOut: {

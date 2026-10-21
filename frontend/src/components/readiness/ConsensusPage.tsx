@@ -33,7 +33,10 @@ export function ConsensusPage({ assessmentId }: { assessmentId: string }) {
   const router = useRouter();
   const [state, setState] = useState<State>({ kind: "loading" });
   const [save, setSave] = useState<SaveState>("idle");
+  // Saves run in order and the chain never rejects. The server's answer replaces the
+  // screen only when no save is left in the queue, so quicker edits are never wiped.
   const queue = useRef<Promise<unknown>>(Promise.resolve());
+  const pending = useRef(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -70,16 +73,35 @@ export function ConsensusPage({ assessmentId }: { assessmentId: string }) {
   const { consensus, questions } = state;
   const byQuestion = new Map(consensus.questions.map((q) => [q.question_id, q]));
 
+  function showServer(consensus: ConsensusOut) {
+    setState((prev) => (prev.kind === "ready" ? { ...prev, consensus } : prev));
+  }
+
   function persist(changes: Parameters<typeof saveConsensus>[1]) {
     setSave("saving");
+    pending.current += 1;
     queue.current = queue.current
       .then(() => saveConsensus(assessmentId, changes))
       .then(
         (updated) => {
-          setSave("saved");
-          setState((prev) => (prev.kind === "ready" ? { ...prev, consensus: updated } : prev));
+          pending.current -= 1;
+          if (pending.current === 0) {
+            setSave("saved");
+            showServer(updated);
+          }
         },
-        () => setSave("error"),
+        async () => {
+          pending.current -= 1;
+          setSave("error");
+          // Show what the server holds, so an unsaved answer is neither shown nor counted.
+          if (pending.current === 0) {
+            try {
+              showServer(await getConsensus(assessmentId));
+            } catch {
+              // still offline: the error message stays
+            }
+          }
+        },
       );
   }
 
@@ -135,6 +157,7 @@ export function ConsensusPage({ assessmentId }: { assessmentId: string }) {
           </span>
           <FinaliseControl
             assessmentId={assessmentId}
+            waitForSaves={() => queue.current}
             ready={agreedCount === consensus.question_count}
             onFinalised={() => router.push(`/readiness/${assessmentId}/result`)}
           />
@@ -205,7 +228,7 @@ function ConsensusRow({
         <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-neutral-600">
           <span>
             {row.answers.map((a) => (
-              <span key={a.name} className="mr-3 whitespace-nowrap">
+              <span key={a.user_id} className="mr-3 whitespace-nowrap">
                 {a.name}: <strong className="text-neutral-900">{a.answer}</strong>
               </span>
             ))}
@@ -271,17 +294,23 @@ function ConsensusRow({
 function FinaliseControl({
   assessmentId,
   ready,
+  waitForSaves,
   onFinalised,
 }: {
   assessmentId: string;
   ready: boolean;
+  waitForSaves: () => Promise<unknown>;
   onFinalised: () => void;
 }) {
   const { busy, error, run } = useSubmit();
   const [confirming, setConfirming] = useState(false);
 
   async function handleFinalise() {
-    const result = await run(() => finaliseAssessment(assessmentId));
+    // The last agreed answer may still be saving; finalise only once every save has landed.
+    const result = await run(async () => {
+      await waitForSaves();
+      return finaliseAssessment(assessmentId);
+    });
     if (result) onFinalised();
   }
 

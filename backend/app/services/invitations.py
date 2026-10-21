@@ -26,7 +26,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Final
 
 from kombu.exceptions import OperationalError as BrokerError
-from sqlalchemy import func, select, update
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
 from app.core.emails import normalise_email
@@ -39,7 +39,7 @@ from app.models import Invitation, Membership, Organisation, User
 from app.models.enums import MembershipRole, OrganisationStatus
 from app.services import consultant_access, members
 from app.services.audit import AuditAction, record
-from app.services.organisations import lock_organisation, oldest_in_window, too_many_requests
+from app.services.organisations import enforce_limit, lock_organisation
 from app.services.team_emails import INVITATION_LIFETIME, invitation_is_pending
 
 logger = logging.getLogger(__name__)
@@ -115,36 +115,35 @@ def invite(
     )
     if already_member is not None:
         raise AppError("already_member", "This person is already a member.", 409)
-    now = datetime.now(UTC)
-    limits = (
-        (
-            Invitation.organisation_id == org.id,
-            INVITE_LIMIT_PERIOD,
-            INVITE_LIMIT,
-            f"This organisation has sent {INVITE_LIMIT} invitations in the last day, "
-            "the most allowed.",
-        ),
-        (
-            Invitation.invited_by_user_id == ctx.user.id,
-            INVITE_LIMIT_PERIOD,
-            INVITER_LIMIT,
-            f"You have sent {INVITER_LIMIT} invitations in the last day, the most allowed.",
-        ),
-        (
-            (Invitation.organisation_id == org.id) & (Invitation.email == email),
-            RECIPIENT_LIMIT_PERIOD,
-            RECIPIENT_LIMIT,
-            f"This email has been invited {RECIPIENT_LIMIT} times in the last hour, "
-            "the most allowed.",
-        ),
+    enforce_limit(
+        db,
+        Invitation.created_at,
+        Invitation.organisation_id == org.id,
+        limit=INVITE_LIMIT,
+        period=INVITE_LIMIT_PERIOD,
+        rule=f"This organisation has sent {INVITE_LIMIT} invitations in the last day, "
+        "the most allowed.",
     )
-    for condition, period, limit, rule in limits:
-        in_window = (condition, Invitation.created_at > now - period)
-        recent = db.scalar(select(func.count()).select_from(Invitation).where(*in_window))
-        if (recent or 0) >= limit:
-            oldest = oldest_in_window(db, select(func.min(Invitation.created_at)).where(*in_window))
-            raise too_many_requests(rule, oldest + period - now)
+    enforce_limit(
+        db,
+        Invitation.created_at,
+        Invitation.invited_by_user_id == ctx.user.id,
+        limit=INVITER_LIMIT,
+        period=INVITE_LIMIT_PERIOD,
+        rule=f"You have sent {INVITER_LIMIT} invitations in the last day, the most allowed.",
+    )
+    enforce_limit(
+        db,
+        Invitation.created_at,
+        Invitation.organisation_id == org.id,
+        Invitation.email == email,
+        limit=RECIPIENT_LIMIT,
+        period=RECIPIENT_LIMIT_PERIOD,
+        rule=f"This email has been invited {RECIPIENT_LIMIT} times in the last hour, "
+        "the most allowed.",
+    )
 
+    now = datetime.now(UTC)
     # Replace any pending invitation for this email: only the newest link works.
     db.execute(
         update(Invitation)

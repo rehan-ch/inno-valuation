@@ -15,7 +15,7 @@ from enum import StrEnum
 from typing import Final
 
 from kombu.exceptions import OperationalError as BrokerError
-from sqlalchemy import and_, exists, func, or_, select
+from sqlalchemy import and_, exists, or_, select
 from sqlalchemy.orm import Session, joinedload
 
 from app.core.emails import normalise_email
@@ -27,7 +27,7 @@ from app.models import ConsultantGrant, Membership, Organisation, User
 from app.models.enums import ConsultantGrantScope, OrganisationStatus
 from app.services import members
 from app.services.audit import AuditAction, record
-from app.services.organisations import lock_organisation, oldest_in_window, too_many_requests
+from app.services.organisations import enforce_limit, lock_organisation
 
 logger = logging.getLogger(__name__)
 
@@ -125,27 +125,24 @@ def grant(
         raise AppError(
             "access_exists", "This person already has access. Change the end date instead.", 409
         )
-    for condition, limit, rule in (
-        (
-            ConsultantGrant.organisation_id == org.id,
-            GRANT_LIMIT,
-            f"This organisation has given consultant access {GRANT_LIMIT} times in the last "
-            "day, the most allowed.",
-        ),
-        (
-            ConsultantGrant.granted_by_user_id == ctx.user.id,
-            GRANTER_LIMIT,
-            f"You have given consultant access {GRANTER_LIMIT} times in the last day, "
-            "the most allowed.",
-        ),
-    ):
-        in_window = (condition, ConsultantGrant.created_at > now - GRANT_LIMIT_PERIOD)
-        recent = db.scalar(select(func.count()).select_from(ConsultantGrant).where(*in_window))
-        if (recent or 0) >= limit:
-            oldest = oldest_in_window(
-                db, select(func.min(ConsultantGrant.created_at)).where(*in_window)
-            )
-            raise too_many_requests(rule, oldest + GRANT_LIMIT_PERIOD - now)
+    enforce_limit(
+        db,
+        ConsultantGrant.created_at,
+        ConsultantGrant.organisation_id == org.id,
+        limit=GRANT_LIMIT,
+        period=GRANT_LIMIT_PERIOD,
+        rule=f"This organisation has given consultant access {GRANT_LIMIT} times in the last "
+        "day, the most allowed.",
+    )
+    enforce_limit(
+        db,
+        ConsultantGrant.created_at,
+        ConsultantGrant.granted_by_user_id == ctx.user.id,
+        limit=GRANTER_LIMIT,
+        period=GRANT_LIMIT_PERIOD,
+        rule=f"You have given consultant access {GRANTER_LIMIT} times in the last day, "
+        "the most allowed.",
+    )
     new = ConsultantGrant(
         organisation_id=org.id,
         consultant_email=email,

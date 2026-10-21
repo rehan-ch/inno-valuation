@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import type { ConsensusOut, ResultOut } from "@/lib/api/types";
 import {
+  errorResponse,
   fakeAssessment,
   fakeAssessmentSummary,
   fakeMe,
@@ -120,8 +121,8 @@ describe("QuestionnairePage", () => {
       [`GET ${A}`]: fakeAssessment({
         submitted_count: 1,
         participants: [
-          { name: "Mia Member", answered: 4, submitted_at: "2026-10-21T09:00:00Z" },
-          { name: "Late Larry", answered: 1, submitted_at: null },
+          { user_id: "u1", name: "Mia Member", answered: 4, submitted_at: "2026-10-21T09:00:00Z" },
+          { user_id: "u2", name: "Late Larry", answered: 1, submitted_at: null },
         ],
       }),
       "GET /api/v1/readiness/question-set": fakeQuestionSet(),
@@ -137,6 +138,60 @@ describe("QuestionnairePage", () => {
 
     expect(calls.at(-1)).toMatchObject({ method: "POST", path: `${A}/consensus/begin` });
     expect(routerPush).toHaveBeenCalledWith(`/readiness/${ID}/consensus`);
+  });
+
+  it("undoes an answer whose save failed, so it is neither shown nor counted", async () => {
+    stubApi({
+      [`GET ${A}`]: fakeAssessment(),
+      "GET /api/v1/readiness/question-set": fakeQuestionSet(),
+      [`PATCH ${A}/my-answers`]: errorResponse("wrong_status", "Answers are closed.", 409),
+    });
+    const user = userEvent.setup();
+
+    renderWithMe(<QuestionnairePage assessmentId={ID} />, fakeMe());
+    const question = await screen.findByRole("group", {
+      name: "Do you understand the end-to-end experience?",
+    });
+    await user.click(within(question).getByRole("radio", { name: "4" }));
+
+    expect(await screen.findByText(/Not saved/)).toBeInTheDocument();
+    expect(within(question).getByRole("radio", { name: "4" })).not.toBeChecked();
+    expect(screen.getByText("0 of 4 answered")).toBeInTheDocument();
+  });
+
+  it("submits only after the last answer has saved", async () => {
+    let releaseSave: () => void = () => {};
+    const order: string[] = [];
+    stubApi({
+      [`GET ${A}`]: fakeAssessment({
+        my_answers: { customer_journey_1: 3, customer_journey_2: 4, brand_magnetism_1: 3 },
+      }),
+      "GET /api/v1/readiness/question-set": fakeQuestionSet(),
+      [`PATCH ${A}/my-answers`]: () =>
+        new Promise((resolve) => {
+          releaseSave = () => {
+            order.push("save");
+            resolve(fakeAssessment({ my_answers: ALL }));
+          };
+        }),
+      [`POST ${A}/my-answers/submit`]: () => {
+        order.push("submit");
+        return fakeAssessment({ my_answers: ALL, my_submitted_at: "2026-10-21T10:00:00Z" });
+      },
+    });
+    const user = userEvent.setup();
+
+    renderWithMe(<QuestionnairePage assessmentId={ID} />, fakeMe());
+    const last = await screen.findByRole("group", { name: "Does the story resonate?" });
+    await user.click(within(last).getByRole("radio", { name: "2" }));
+    // The last answer is still saving when the person submits.
+    await user.click(screen.getByRole("button", { name: "Submit my answers" }));
+    await user.click(screen.getByRole("button", { name: "Submit now" }));
+    expect(order).toEqual([]);
+    releaseSave();
+
+    expect(await screen.findByText(/Your answers are submitted/)).toBeInTheDocument();
+    expect(order).toEqual(["save", "submit"]);
   });
 
   it("tells an investor that their role watches", async () => {
@@ -158,7 +213,11 @@ function fakeConsensus(agreed: Record<string, number | null> = {}): ConsensusOut
   const question = (id: string, dim: string, answers: number[]) => ({
     question_id: id,
     dimension_key: dim,
-    answers: answers.map((answer, i) => ({ name: ["Olive", "Mia"][i] ?? "X", answer })),
+    answers: answers.map((answer, i) => ({
+      user_id: `u${i}`,
+      name: ["Olive", "Mia"][i] ?? "X",
+      answer,
+    })),
     mean: (answers.reduce((s, a) => s + a, 0) / answers.length).toFixed(2),
     spread: Math.max(...answers) - Math.min(...answers),
     wide_spread: Math.max(...answers) - Math.min(...answers) >= 2,

@@ -36,7 +36,9 @@ export function QuestionnairePage({ assessmentId }: { assessmentId: string }) {
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [save, setSave] = useState<SaveState>("idle");
   // Saves run one after another, so two quick clicks on one question land in order.
+  // The chain never rejects: each save handles its own failure.
   const queue = useRef<Promise<unknown>>(Promise.resolve());
+  const pending = useRef(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -73,16 +75,33 @@ export function QuestionnairePage({ assessmentId }: { assessmentId: string }) {
   const total = assessment.question_count;
 
   function choose(questionId: string, value: number) {
+    const previous = answers[questionId];
     setAnswers((prev) => ({ ...prev, [questionId]: value }));
     setSave("saving");
+    pending.current += 1;
     queue.current = queue.current
       .then(() => saveMyAnswers(assessmentId, { [questionId]: value }))
       .then(
         (updated) => {
-          setSave("saved");
-          setState((prev) => (prev.kind === "ready" ? { ...prev, assessment: updated } : prev));
+          pending.current -= 1;
+          if (pending.current === 0) {
+            setSave("saved");
+            setState((prev) => (prev.kind === "ready" ? { ...prev, assessment: updated } : prev));
+          }
         },
-        () => setSave("error"),
+        () => {
+          pending.current -= 1;
+          setSave("error");
+          // Show what the server holds, so the unsaved choice is not counted and choosing
+          // it again is a real change that retries the save.
+          setAnswers((prev) => {
+            if (prev[questionId] !== value) return prev;
+            const next = { ...prev };
+            if (previous === undefined) delete next[questionId];
+            else next[questionId] = previous;
+            return next;
+          });
+        },
       );
   }
 
@@ -114,9 +133,14 @@ export function QuestionnairePage({ assessmentId }: { assessmentId: string }) {
           Your answers are submitted. The facilitator will agree the team&apos;s answers next.
         </Alert>
       )}
-      {!assessment.can_answer && (
+      {assessment.my_answers === null && (
         <Alert tone="info">Your role watches the assessment; it does not answer.</Alert>
       )}
+      {assessment.my_answers !== null &&
+        !assessment.can_answer &&
+        assessment.status === "collecting" && (
+          <Alert tone="info">This organisation is archived, so your answers are read-only.</Alert>
+        )}
       {assessment.can_answer && assessment.status !== "collecting" && !assessment.my_submitted_at && (
         <Alert tone="info">Answering is closed: the team&apos;s answers are being agreed.</Alert>
       )}
@@ -125,7 +149,7 @@ export function QuestionnairePage({ assessmentId }: { assessmentId: string }) {
         <FacilitatorPanel assessment={assessment} />
       )}
 
-      {assessment.can_answer && (
+      {assessment.my_answers !== null && (
         <div className="sticky top-(--app-header-h) z-10 rounded-2xl border border-neutral-200 bg-white/90 p-4 shadow-sm backdrop-blur">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             <span className="text-sm font-medium text-neutral-900">
@@ -143,6 +167,7 @@ export function QuestionnairePage({ assessmentId }: { assessmentId: string }) {
             {editable && (
               <SubmitControl
                 ready={answered === total}
+                waitForSaves={() => queue.current}
                 onSubmitted={(updated) =>
                   setState((prev) =>
                     prev.kind === "ready" ? { ...prev, assessment: updated } : prev,
@@ -244,17 +269,23 @@ export function QuestionnairePage({ assessmentId }: { assessmentId: string }) {
 function SubmitControl({
   ready,
   assessmentId,
+  waitForSaves,
   onSubmitted,
 }: {
   ready: boolean;
   assessmentId: string;
+  waitForSaves: () => Promise<unknown>;
   onSubmitted: (assessment: AssessmentOut) => void;
 }) {
   const { busy, error, run } = useSubmit();
   const [confirming, setConfirming] = useState(false);
 
   async function handleSubmit() {
-    const updated = await run(() => submitMyAnswers(assessmentId));
+    // The last answer may still be saving; submit only once every save has landed.
+    const updated = await run(async () => {
+      await waitForSaves();
+      return submitMyAnswers(assessmentId);
+    });
     if (updated) onSubmitted(updated);
   }
 
@@ -303,7 +334,7 @@ function FacilitatorPanel({ assessment }: { assessment: AssessmentOut }) {
       ) : (
         <ul className="mt-3 divide-y divide-neutral-200">
           {participants.map((p) => (
-            <li key={p.name} className="flex items-center justify-between gap-3 py-2 text-sm">
+            <li key={p.user_id} className="flex items-center justify-between gap-3 py-2 text-sm">
               <span className="text-neutral-900">{p.name}</span>
               {p.submitted_at ? (
                 <Badge tone="green">Submitted</Badge>

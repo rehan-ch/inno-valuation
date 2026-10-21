@@ -10,7 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models import AuditEvent, Organisation, ReadinessResult, User
-from app.models.enums import MembershipRole
+from app.models.enums import MembershipRole, OrganisationStatus
 from app.scoring.question_set import QUESTION_SET
 from app.services.audit import AuditAction
 from tests.api.helpers import csrf, member, signed_in
@@ -278,7 +278,9 @@ def test_people_who_did_not_submit_are_left_out(client: TestClient) -> None:
     _as(client, owner, org)
     table = _post(client, assessment_id, "consensus/begin").json()
     assert table["participants"] == ["Olive Owner"]
-    assert table["questions"][0]["answers"] == [{"name": "Olive Owner", "answer": 4}]
+    assert table["questions"][0]["answers"] == [
+        {"user_id": str(owner.id), "name": "Olive Owner", "answer": 4}
+    ]
     # Answering is closed now, even for the late person.
     _as(client, late, org)
     assert _answer(client, assessment_id, {QUESTION_IDS[0]: 2}).status_code == 409
@@ -419,3 +421,71 @@ def test_the_question_set_is_served_verbatim(client: TestClient) -> None:
     first = QUESTION_SET.dimensions[0].questions[0]
     assert body["dimensions"][0]["questions"][0] == {"id": first.id, "text": first.text}
     assert sum(len(d["questions"]) for d in body["dimensions"]) == 60
+
+
+# Review fixes
+
+
+def _finished(client: TestClient, people: list[User], org: Organisation) -> str:
+    """Everyone answers and submits; the first person agrees 3s and finalises."""
+    _as(client, people[0], org)
+    assessment_id: str = _start(client).json()["id"]
+    for person in people:
+        _as(client, person, org)
+        _answer(client, assessment_id, _all(3))
+        _submit(client, assessment_id)
+    _as(client, people[0], org)
+    _post(client, assessment_id, "consensus/begin")
+    _agree(client, assessment_id, _all(3))
+    assert _post(client, assessment_id, "finalise").status_code == 200
+    return assessment_id
+
+
+def test_the_result_keeps_its_participant_count(client: TestClient, db: Session) -> None:
+    owner, org = member(MembershipRole.OWNER)
+    leaver, _ = member(MembershipRole.MEMBER, org)
+    assessment_id = _finished(client, [owner, leaver], org)
+    assert client.get(f"{BASE}/assessments/{assessment_id}/result").json()["submitted_count"] == 2
+
+    # The leaver deletes their account; their response goes, the result does not change.
+    db.delete(db.get(User, leaver.id))
+    db.flush()
+    assert client.get(f"{BASE}/assessments/{assessment_id}/result").json()["submitted_count"] == 2
+
+
+def test_people_with_the_same_name_stay_apart(client: TestClient) -> None:
+    owner, org = member(MembershipRole.OWNER, name="Alex Smith")
+    twin, _ = member(MembershipRole.MEMBER, org, name="Alex Smith")
+    _as(client, owner, org)
+    assessment_id = _start(client).json()["id"]
+    for person, value in ((owner, 2), (twin, 5)):
+        _as(client, person, org)
+        _answer(client, assessment_id, _all(value))
+        _submit(client, assessment_id)
+    _as(client, owner, org)
+    participants = client.get(f"{BASE}/assessments/{assessment_id}").json()["participants"]
+    assert {p["user_id"] for p in participants} == {str(owner.id), str(twin.id)}
+    answers = _post(client, assessment_id, "consensus/begin").json()["questions"][0]["answers"]
+    assert {(a["user_id"], a["answer"]) for a in answers} == {(str(owner.id), 2), (str(twin.id), 5)}
+
+
+def test_an_archived_organisation_keeps_your_answers_read_only(
+    client: TestClient, db: Session
+) -> None:
+    owner, org = member(MembershipRole.OWNER)
+    mia, _ = member(MembershipRole.MEMBER, org)
+    _as(client, owner, org)
+    assessment_id = _start(client).json()["id"]
+    # Mia's session has the organisation open when it is archived.
+    _as(client, mia, org)
+    _answer(client, assessment_id, {QUESTION_IDS[0]: 4})
+    org.status = OrganisationStatus.ARCHIVED
+    db.flush()
+
+    body = client.get(f"{BASE}/assessments/{assessment_id}").json()
+    assert body["my_answers"] == {QUESTION_IDS[0]: 4}  # still her own answers
+    assert body["my_status"] == "in_progress"
+    assert body["can_answer"] is False  # but no longer editable
+    refused = _answer(client, assessment_id, {QUESTION_IDS[1]: 3})
+    assert refused.status_code == 403
+    assert refused.json()["error"]["code"] == "organisation_archived"

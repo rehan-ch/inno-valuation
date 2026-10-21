@@ -9,8 +9,8 @@ import math
 from datetime import UTC, datetime, timedelta
 from typing import Any, Final
 
-from sqlalchemy import Select, func, select
-from sqlalchemy.orm import Session
+from sqlalchemy import ColumnElement, func, select
+from sqlalchemy.orm import InstrumentedAttribute, Session
 
 from app.core.errors import AppError
 from app.models import Membership, Organisation, User
@@ -60,10 +60,23 @@ def too_many_requests(rule: str, retry_in: timedelta) -> AppError:
     return AppError("too_many_requests", f"{rule} Try again {describe_wait(retry_in)}.", 429)
 
 
-def oldest_in_window(db: Session, stmt: Select[datetime]) -> datetime:
-    """The oldest timestamp a limit query counted (``stmt`` selects ``min(created_at)``)."""
-    oldest: datetime | None = db.scalar(stmt)
-    return oldest if oldest is not None else datetime.now(UTC)
+def enforce_limit(
+    db: Session,
+    created_at: InstrumentedAttribute[datetime],
+    *conditions: ColumnElement[bool],
+    limit: int,
+    period: timedelta,
+    rule: str,
+) -> None:
+    """Refuse with 429 when ``limit`` rows matching ``conditions`` were created within the
+    rolling ``period``. One query gives the count and the oldest, so the message says when
+    the next request is allowed. ``rule`` is the full sentence shown to the person."""
+    now = datetime.now(UTC)
+    count, oldest = db.execute(
+        select(func.count(), func.min(created_at)).where(*conditions, created_at > now - period)
+    ).one()
+    if count >= limit:
+        raise too_many_requests(rule, (oldest or now) + period - now)
 
 
 def lock_organisation(db: Session, org: Organisation) -> None:
@@ -76,18 +89,14 @@ def create_organisation(db: Session, *, creator: User, values: dict[str, Any]) -
     unknown = set(values) - EDITABLE_FIELDS
     if unknown:
         raise ValueError(f"Not settable: {sorted(unknown)}")
-    now = datetime.now(UTC)
-    in_window = (
+    enforce_limit(
+        db,
+        Organisation.created_at,
         Organisation.created_by_user_id == creator.id,
-        Organisation.created_at > now - CREATE_LIMIT_PERIOD,
+        limit=CREATE_LIMIT,
+        period=CREATE_LIMIT_PERIOD,
+        rule=f"You have created {CREATE_LIMIT} organisations in the last day, the most allowed.",
     )
-    recent = db.scalar(select(func.count()).select_from(Organisation).where(*in_window))
-    if (recent or 0) >= CREATE_LIMIT:
-        oldest = oldest_in_window(db, select(func.min(Organisation.created_at)).where(*in_window))
-        raise too_many_requests(
-            f"You have created {CREATE_LIMIT} organisations in the last day, the most allowed.",
-            oldest + CREATE_LIMIT_PERIOD - now,
-        )
     org = Organisation(created_by_user_id=creator.id, **values)
     db.add(org)
     db.flush()

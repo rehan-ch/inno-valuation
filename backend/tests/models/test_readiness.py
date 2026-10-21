@@ -86,6 +86,7 @@ def test_one_consensus_and_one_result_per_assessment(db: Session) -> None:
             per_dimension="{}",
             category_scores="{}",
             total=0,
+            participant_count=1,
             band_key="foundation",
             priorities="[]",
         )
