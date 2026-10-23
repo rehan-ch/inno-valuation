@@ -444,7 +444,13 @@ def test_one_email_cannot_be_flooded(
     signed_in(client, admin)
     for _ in range(2):
         assert _invite(client, "victim@example.com").status_code == 201
-    assert _invite(client, "victim@example.com").json()["error"]["code"] == "too_many_requests"
+    refused = _invite(client, "victim@example.com").json()["error"]
+    assert refused["code"] == "too_many_requests"
+    # Says which rule was hit and when the next invitation is allowed.
+    assert refused["message"] == (
+        "This email has been invited 2 times in the last hour, the most allowed. "
+        "Try again in about 1 hour."
+    )
     assert _invite(client, "someone-else@example.com").status_code == 201
     assert len(outbox.outbox) == 3
 

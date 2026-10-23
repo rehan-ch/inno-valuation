@@ -2,12 +2,15 @@
 import { vi } from "vitest";
 
 import type {
+  AssessmentOut,
+  AssessmentSummaryOut,
   ConsultantAccessOut,
   ConsultantGrantOut,
   InvitationOut,
   MemberOut,
   MeOut,
   OrganisationOut,
+  QuestionSetOut,
 } from "@/lib/api/types";
 
 export function jsonResponse(body: unknown, status = 200): Response {
@@ -143,5 +146,70 @@ export function fakeAccess(overrides: Partial<ConsultantAccessOut> = {}): Consul
     status: "waiting",
     expires_at: "2026-12-31T23:59:59Z",
     ...overrides,
+  };
+}
+
+export function fakeAssessmentSummary(
+  overrides: Partial<AssessmentSummaryOut> = {},
+): AssessmentSummaryOut {
+  return {
+    id: "77777777-7777-7777-7777-777777777777",
+    status: "collecting",
+    question_set_version: 1,
+    created_at: "2026-10-20T09:00:00Z",
+    started_at: "2026-10-20T09:00:00Z",
+    finalised_at: null,
+    created_by_name: "Olive Owner",
+    submitted_count: 0,
+    my_status: "not_started",
+    total: null,
+    band_name: null,
+    ...overrides,
+  };
+}
+
+export function fakeAssessment(overrides: Partial<AssessmentOut> = {}): AssessmentOut {
+  return {
+    ...fakeAssessmentSummary(),
+    my_answers: {},
+    my_submitted_at: null,
+    question_count: 4,
+    can_answer: true,
+    can_manage: true,
+    participants: [],
+    ...overrides,
+  };
+}
+
+/** A small question set (2 dimensions, 2 questions each) shaped like the real one. */
+export function fakeQuestionSet(): QuestionSetOut {
+  return {
+    version: 1,
+    scale: { min: 1, max: 5, labels: { "1": "Strongly Disagree", "5": "Strongly Agree" } },
+    categories: [{ key: "customer_facing", name: "Customer-Facing Innovation", order: 1 }],
+    dimensions: [
+      {
+        key: "customer_journey",
+        name: "Customer Journey",
+        order: 1,
+        category: "customer_facing",
+        description: "Map the customer's journey.",
+        questions: [
+          { id: "customer_journey_1", text: "Do you understand the end-to-end experience?" },
+          { id: "customer_journey_2", text: "Is feedback integrated?" },
+        ],
+      },
+      {
+        key: "brand_magnetism",
+        name: "Brand Magnetism",
+        order: 2,
+        category: "customer_facing",
+        description: "Build a magnetic brand.",
+        questions: [
+          { id: "brand_magnetism_1", text: "Are brand values clear?" },
+          { id: "brand_magnetism_2", text: "Does the story resonate?" },
+        ],
+      },
+    ],
   };
 }

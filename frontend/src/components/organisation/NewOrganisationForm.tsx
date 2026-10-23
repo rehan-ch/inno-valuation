@@ -8,6 +8,7 @@ import { useMe } from "@/components/app/me-context";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { Card, PageHeader } from "@/components/ui/Card";
+import { CurrencySelect } from "@/components/ui/CurrencySelect";
 import { TextField } from "@/components/ui/fields";
 import { createOrganisation } from "@/lib/api/organisation";
 import { useSubmit } from "@/lib/forms";
@@ -24,17 +25,11 @@ export function NewOrganisationForm() {
   const [website, setWebsite] = useState("");
   const [description, setDescription] = useState("");
   const [nameError, setNameError] = useState<string | undefined>(undefined);
-  const [currencyError, setCurrencyError] = useState<string | undefined>(undefined);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    const invalidName = name.trim() ? undefined : "Enter the organisation's name.";
-    const invalidCurrency = /^[A-Za-z]{3}$/.test(currency)
-      ? undefined
-      : "Use a 3-letter code, like USD.";
-    if (invalidName || invalidCurrency) {
-      setNameError(invalidName);
-      setCurrencyError(invalidCurrency);
+    if (!name.trim()) {
+      setNameError("Enter the organisation's name.");
       return;
     }
     const org = await run(() =>
@@ -43,7 +38,7 @@ export function NewOrganisationForm() {
         industry: industry || null,
         country: country ? country.toUpperCase() : null,
         size_band: sizeBand || null,
-        currency: currency.toUpperCase() || "USD",
+        currency,
         website: website || null,
         description: description || null,
       }),
@@ -51,7 +46,7 @@ export function NewOrganisationForm() {
     if (org) {
       // The new organisation became the active one in the session; re-read /me, then go.
       await refresh();
-      router.push("/team");
+      router.push("/dashboard");
     }
   }
 
@@ -81,7 +76,7 @@ export function NewOrganisationForm() {
             value={industry}
             onChange={(e) => setIndustry(e.target.value)}
           />
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <TextField
               label="Country"
               name="country"
@@ -97,20 +92,12 @@ export function NewOrganisationForm() {
               value={sizeBand}
               onChange={(e) => setSizeBand(e.target.value)}
             />
-            <TextField
-              label="Currency"
-              name="currency"
-              maxLength={3}
-              hint="3-letter code, e.g. USD."
-              required
-              error={currencyError}
-              value={currency}
-              onChange={(e) => {
-                setCurrency(e.target.value);
-                setCurrencyError(undefined);
-              }}
-            />
           </div>
+          <CurrencySelect
+            value={currency}
+            onChange={setCurrency}
+            hint="Investments and Value for Money are shown in this currency."
+          />
           <TextField
             label="Website"
             type="url"

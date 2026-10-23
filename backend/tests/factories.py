@@ -14,7 +14,7 @@ from functools import cache
 from typing import Any, cast
 
 from factory.alchemy import SQLAlchemyModelFactory
-from factory.declarations import LazyFunction, Sequence, SubFactory
+from factory.declarations import LazyAttribute, LazyFunction, Sequence, SubFactory
 from sqlalchemy.orm import Session
 
 from app.core.security import hash_password, throttle_key
@@ -24,6 +24,10 @@ from app.models import (
     Invitation,
     Membership,
     Organisation,
+    ReadinessAssessment,
+    ReadinessConsensus,
+    ReadinessResponse,
+    ReadinessResult,
     SignInThrottle,
     User,
     UserToken,
@@ -151,3 +155,44 @@ class SignInThrottleFactory(BaseFactory[SignInThrottle]):
     key_hash = Sequence(lambda n: throttle_key(f"throttled{n}@example.com"))
     attempt_count = 1
     window_started_at = LazyFunction(lambda: datetime.now(UTC))
+
+
+class ReadinessAssessmentFactory(BaseFactory[ReadinessAssessment]):
+    class Meta:
+        model = ReadinessAssessment
+
+    organisation = SubFactory(OrganisationFactory)
+    question_set_version = 1
+
+
+class ReadinessResponseFactory(BaseFactory[ReadinessResponse]):
+    class Meta:
+        model = ReadinessResponse
+
+    assessment = SubFactory(ReadinessAssessmentFactory)
+    organisation_id = LazyAttribute(lambda o: o.assessment.organisation_id)
+    user = SubFactory(UserFactory)
+    answers = LazyFunction(dict)
+
+
+class ReadinessConsensusFactory(BaseFactory[ReadinessConsensus]):
+    class Meta:
+        model = ReadinessConsensus
+
+    assessment = SubFactory(ReadinessAssessmentFactory)
+    organisation_id = LazyAttribute(lambda o: o.assessment.organisation_id)
+    answers = LazyFunction(dict)
+
+
+class ReadinessResultFactory(BaseFactory[ReadinessResult]):
+    class Meta:
+        model = ReadinessResult
+
+    assessment = SubFactory(ReadinessAssessmentFactory)
+    organisation_id = LazyAttribute(lambda o: o.assessment.organisation_id)
+    per_dimension = LazyFunction(dict)
+    category_scores = LazyFunction(dict)
+    total = 0
+    participant_count = 1
+    band_key = "foundation"
+    priorities = LazyFunction(list)

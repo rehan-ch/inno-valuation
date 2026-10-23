@@ -5,11 +5,12 @@ Team changes (members, invitations, consultant access) lock the organisation row
 other and leave the organisation without an owner.
 """
 
+import math
 from datetime import UTC, datetime, timedelta
 from typing import Any, Final
 
-from sqlalchemy import func, select
-from sqlalchemy.orm import Session
+from sqlalchemy import ColumnElement, func, select
+from sqlalchemy.orm import InstrumentedAttribute, Session
 
 from app.core.errors import AppError
 from app.models import Membership, Organisation, User
@@ -38,8 +39,44 @@ CREATE_LIMIT: Final = 10
 CREATE_LIMIT_PERIOD: Final = timedelta(days=1)
 
 
-def too_many_requests() -> AppError:
-    return AppError("too_many_requests", "Too many requests. Please try again later.", 429)
+_MINUTES_PER_HOUR: Final = 60
+
+
+def describe_wait(delta: timedelta) -> str:
+    """'in 7 minutes', 'in about 3 hours': rounded up, so the person never retries early."""
+    minutes = max(1, math.ceil(delta.total_seconds() / 60))
+    if minutes < _MINUTES_PER_HOUR:
+        return "in 1 minute" if minutes == 1 else f"in {minutes} minutes"
+    hours = math.ceil(minutes / _MINUTES_PER_HOUR)
+    return "in about 1 hour" if hours == 1 else f"in about {hours} hours"
+
+
+def too_many_requests(rule: str, retry_in: timedelta) -> AppError:
+    """A refused abuse limit, saying which rule and when the next request is allowed.
+
+    ``rule`` is a full sentence; ``retry_in`` is when the oldest counted request leaves
+    the rolling window.
+    """
+    return AppError("too_many_requests", f"{rule} Try again {describe_wait(retry_in)}.", 429)
+
+
+def enforce_limit(
+    db: Session,
+    created_at: InstrumentedAttribute[datetime],
+    *conditions: ColumnElement[bool],
+    limit: int,
+    period: timedelta,
+    rule: str,
+) -> None:
+    """Refuse with 429 when ``limit`` rows matching ``conditions`` were created within the
+    rolling ``period``. One query gives the count and the oldest, so the message says when
+    the next request is allowed. ``rule`` is the full sentence shown to the person."""
+    now = datetime.now(UTC)
+    count, oldest = db.execute(
+        select(func.count(), func.min(created_at)).where(*conditions, created_at > now - period)
+    ).one()
+    if count >= limit:
+        raise too_many_requests(rule, (oldest or now) + period - now)
 
 
 def lock_organisation(db: Session, org: Organisation) -> None:
@@ -52,16 +89,14 @@ def create_organisation(db: Session, *, creator: User, values: dict[str, Any]) -
     unknown = set(values) - EDITABLE_FIELDS
     if unknown:
         raise ValueError(f"Not settable: {sorted(unknown)}")
-    recent = db.scalar(
-        select(func.count())
-        .select_from(Organisation)
-        .where(
-            Organisation.created_by_user_id == creator.id,
-            Organisation.created_at > datetime.now(UTC) - CREATE_LIMIT_PERIOD,
-        )
+    enforce_limit(
+        db,
+        Organisation.created_at,
+        Organisation.created_by_user_id == creator.id,
+        limit=CREATE_LIMIT,
+        period=CREATE_LIMIT_PERIOD,
+        rule=f"You have created {CREATE_LIMIT} organisations in the last day, the most allowed.",
     )
-    if (recent or 0) >= CREATE_LIMIT:
-        raise too_many_requests()
     org = Organisation(created_by_user_id=creator.id, **values)
     db.add(org)
     db.flush()

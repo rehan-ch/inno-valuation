@@ -24,6 +24,14 @@ export type MemberOut = Schemas["MemberOut"];
 export type InvitationOut = Schemas["InvitationOut"];
 export type InvitationPreviewOut = Schemas["InvitationPreviewOut"];
 
+export type QuestionSetOut = Schemas["QuestionSetOut"];
+export type ReadinessStatus = Schemas["ReadinessStatus"];
+export type AssessmentSummaryOut = Schemas["AssessmentSummaryOut"];
+export type AssessmentOut = Schemas["AssessmentOut"];
+export type ConsensusOut = Schemas["ConsensusOut"];
+export type QuestionConsensusOut = Schemas["QuestionConsensusOut"];
+export type ResultOut = Schemas["ResultOut"];
+
 export type ConsultantGrantOut = Schemas["ConsultantGrantOut"];
 export type ConsultantAccessOut = Schemas["ConsultantAccessOut"];
 export type GrantStatus = Schemas["GrantStatus"];

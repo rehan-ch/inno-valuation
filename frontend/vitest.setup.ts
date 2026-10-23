@@ -14,6 +14,15 @@ if (typeof HTMLDialogElement.prototype.showModal !== "function") {
   };
 }
 
+// jsdom has no ResizeObserver either; Headless UI's Combobox measures its options with it.
+if (typeof globalThis.ResizeObserver === "undefined") {
+  globalThis.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
+}
+
 afterEach(() => {
   cleanup();
 });

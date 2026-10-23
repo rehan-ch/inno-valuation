@@ -434,6 +434,175 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/readiness/assessments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Assessments */
+        get: operations["list_assessments_api_v1_readiness_assessments_get"];
+        put?: never;
+        /** Start Assessment */
+        post: operations["start_assessment_api_v1_readiness_assessments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/readiness/assessments/{assessment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Assessment */
+        get: operations["get_assessment_api_v1_readiness_assessments__assessment_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/readiness/assessments/{assessment_id}/consensus": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Consensus
+         * @description Everyone's submitted answers, the mean and spread, and the agreed answers so far.
+         *     The facilitator's view; individual answers are never shown to anyone else.
+         */
+        get: operations["get_consensus_api_v1_readiness_assessments__assessment_id__consensus_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Save Consensus */
+        patch: operations["save_consensus_api_v1_readiness_assessments__assessment_id__consensus_patch"];
+        trace?: never;
+    };
+    "/api/v1/readiness/assessments/{assessment_id}/consensus/begin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Begin Consensus */
+        post: operations["begin_consensus_api_v1_readiness_assessments__assessment_id__consensus_begin_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/readiness/assessments/{assessment_id}/finalise": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Finalise */
+        post: operations["finalise_api_v1_readiness_assessments__assessment_id__finalise_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/readiness/assessments/{assessment_id}/my-answers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Save My Answers
+         * @description Autosave: merge these answers into the caller's own; null clears one.
+         */
+        patch: operations["save_my_answers_api_v1_readiness_assessments__assessment_id__my_answers_patch"];
+        trace?: never;
+    };
+    "/api/v1/readiness/assessments/{assessment_id}/my-answers/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Submit My Answers */
+        post: operations["submit_my_answers_api_v1_readiness_assessments__assessment_id__my_answers_submit_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/readiness/assessments/{assessment_id}/result": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Result
+         * @description The final result: total out of 300 and its band in the book's words, the 12 dimension
+         *     scores, category totals, priorities with the book's next steps, and strengths.
+         */
+        get: operations["get_result_api_v1_readiness_assessments__assessment_id__result_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/readiness/question-set": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Question Set
+         * @description The 60 readiness questions, verbatim from the book, grouped by dimension in book order.
+         */
+        get: operations["get_question_set_api_v1_readiness_question_set_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -446,12 +615,150 @@ export interface components {
              */
             organisation_id: string;
         };
+        /** AnswersIn */
+        AnswersIn: {
+            /** Answers */
+            answers: {
+                [key: string]: number | null;
+            };
+        };
+        /** AssessmentOut */
+        AssessmentOut: {
+            /** Band Name */
+            band_name: string | null;
+            /** Can Answer */
+            can_answer: boolean;
+            /** Can Manage */
+            can_manage: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Created By Name */
+            created_by_name: string | null;
+            /** Finalised At */
+            finalised_at: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** My Answers */
+            my_answers: {
+                [key: string]: number;
+            } | null;
+            /** My Status */
+            my_status: ("not_started" | "in_progress" | "submitted") | null;
+            /** My Submitted At */
+            my_submitted_at: string | null;
+            /** Participants */
+            participants: components["schemas"]["ParticipantOut"][] | null;
+            /** Question Count */
+            question_count: number;
+            /** Question Set Version */
+            question_set_version: number;
+            /** Started At */
+            started_at: string | null;
+            status: components["schemas"]["ReadinessStatus"];
+            /** Submitted Count */
+            submitted_count: number;
+            /** Total */
+            total: number | null;
+        };
+        /** AssessmentSummaryOut */
+        AssessmentSummaryOut: {
+            /** Band Name */
+            band_name: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Created By Name */
+            created_by_name: string | null;
+            /** Finalised At */
+            finalised_at: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** My Status */
+            my_status: ("not_started" | "in_progress" | "submitted") | null;
+            /** Question Set Version */
+            question_set_version: number;
+            /** Started At */
+            started_at: string | null;
+            status: components["schemas"]["ReadinessStatus"];
+            /** Submitted Count */
+            submitted_count: number;
+            /** Total */
+            total: number | null;
+        };
+        /** BandOut */
+        BandOut: {
+            /** Key */
+            key: string;
+            /** Name */
+            name: string;
+            /** Text */
+            text: string;
+        };
+        /** CategoryOut */
+        CategoryOut: {
+            /** Key */
+            key: string;
+            /** Name */
+            name: string;
+            /** Order */
+            order: number;
+        };
+        /** CategoryScoreOut */
+        CategoryScoreOut: {
+            /** Key */
+            key: string;
+            /** Maximum */
+            maximum: number;
+            /** Name */
+            name: string;
+            /** Score */
+            score: number;
+        };
         /** ChangePasswordIn */
         ChangePasswordIn: {
             /** Current Password */
             current_password: string;
             /** New Password */
             new_password: string;
+        };
+        /** ConsensusIn */
+        ConsensusIn: {
+            /** Answers */
+            answers?: {
+                [key: string]: number | null;
+            };
+            /** Notes */
+            notes?: {
+                [key: string]: string | null;
+            };
+        };
+        /** ConsensusOut */
+        ConsensusOut: {
+            /** Agreed Count */
+            agreed_count: number;
+            /**
+             * Assessment Id
+             * Format: uuid
+             */
+            assessment_id: string;
+            /** Participants */
+            participants: string[];
+            /** Question Count */
+            question_count: number;
+            /** Questions */
+            questions: components["schemas"]["QuestionConsensusOut"][];
+            status: components["schemas"]["ReadinessStatus"];
         };
         /**
          * ConsultantAccessOut
@@ -545,6 +852,36 @@ export interface components {
             /** Organisation Name */
             organisation_name: string;
             organisation_status: components["schemas"]["OrganisationStatus"];
+        };
+        /** DimensionOut */
+        DimensionOut: {
+            /** Category */
+            category: string;
+            /** Description */
+            description: string;
+            /** Key */
+            key: string;
+            /** Name */
+            name: string;
+            /** Order */
+            order: number;
+            /** Questions */
+            questions: components["schemas"]["QuestionOut"][];
+        };
+        /** DimensionScoreOut */
+        DimensionScoreOut: {
+            /** Category */
+            category: string;
+            /** Key */
+            key: string;
+            /** Maximum */
+            maximum: number;
+            /** Name */
+            name: string;
+            /** Order */
+            order: number;
+            /** Score */
+            score: number;
         };
         /** EmailIn */
         EmailIn: {
@@ -811,12 +1148,140 @@ export interface components {
             /** Website */
             website?: string | null;
         };
+        /** ParticipantOut */
+        ParticipantOut: {
+            /** Answered */
+            answered: number;
+            /** Name */
+            name: string;
+            /** Submitted At */
+            submitted_at: string | null;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+        };
+        /** PersonAnswerOut */
+        PersonAnswerOut: {
+            /** Answer */
+            answer: number;
+            /** Name */
+            name: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+        };
+        /** PriorityOut */
+        PriorityOut: {
+            /** Key */
+            key: string;
+            /** Maximum */
+            maximum: number;
+            /** Name */
+            name: string;
+            /** Next Steps */
+            next_steps: string;
+            /** Rank */
+            rank: number;
+            /** Score */
+            score: number;
+        };
+        /** QuestionConsensusOut */
+        QuestionConsensusOut: {
+            /** Agreed */
+            agreed: number | null;
+            /** Answers */
+            answers: components["schemas"]["PersonAnswerOut"][];
+            /** Dimension Key */
+            dimension_key: string;
+            /** Mean */
+            mean: string | null;
+            /** Note */
+            note: string | null;
+            /** Question Id */
+            question_id: string;
+            /** Spread */
+            spread: number | null;
+            /** Wide Spread */
+            wide_spread: boolean;
+        };
+        /** QuestionOut */
+        QuestionOut: {
+            /** Id */
+            id: string;
+            /** Text */
+            text: string;
+        };
+        /** QuestionSetOut */
+        QuestionSetOut: {
+            /** Categories */
+            categories: components["schemas"]["CategoryOut"][];
+            /** Dimensions */
+            dimensions: components["schemas"]["DimensionOut"][];
+            scale: components["schemas"]["ScaleOut"];
+            /** Version */
+            version: number;
+        };
+        /**
+         * ReadinessStatus
+         * @description The life of a readiness assessment, left to right. It never moves backwards.
+         *
+         *     ``draft`` is just created; ``collecting`` takes each person's answers; ``consensus``
+         *     is the facilitator setting the agreed answers (Amy Q5); ``final`` is scored and
+         *     immutable.
+         * @enum {string}
+         */
+        ReadinessStatus: "draft" | "collecting" | "consensus" | "final";
         /** ResetPasswordIn */
         ResetPasswordIn: {
             /** New Password */
             new_password: string;
             /** Token */
             token: string;
+        };
+        /** ResultOut */
+        ResultOut: {
+            /**
+             * Assessment Id
+             * Format: uuid
+             */
+            assessment_id: string;
+            band: components["schemas"]["BandOut"];
+            /** Categories */
+            categories: components["schemas"]["CategoryScoreOut"][];
+            /** Dimensions */
+            dimensions: components["schemas"]["DimensionScoreOut"][];
+            /**
+             * Finalised At
+             * Format: date-time
+             */
+            finalised_at: string;
+            /** Priorities */
+            priorities: components["schemas"]["PriorityOut"][];
+            /** Question Set Version */
+            question_set_version: number;
+            /** Strengths */
+            strengths: components["schemas"]["DimensionScoreOut"][];
+            /** Submitted Count */
+            submitted_count: number;
+            /** Total */
+            total: number;
+            /** Total Maximum */
+            total_maximum: number;
+        };
+        /** ScaleOut */
+        ScaleOut: {
+            /** Labels */
+            labels: {
+                [key: string]: string;
+            };
+            /** Max */
+            max: number;
+            /** Min */
+            min: number;
         };
         /** SignInIn */
         SignInIn: {
@@ -1710,6 +2175,333 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OrganisationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_assessments_api_v1_readiness_assessments_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssessmentSummaryOut"][];
+                };
+            };
+        };
+    };
+    start_assessment_api_v1_readiness_assessments_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssessmentOut"];
+                };
+            };
+        };
+    };
+    get_assessment_api_v1_readiness_assessments__assessment_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assessment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssessmentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_consensus_api_v1_readiness_assessments__assessment_id__consensus_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assessment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConsensusOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_consensus_api_v1_readiness_assessments__assessment_id__consensus_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assessment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConsensusIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConsensusOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    begin_consensus_api_v1_readiness_assessments__assessment_id__consensus_begin_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assessment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConsensusOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    finalise_api_v1_readiness_assessments__assessment_id__finalise_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assessment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_my_answers_api_v1_readiness_assessments__assessment_id__my_answers_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assessment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnswersIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssessmentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    submit_my_answers_api_v1_readiness_assessments__assessment_id__my_answers_submit_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assessment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssessmentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_result_api_v1_readiness_assessments__assessment_id__result_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assessment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_question_set_api_v1_readiness_question_set_get: {
+        parameters: {
+            query?: {
+                version?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuestionSetOut"];
                 };
             };
             /** @description Validation Error */

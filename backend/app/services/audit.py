@@ -32,6 +32,10 @@ class AuditAction(StrEnum):
     CONSULTANT_ACCESS_CHANGED = "consultant.access_changed"
     CONSULTANT_ACCESS_REVOKED = "consultant.access_revoked"
     CONSULTANT_ACCESS_ACCEPTED = "consultant.access_accepted"
+    READINESS_STARTED = "readiness.started"
+    READINESS_RESPONSE_SUBMITTED = "readiness.response_submitted"
+    READINESS_CONSENSUS_STARTED = "readiness.consensus_started"
+    READINESS_FINALISED = "readiness.finalised"
 
 
 def record(

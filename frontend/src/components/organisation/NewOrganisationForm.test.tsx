@@ -36,6 +36,6 @@ describe("NewOrganisationForm", () => {
       },
     });
     expect(refresh).toHaveBeenCalled();
-    expect(routerPush).toHaveBeenCalledWith("/team");
+    expect(routerPush).toHaveBeenCalledWith("/dashboard");
   });
 });

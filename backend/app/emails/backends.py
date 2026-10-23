@@ -1,16 +1,25 @@
 """Email delivery backends.
 
 - ``ResendEmailBackend`` when ``RESEND_API_KEY`` is set.
-- ``LogEmailBackend`` otherwise, only in development and test: it writes the recipient,
-  subject and link to the application log at INFO. The link holds a live token, which is
-  acceptable only on a developer's machine.
+- ``DevSmtpEmailBackend`` in development without a key: logs the line, delivers the
+  email to the local mail catcher (Mailpit, web UI on http://localhost:8025), then opens
+  it there in a new browser tab, like a letter opener. The link holds a live token,
+  which is acceptable only on a developer's machine.
+- ``LogEmailBackend`` in test without a key: the log line only.
 - In staging or production without a key, ``get_email_backend`` raises
   ``EmailNotConfiguredError``, so the send task fails loudly instead of dropping the email.
 
 Tests swap in ``MemoryEmailBackend`` with ``override_email_backend``.
 """
 
+import json
 import logging
+import smtplib
+import urllib.parse
+import urllib.request
+import webbrowser
+from email.message import EmailMessage as MimeMessage
+from email.utils import make_msgid
 from typing import Protocol
 
 import resend
@@ -39,6 +48,72 @@ class LogEmailBackend:
             message.subject,
             message.link,
         )
+
+
+def mime_message(message: EmailMessage, sender: str) -> MimeMessage:
+    """The email as a multipart message: plain text first, HTML as the alternative."""
+    mime = MimeMessage()
+    mime["From"] = sender
+    mime["To"] = message.to
+    mime["Subject"] = message.subject
+    mime["Message-ID"] = make_msgid(domain="innovaluation.local")
+    mime.set_content(message.text)
+    mime.add_alternative(message.html, subtype="html")
+    return mime
+
+
+class DevSmtpEmailBackend(LogEmailBackend):
+    """The log line, delivery to the local mail catcher, then the email in a new tab.
+
+    A catcher that is not running only costs a warning, and a tab that cannot be opened
+    costs nothing: the log line already holds the link, so a developer is never stuck.
+    The tab opens on the machine running the worker, which in development is the
+    developer's own.
+    """
+
+    def __init__(
+        self,
+        host: str,
+        port: int,
+        sender: str,
+        *,
+        web_url: str = "http://localhost:8025",
+        open_in_browser: bool = False,
+    ) -> None:
+        self._host = host
+        self._port = port
+        self._sender = sender
+        self._web_url = web_url.rstrip("/")
+        self._open_in_browser = open_in_browser
+
+    def send(self, message: EmailMessage, *, idempotency_key: str) -> None:
+        super().send(message, idempotency_key=idempotency_key)
+        mime = mime_message(message, self._sender)
+        try:
+            with smtplib.SMTP(self._host, self._port, timeout=5) as smtp:
+                smtp.send_message(mime)
+        except OSError:
+            logger.warning(
+                "The local mail catcher is not reachable on %s:%s, so this email is only "
+                "in the log line above. Start it with: docker compose up -d mailpit",
+                self._host,
+                self._port,
+            )
+            return
+        if self._open_in_browser:
+            self._open_in_new_tab(str(mime["Message-ID"]))
+
+    def _open_in_new_tab(self, message_id: str) -> None:
+        query = urllib.parse.quote(f'message-id:"{message_id}"')
+        try:
+            with urllib.request.urlopen(  # noqa: S310  (fixed local http URL from settings)
+                f"{self._web_url}/api/v1/search?query={query}", timeout=3
+            ) as response:
+                found = json.load(response)["messages"]
+            if found:
+                webbrowser.open_new_tab(f"{self._web_url}/view/{found[0]['ID']}")
+        except (OSError, ValueError, KeyError, webbrowser.Error):
+            logger.debug("Could not open the email in a browser tab.", exc_info=True)
 
 
 class ResendEmailBackend:
@@ -87,5 +162,13 @@ def get_email_backend() -> EmailBackend:
     if settings.is_deployed:
         raise EmailNotConfiguredError(
             f"RESEND_API_KEY is not set in {settings.environment}; emails cannot be sent."
+        )
+    if settings.environment == "development":
+        return DevSmtpEmailBackend(
+            settings.dev_smtp_host,
+            settings.dev_smtp_port,
+            settings.email_from,
+            web_url=settings.dev_mail_web_url,
+            open_in_browser=settings.dev_email_open_browser,
         )
     return LogEmailBackend()

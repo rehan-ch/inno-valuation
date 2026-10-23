@@ -39,6 +39,20 @@ class ConsultantGrantScope(StrEnum):
     READ_RESULTS = "read_results"
 
 
+class ReadinessStatus(StrEnum):
+    """The life of a readiness assessment, left to right. It never moves backwards.
+
+    ``draft`` is just created; ``collecting`` takes each person's answers; ``consensus``
+    is the facilitator setting the agreed answers (Amy Q5); ``final`` is scored and
+    immutable.
+    """
+
+    DRAFT = "draft"
+    COLLECTING = "collecting"
+    CONSENSUS = "consensus"
+    FINAL = "final"
+
+
 def enum_type(enum_cls: type[StrEnum], name: str, length: int = 20) -> Enum:
     """A VARCHAR column with a CHECK constraint named ``ck_<table>_<name>``.
 

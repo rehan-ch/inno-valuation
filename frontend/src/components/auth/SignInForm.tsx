@@ -20,7 +20,7 @@ function safeNext(): string | null {
 }
 
 function landingPage(me: MeOut): string {
-  if (me.memberships.length > 0) return "/team";
+  if (me.memberships.length > 0) return "/dashboard";
   if (me.consultant_organisations.length > 0) return "/consultant-access";
   return "/organisations/new";
 }

@@ -12,6 +12,7 @@ MANAGE = {
     Permission.MANAGE_MEMBERS,
     Permission.CHANGE_ROLES,
     Permission.MANAGE_CONSULTANT_ACCESS,
+    Permission.MANAGE_ASSESSMENTS,
 }
 
 
@@ -32,7 +33,10 @@ def test_only_owner_and_admin_manage() -> None:
 
 
 def test_consultant_is_read_only() -> None:
-    assert ROLE_PERMISSIONS[OrgRole.CONSULTANT] == {Permission.VIEW_ORGANISATION}
+    assert ROLE_PERMISSIONS[OrgRole.CONSULTANT] == {
+        Permission.VIEW_ORGANISATION,
+        Permission.VIEW_ASSESSMENTS,
+    }
 
 
 def test_platform_admin_is_not_a_role() -> None:

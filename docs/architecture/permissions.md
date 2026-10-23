@@ -11,7 +11,7 @@ One table decides who may do what inside an organisation: `ROLE_PERMISSIONS` in 
 
 An archived organisation is view-only until the archive feature exists (Phase 8): it cannot be chosen as the active organisation, and only `organisation.view` and `team.view` still work. `require_permission(...)` enforces this; `require_role(...)` checks the role only, so routes that change data use `require_permission(...)`.
 
-## Matrix (Phase 2)
+## Matrix (Phases 2 and 3)
 
 | Permission | Code | owner | admin | member | committee | investor | consultant |
 |---|---|---|---|---|---|---|---|
@@ -21,6 +21,11 @@ An archived organisation is view-only until the archive feature exists (Phase 8)
 | Change roles | `members.change_role` | yes | yes | no | no | no | no |
 | Manage consultant access | `consultants.manage` | yes | yes | no | no | no | no |
 | View the team | `team.view` | yes | yes | yes | yes | yes | no |
+| View assessments and results | `assessments.view` | yes | yes | yes | yes | yes | yes |
+| Answer a readiness assessment | `assessments.answer` | yes | yes | yes | yes | no | no |
+| Manage assessments (start, consensus, finalise) | `assessments.manage` | yes | yes | no | no | no | no |
+
+An investor watches: they see assessments and results but do not answer. A consultant (Amy) reads assessments and results only while their grant is live; the service layer additionally limits consultants to assessments that are `final`.
 
 ## Owner rules (service layer, `app/services/members.py`)
 - Only an owner may give the owner role (by role change or invitation), change an owner's role, or remove an owner. An admin gets 403 `owner_only`.

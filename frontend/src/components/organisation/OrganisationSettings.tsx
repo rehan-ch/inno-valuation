@@ -8,6 +8,7 @@ import { useMe } from "@/components/app/me-context";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { Card, CardTitle, PageHeader } from "@/components/ui/Card";
+import { CurrencySelect } from "@/components/ui/CurrencySelect";
 import { TextField } from "@/components/ui/fields";
 import { Loading } from "@/components/ui/Loading";
 import { ApiError } from "@/lib/api/client";
@@ -122,19 +123,13 @@ function SettingsForm({
   const [contactEmail, setContactEmail] = useState(org.primary_contact_email ?? "");
   const [currency, setCurrency] = useState(org.currency);
   const [nameError, setNameError] = useState<string | undefined>(undefined);
-  const [currencyError, setCurrencyError] = useState<string | undefined>(undefined);
   const [saved, setSaved] = useState(false);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setSaved(false);
-    const invalidName = name.trim() ? undefined : "Enter the organisation's name.";
-    const invalidCurrency = /^[A-Za-z]{3}$/.test(currency)
-      ? undefined
-      : "Use a 3-letter code, like USD.";
-    if (invalidName || invalidCurrency) {
-      setNameError(invalidName);
-      setCurrencyError(invalidCurrency);
+    if (!name.trim()) {
+      setNameError("Enter the organisation's name.");
       return;
     }
     const result = await run(() =>
@@ -149,7 +144,7 @@ function SettingsForm({
         website: website || null,
         primary_contact_name: contactName || null,
         primary_contact_email: contactEmail || null,
-        currency: currency.toUpperCase(),
+        currency,
       }),
     );
     if (result) {
@@ -241,21 +236,11 @@ function SettingsForm({
             onChange={(e) => setContactEmail(e.target.value)}
           />
         </div>
-        <div className="sm:w-48">
-          <TextField
-            label="Currency"
-            name="currency"
-            maxLength={3}
-            hint="3-letter code, e.g. USD."
-            required
-            error={currencyError}
-            value={currency}
-            onChange={(e) => {
-              setCurrency(e.target.value);
-              setCurrencyError(undefined);
-            }}
-          />
-        </div>
+        <CurrencySelect
+          value={currency}
+          onChange={setCurrency}
+          hint="Investments and Value for Money are shown in this currency."
+        />
         <Button type="submit" busy={busy}>
           Save changes
         </Button>

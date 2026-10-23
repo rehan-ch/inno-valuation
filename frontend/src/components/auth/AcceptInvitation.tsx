@@ -58,7 +58,7 @@ export function AcceptInvitation() {
 
   async function handleAccept(token: string) {
     const me = await run(() => acceptInvitation(token));
-    if (me) router.push("/team");
+    if (me) router.push("/dashboard");
   }
 
   async function handleSwitchAccount() {

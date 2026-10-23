@@ -25,6 +25,17 @@ from tests import factories
 from tests.database import alembic_config, throwaway_database
 
 
+@pytest.fixture(autouse=True)
+def _never_open_a_browser(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The development email backend opens emails in a browser tab; a test never may."""
+
+    def refuse(*args: object, **kwargs: object) -> bool:
+        raise AssertionError("A test tried to open a browser tab.")
+
+    monkeypatch.setattr("webbrowser.open", refuse)
+    monkeypatch.setattr("webbrowser.open_new_tab", refuse)
+
+
 @pytest.fixture(scope="session")
 def database_url() -> Iterator[str]:
     """Create a throwaway database on TEST_DATABASE_URL's server, migrate it, drop it after."""
