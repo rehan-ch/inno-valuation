@@ -2,10 +2,11 @@
 
 ## Phase and branch
 - Phases 0 to 2 are merged to `main` (Phase 2 through PR 1, the password follow-up through PR 2).
-- Phase 3's readiness flow is merged to `main` (PR 3). Its AI work (P3.05, P3.06) is on `phase-3-ai`.
+- Phase 3's readiness flow is merged to `main` (PR 3). Its AI work (P3.05, P3.06) is fast-forwarded into the local `main`; on GitHub it is still PR 4 (`phase-3-ai`).
+- From here on, work happens on `main` only. The code is mirrored into Haroon's repository, which starts from one fresh commit; this repository keeps the full history. Personal files (`.claude/`, `CLAUDE.md`, `docs/` apart from the three files the code loads, planning, Amy drafts) never go there, and their ignore rules live in `.git/info/exclude`.
 
 ## In progress
-Phase 3 AI on `phase-3-ai`
+Phase 3 AI (local `main`)
 - Done (P3.05, AI foundation): the `ai_runs` table (migration `0007_ai_runs`) logs every AI result with its prompts, model asked and model that answered, effort, prompt version, raw and validated answer, attempts, tokens, cost (millionths of a dollar at the list prices in `config/ai.yml`) and the API request id of each attempt. `app/ai/`: `config.py` (strict loader for `config/ai.yml`, now `effort` instead of `temperature`), `client.py` (Anthropic SDK with structured JSON output, timeouts, SDK retries with backoff, refusal fallback; offline stand-in without a key in development and tests; fails loudly when deployed without one), `prompting.py` (Jinja2 templates with a version line, `as_data` delimiting), `runner.py` (validate, retry once with the reason, then fail and keep the raw answer), `schemas/` (strict output models, `dimension_key` required), the Celery task `ai.run` (ids only, re-checks the organisation, idempotent).
 - Done (P3.06, explain a question): "What does this mean?" under every question for people who answer. `POST /api/v1/readiness/questions/{id}/explanation` asks (or returns the organisation's saved one), `GET` polls; 2 to 4 plain sentences and one example, naming the dimension; saved per organisation and question, reused while the prompt and company details are unchanged; 150 runs per organisation per day. Recorded cases: typical, sparse, adversarial (and the model obeying the injection, which the schema refuses), retry.
 - Done: security bumps the audits caught, which also affected `main`: Next.js 16.4.3 (critical advisories) and `opentelemetry-api` 1.45.1.

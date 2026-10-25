@@ -1,6 +1,6 @@
 # InnoValuation
 
-Innovation diagnostic platform built on Amy-Renee's "12 Dimensions of Innovation". See `docs/PROGRESS.md` for where the build is, `docs/methodology/` for the scoring rules and `docs/architecture/` for the data model.
+Innovation diagnostic platform built on Amy-Renee's "12 Dimensions of Innovation". See `docs/methodology/` for the scoring rules and `docs/architecture/permissions.md` for who may do what.
 
 ## Run it locally
 
@@ -30,7 +30,7 @@ Templates live in `backend/app/emails/templates/`: each email has an HTML versio
 | Hook | Runs | Checks |
 |---|---|---|
 | `pre-commit` | `bin/check staged` (seconds) | no secrets, `.env` files, keys, conflict markers or files over 1 MB; ruff lint and format and mypy on staged Python; eslint with zero warnings on staged TypeScript; scoring tests when the engine or `dimensions.yml` changes |
-| `commit-msg` | `bin/check message` | subject is `type(scope): summary`, at most 100 characters; no AI attribution or co-author lines |
+| `commit-msg` | `bin/check message` | subject is `type(scope): summary`, at most 100 characters; no co-author or generator lines |
 | `pre-push` | `bin/check range` + `bin/check full` (about a minute) | no direct push to `main` (except the first push that creates it on a new remote); pushed commits scanned for secrets and attribution; lock file in sync; ruff, mypy, all backend tests (Postgres must be up), migrations match models, OpenAPI types current, frontend lint, typecheck, tests and build; `pip-audit` and `npm audit` on production dependencies |
 
 Do not skip them with `--no-verify`. CI runs the same checks, so a skipped hook only moves the failure to CI.

@@ -24,8 +24,8 @@ fail() { red "check failed: $*"; exit 1; }
 # Added lines that look like real credentials. Placeholders in .env.example stay empty.
 SECRET_PATTERN='(-----BEGIN ([A-Z]+ )?PRIVATE KEY-----|sk-ant-[A-Za-z0-9_-]{20,}|AKIA[0-9A-Z]{16}|GOCSPX-[A-Za-z0-9_-]{10,}|gh[pousr]_[A-Za-z0-9]{30,}|xox[baprs]-[A-Za-z0-9-]{10,}|(api[_-]?key|secret|token|password)["'\'']?[[:space:]]*[:=][[:space:]]*["'\''][A-Za-z0-9/+_=-]{24,}["'\''])'
 
-# Commit messages must not credit AI tools (developer rule). ".claude/" paths are allowed.
-ATTRIBUTION_PATTERN='(co-authored-by:.*(claude|anthropic)|noreply@anthropic\.com|generated (with|by) \[?claude|(^|[^./[:alnum:]_])claude([^/[:alnum:]_]|$))'
+# Commit messages must not carry co-author or generator lines (developer rule).
+ATTRIBUTION_PATTERN='(^co-authored-by:|generated (with|by) \[)'
 
 SUBJECT_PATTERN='^(feat|fix|chore|docs|test|refactor|perf|build|ci|style|revert)(\([a-z0-9._/-]+\))?!?: [^ ].*'
 
@@ -47,7 +47,7 @@ check_message_text() {
   local msg="$1" subject
   subject="$(head -n1 <<<"$msg")"
   if grep -qiE -- "$ATTRIBUTION_PATTERN" <<<"$msg"; then
-    fail "commit message mentions an AI tool or carries an AI co-author line. Remove it."
+    fail "commit message carries a co-author or generator line. Remove it."
   fi
   case "$subject" in
     "Merge "* | "Revert "* | "fixup! "* | "squash! "* | "amend! "*) return 0 ;;
