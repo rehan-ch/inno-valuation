@@ -22,10 +22,10 @@ Phase 2: `innovation_identifier` (reads supplier or procurement info and spots o
 4. Output is strict JSON validated by the touchpoint's Pydantic model (`backend/app/ai/schemas/<key>.py`). Validate before saving. On a validation error retry once with the error message, then fail the task and keep the raw response.
 5. Fixed methodology text (next_steps, band text, level text) is passed in and must be returned unchanged where the schema has a `fixed_text` field.
 6. Plain English, short sentences, no em dashes, no marketing tone.
-7. Model, max tokens and temperature are set per touchpoint in `backend/config/ai.yml`, not in code.
+7. Model, effort, max tokens and timeout are set per touchpoint in `backend/config/ai.yml`, not in code. (The API no longer takes temperature.)
 
 ## What is stored (AiRun)
-`organisation_id, touchpoint, subject_type, subject_id, model, prompt_version, system_prompt, user_prompt, response_raw, response_json, input_tokens, output_tokens, status (queued, running, succeeded, failed), error, created_at`
+`organisation_id, touchpoint, subject_type, subject_id, requested_by_user_id, model, effort, prompt_version, system_prompt, user_prompt, response_model, response_raw, response_json, stop_reason, attempts, input_tokens, output_tokens, cost_micro_usd, provider_request_ids, status (queued, running, succeeded, failed), error, created_at, started_at, finished_at`
 
 Results that users act on (proposed scores, recommendations) link back to their `ai_run_id` so every number and sentence can be traced.
 

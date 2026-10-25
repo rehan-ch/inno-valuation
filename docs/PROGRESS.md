@@ -1,16 +1,20 @@
 # Progress
 
 ## Phase and branch
-- Phases 0 to 2 are merged to `main` (Phase 2 through PR 1).
-- One Phase 2 follow-up rode after the merge and is on `password-minimum-8` (PR 2): the password minimum is 8 with the regenerated API contract.
-- Phase 3 (Readiness questions) is in progress on `phase-3-readiness`.
+- Phases 0 to 2 are merged to `main` (Phase 2 through PR 1, the password follow-up through PR 2).
+- Phase 3's readiness flow is merged to `main` (PR 3). Its AI work (P3.05, P3.06) is on `phase-3-ai`.
 
 ## In progress
-Phase 3 on `phase-3-readiness`
+Phase 3 AI on `phase-3-ai`
+- Done (P3.05, AI foundation): the `ai_runs` table (migration `0007_ai_runs`) logs every AI result with its prompts, model asked and model that answered, effort, prompt version, raw and validated answer, attempts, tokens, cost (millionths of a dollar at the list prices in `config/ai.yml`) and the API request id of each attempt. `app/ai/`: `config.py` (strict loader for `config/ai.yml`, now `effort` instead of `temperature`), `client.py` (Anthropic SDK with structured JSON output, timeouts, SDK retries with backoff, refusal fallback; offline stand-in without a key in development and tests; fails loudly when deployed without one), `prompting.py` (Jinja2 templates with a version line, `as_data` delimiting), `runner.py` (validate, retry once with the reason, then fail and keep the raw answer), `schemas/` (strict output models, `dimension_key` required), the Celery task `ai.run` (ids only, re-checks the organisation, idempotent).
+- Done (P3.06, explain a question): "What does this mean?" under every question for people who answer. `POST /api/v1/readiness/questions/{id}/explanation` asks (or returns the organisation's saved one), `GET` polls; 2 to 4 plain sentences and one example, naming the dimension; saved per organisation and question, reused while the prompt and company details are unchanged; 150 runs per organisation per day. Recorded cases: typical, sparse, adversarial (and the model obeying the injection, which the schema refuses), retry.
+- Done: security bumps the audits caught, which also affected `main`: Next.js 16.4.3 (critical advisories) and `opentelemetry-api` 1.45.1.
+- Next: review and merge `phase-3-ai`, then Amy's first demo (P3.08). Until the AI key arrives, explanations show marked sample text.
+
+Phase 3 readiness flow (merged)
 - Done: readiness tables and reversible migration `0006_readiness` (P3.01): assessments, per-person responses, consensus with per-question notes, results; answers checked 1 to 5 in the database (strict jsonpath); assessment permissions added to the matrix (`assessments.view` for every role including consultants, `assessments.answer` for owner/admin/member/committee, `assessments.manage` for owner/admin).
 - Done: the readiness flow, backend and screens (P3.02 to P3.04). API `/api/v1/readiness`: the question set verbatim from the book; start an assessment (one open per organisation); each person saves their own answers as they go and submits all 60; the facilitator starts consensus, sees every submitted answer with the mean (2 decimals) and spread, sets agreed answers and notes, and finalises; the engine scores the agreed answers only and the result is written once. Screens: `/readiness` (list and start), `/readiness/[id]` (questionnaire with autosave, per-dimension progress, submit; the facilitator's team progress and start consensus), `/readiness/[id]/consensus`, `/readiness/[id]/result` (total out of 300 with the band in the book's words, categories with maximums, the 12 dimensions, priorities with the book's next steps, strengths). The dashboard's readiness card and checklist use the real status.
 - Done (P3.07): request tests for the golden flow (three people, agreed total 190, Building Blocks), immutability, missing participants, rounding, permissions and cross-organisation isolation; exercised end to end against the running stack.
-- Next: the AI foundation and "explain a question" (P3.05, P3.06, recorded responses only until the AI key arrives), then review, merge and Amy's first demo (P3.08).
 
 ## Done
 Phase 0
@@ -44,6 +48,7 @@ Phase 1
 
 ## PROVISIONAL markers in code
 - Q8: `backend/app/scoring/targets.py` (per dimension, both scales).
+- Q10: `backend/app/ai/touchpoints/explain_question.py` `COMPANY_FIELDS` (only industry, size and country go to the AI provider).
 - Q17: `frontend/src/app/globals.css` (ice-blue and emerald palette from the compass mark, pending Amy's approval).
 - Q11: `backend/config/ai.yml` (consultation nudge off until touchpoint 8 is built; Q11 itself is decided).
 - Q18: `backend/app/scoring/_rounding.py` (half up), `vfm.py` (uses the rounded IQ), `categories.py` (category IQ 1 decimal).
@@ -59,9 +64,9 @@ Phase 1
 ## Known gaps
 - `.env.example` has `EMAIL_FROM=InnoValuation <no-reply@example.com>` unquoted. Harmless now (nothing shell-sources `.env`), but it should be quoted. Agents cannot edit `.env.*` (project permission rule), so a human must change it.
 - CI workflow is written but has never run (no remote).
-- `npm audit`: 5 high findings in dev-only lint dependencies (eslint-config-next). Production dependencies have none; the pre-push and CI audits check production only.
-- Starlette prints a deprecation warning about `httpx` in the TestClient. Harmless.
-- The backend Docker image (Phase 8) must ship `docs/methodology/dimensions.yml` and set `INNO_QUESTION_SET_PATH`.
+- `npm audit`: 5 findings (3 high, 2 moderate) in dev-only lint dependencies (eslint-config-next). Production dependencies have none; the pre-push and CI audits check production only.
+- AI test fixtures are hand-written in the model's output format. Replace them with live recordings once the AI key arrives, and try the explain prompt on a few real questions.
+- The backend Docker image (Phase 8) must ship `docs/methodology/dimensions.yml` and set `INNO_QUESTION_SET_PATH`, and must ship `backend/config/ai.yml` and `backend/app/ai/prompts/`.
 - Services built in later phases must pass `IqResult.iq` (already rounded) to `vfm`, so VfM always uses the IQ the user sees (Q18).
 
 ## How to run and try it manually
