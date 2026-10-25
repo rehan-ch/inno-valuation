@@ -20,6 +20,7 @@ import {
 import type { AssessmentOut, QuestionSetOut } from "@/lib/api/types";
 import { useSubmit } from "@/lib/forms";
 
+import { QuestionExplanation } from "./QuestionExplanation";
 import { STATUS_LABELS, STATUS_TONES } from "./status";
 
 type State =
@@ -257,6 +258,10 @@ export function QuestionnairePage({ assessmentId }: { assessmentId: string }) {
                     </span>
                   </div>
                 </fieldset>
+                {/* Outside the fieldset, so it still works once answers are locked. */}
+                {assessment.can_answer && (
+                  <QuestionExplanation questionId={question.id} version={questions.version} />
+                )}
               </li>
             ))}
           </ol>

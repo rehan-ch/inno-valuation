@@ -603,6 +603,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/readiness/questions/{question_id}/explanation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Explanation
+         * @description The latest explanation of a question in this organisation; 404 if nobody asked yet.
+         */
+        get: operations["get_explanation_api_v1_readiness_questions__question_id__explanation_get"];
+        put?: never;
+        /**
+         * Explain Question
+         * @description Answers "What does this mean?" on a question: the organisation's saved AI explanation,
+         *     or a new one on its way (status "pending"; poll the GET until "ready" or "failed").
+         */
+        post: operations["explain_question_api_v1_readiness_questions__question_id__explanation_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -890,6 +915,36 @@ export interface components {
              * Format: email
              */
             email: string;
+        };
+        /**
+         * ExplanationOut
+         * @description An AI explanation of one question (touchpoint 1). Helps only; it holds no number.
+         */
+        ExplanationOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Dimension Key */
+            dimension_key: string;
+            /** Dimension Name */
+            dimension_name: string;
+            /** Example */
+            example: string | null;
+            /** Explanation */
+            explanation: string[] | null;
+            /** Question Id */
+            question_id: string;
+            /** Question Set Version */
+            question_set_version: number;
+            /** Sample */
+            sample: boolean;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "ready" | "failed";
         };
         /**
          * GrantStatus
@@ -2502,6 +2557,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["QuestionSetOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_explanation_api_v1_readiness_questions__question_id__explanation_get: {
+        parameters: {
+            query?: {
+                version?: number | null;
+            };
+            header?: never;
+            path: {
+                question_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExplanationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    explain_question_api_v1_readiness_questions__question_id__explanation_post: {
+        parameters: {
+            query?: {
+                version?: number | null;
+            };
+            header?: never;
+            path: {
+                question_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExplanationOut"];
                 };
             };
             /** @description Validation Error */

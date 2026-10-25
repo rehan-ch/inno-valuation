@@ -31,6 +31,7 @@ export type AssessmentOut = Schemas["AssessmentOut"];
 export type ConsensusOut = Schemas["ConsensusOut"];
 export type QuestionConsensusOut = Schemas["QuestionConsensusOut"];
 export type ResultOut = Schemas["ResultOut"];
+export type ExplanationOut = Schemas["ExplanationOut"];
 
 export type ConsultantGrantOut = Schemas["ConsultantGrantOut"];
 export type ConsultantAccessOut = Schemas["ConsultantAccessOut"];

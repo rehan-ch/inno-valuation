@@ -4,6 +4,7 @@ import type {
   AssessmentOut,
   AssessmentSummaryOut,
   ConsensusOut,
+  ExplanationOut,
   QuestionSetOut,
   ResultOut,
 } from "./types";
@@ -61,6 +62,16 @@ export function finaliseAssessment(id: string): Promise<ResultOut> {
 
 export function getResult(id: string): Promise<ResultOut> {
   return getJson(`${BASE}/assessments/${id}/result`);
+}
+
+/** "What does this mean?": the organisation's saved AI explanation of a question, or a new
+ * one on its way (status "pending"; poll getExplanation until "ready" or "failed"). */
+export function explainQuestion(questionId: string, version: number): Promise<ExplanationOut> {
+  return postJson(`${BASE}/questions/${questionId}/explanation?version=${version}`);
+}
+
+export function getExplanation(questionId: string, version: number): Promise<ExplanationOut> {
+  return getJson(`${BASE}/questions/${questionId}/explanation?version=${version}`);
 }
 
 /** Where an assessment's link should take this person, given its status and their role. */
