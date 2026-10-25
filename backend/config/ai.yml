@@ -1,36 +1,61 @@
 # Per-touchpoint AI settings. Keys match docs/methodology/ai-touchpoints.md.
-# No loader yet (Phase 0).
+# Loaded and checked by app/ai/config.py; an unknown key or a bad value fails loudly.
+#
+# effort: low | medium | high | xhigh | max. The API no longer takes temperature (API
+#   version 2026-10-21), and the current models sample with their defaults only.
+# max_tokens: a ceiling that includes the model's thinking, not a target length.
+# timeout_seconds: per API attempt. The SDK retries twice with backoff on timeouts,
+#   connection errors, 429 and 5xx, so one call can take up to three times this.
+
+# List prices in US dollars per million tokens, used for the cost of each run.
+# Every model a touchpoint uses needs a line here.
+models:
+  claude-sonnet-5-5:
+    input: "2.00"
+    output: "10.00"
+  claude-opus-5-5:
+    input: "4.00"
+    output: "20.00"
+
 touchpoints:
   explain_question:
     model: claude-sonnet-5-5
-    max_tokens: 600
-    temperature: 0.4
+    effort: low
+    max_tokens: 4000
+    timeout_seconds: 60
   context_questions:
     model: claude-sonnet-5-5
-    max_tokens: 1000
-    temperature: 0.4
+    effort: low
+    max_tokens: 4000
+    timeout_seconds: 60
   propose_iq_scores:
     model: claude-opus-5-5
-    max_tokens: 4000
-    temperature: 0.2
+    effort: high
+    max_tokens: 16000
+    timeout_seconds: 300
   interpret_results:
     model: claude-sonnet-5-5
-    max_tokens: 4000
-    temperature: 0.3
+    effort: medium
+    max_tokens: 8000
+    timeout_seconds: 120
   bridge_gaps:
     model: claude-sonnet-5-5
-    max_tokens: 3000
-    temperature: 0.4
+    effort: medium
+    max_tokens: 8000
+    timeout_seconds: 120
   recommendations:
     model: claude-sonnet-5-5
-    max_tokens: 4000
-    temperature: 0.4
+    effort: medium
+    max_tokens: 8000
+    timeout_seconds: 120
   report_narrative:
     model: claude-opus-5-5
-    max_tokens: 8000
-    temperature: 0.4
+    effort: medium
+    max_tokens: 16000
+    timeout_seconds: 300
   consultation_nudge:
     model: claude-sonnet-5-5
-    max_tokens: 400
-    temperature: 0.3
+    effort: low
+    max_tokens: 2000
+    timeout_seconds: 60
     enabled: false  # off until touchpoint 8 is built; Q11 decided (AI judges the gap, no fixed threshold)

@@ -3,7 +3,7 @@
 from datetime import UTC, datetime
 from typing import Any
 
-import httpx
+import httpx2
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import select
@@ -25,13 +25,13 @@ def _as(client: TestClient, user: User, org: Organisation) -> None:
     signed_in(client, user, org)
 
 
-def _start(client: TestClient) -> httpx.Response:
-    response: httpx.Response = client.post(f"{BASE}/assessments", headers=csrf(client))
+def _start(client: TestClient) -> httpx2.Response:
+    response: httpx2.Response = client.post(f"{BASE}/assessments", headers=csrf(client))
     return response
 
 
-def _answer(client: TestClient, assessment_id: str, answers: dict[str, Any]) -> httpx.Response:
-    response: httpx.Response = client.patch(
+def _answer(client: TestClient, assessment_id: str, answers: dict[str, Any]) -> httpx2.Response:
+    response: httpx2.Response = client.patch(
         f"{BASE}/assessments/{assessment_id}/my-answers",
         json={"answers": answers},
         headers=csrf(client),
@@ -39,12 +39,12 @@ def _answer(client: TestClient, assessment_id: str, answers: dict[str, Any]) -> 
     return response
 
 
-def _submit(client: TestClient, assessment_id: str) -> httpx.Response:
+def _submit(client: TestClient, assessment_id: str) -> httpx2.Response:
     return _post(client, assessment_id, "my-answers/submit")
 
 
-def _post(client: TestClient, assessment_id: str, action: str) -> httpx.Response:
-    response: httpx.Response = client.post(
+def _post(client: TestClient, assessment_id: str, action: str) -> httpx2.Response:
+    response: httpx2.Response = client.post(
         f"{BASE}/assessments/{assessment_id}/{action}", headers=csrf(client)
     )
     return response
@@ -55,8 +55,8 @@ def _agree(
     assessment_id: str,
     answers: dict[str, Any],
     notes: dict[str, Any] | None = None,
-) -> httpx.Response:
-    response: httpx.Response = client.patch(
+) -> httpx2.Response:
+    response: httpx2.Response = client.patch(
         f"{BASE}/assessments/{assessment_id}/consensus",
         json={"answers": answers, "notes": notes or {}},
         headers=csrf(client),

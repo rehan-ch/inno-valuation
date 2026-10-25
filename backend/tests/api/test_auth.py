@@ -465,6 +465,8 @@ def test_tampered_or_expired_session_is_rejected(client: TestClient) -> None:
     user = verified_user()
     signed_in(client, user)
     good = client.cookies[SESSION_COOKIE]
+    # Delete first: setting alone adds a second cookie next to the server's own.
+    client.cookies.delete(SESSION_COOKIE)
     client.cookies.set(SESSION_COOKIE, good[:-2] + ("AA" if not good.endswith("AA") else "BB"))
     assert client.get(ME).status_code == 401
 
@@ -477,6 +479,7 @@ def test_tampered_or_expired_session_is_rejected(client: TestClient) -> None:
             expires_at=datetime.now(UTC) - timedelta(seconds=1),
         )
     )
+    client.cookies.delete(SESSION_COOKIE)
     client.cookies.set(SESSION_COOKIE, expired)
     assert client.get(ME).status_code == 401
 

@@ -3,14 +3,16 @@
 import uuid
 from typing import Final
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Path, status
 from sqlalchemy.orm import Session
 
+from app.ai.client import OFFLINE_MODEL
+from app.ai.touchpoints import explain_question as explain_question_touchpoint
 from app.core.deps import get_db, require_permission
 from app.core.errors import AppError
 from app.core.permissions import OrgContext, Permission, has_permission
-from app.models import ReadinessAssessment, ReadinessResponse
-from app.models.enums import ReadinessStatus
+from app.models import AiRun, ReadinessAssessment, ReadinessResponse
+from app.models.enums import AiRunStatus, ReadinessStatus
 from app.schemas.readiness import (
     AnswersIn,
     AssessmentOut,
@@ -22,6 +24,8 @@ from app.schemas.readiness import (
     ConsensusOut,
     DimensionOut,
     DimensionScoreOut,
+    ExplanationOut,
+    ExplanationStatus,
     MyStatus,
     ParticipantOut,
     PersonAnswerOut,
@@ -34,7 +38,7 @@ from app.schemas.readiness import (
 )
 from app.scoring.errors import ScoringError
 from app.scoring.question_set import QUESTION_SET, question_set_for
-from app.services import readiness
+from app.services import explanations, readiness
 
 router = APIRouter(prefix="/readiness", tags=["readiness"])
 
@@ -362,3 +366,70 @@ def get_result(
     """The final result: total out of 300 and its band in the book's words, the 12 dimension
     scores, category totals, priorities with the book's next steps, and strengths."""
     return _result_out(db, readiness.get_assessment(db, ctx, assessment_id))
+
+
+_EXPLANATION_STATUS: Final[dict[AiRunStatus, ExplanationStatus]] = {
+    AiRunStatus.QUEUED: "pending",
+    AiRunStatus.RUNNING: "pending",
+    AiRunStatus.SUCCEEDED: "ready",
+    AiRunStatus.FAILED: "failed",
+}
+
+QuestionId = Path(max_length=100)
+
+
+def _version(version: int | None) -> int:
+    """The question set version asked about; the current one when not given."""
+    return QUESTION_SET.version if version is None else version
+
+
+def _explanation_out(run: AiRun) -> ExplanationOut:
+    version, question_id = explain_question_touchpoint.parse_subject(run.subject_id)
+    dimension = question_set_for(version).dimension_of_question(question_id)
+    output = run.response_json if run.status is AiRunStatus.SUCCEEDED else None
+    return ExplanationOut(
+        question_id=question_id,
+        question_set_version=version,
+        dimension_key=dimension.key,
+        dimension_name=dimension.name,
+        status=_EXPLANATION_STATUS[run.status],
+        explanation=list(output["explanation"]) if output else None,
+        example=str(output["example"]) if output else None,
+        sample=run.response_model == OFFLINE_MODEL,
+        created_at=run.created_at,
+    )
+
+
+@router.post(
+    "/questions/{question_id}/explanation",
+    response_model=ExplanationOut,
+    status_code=status.HTTP_200_OK,
+)
+def explain_question(
+    question_id: str = QuestionId,
+    version: int | None = None,
+    ctx: OrgContext = Depends(require_permission(Permission.ANSWER_ASSESSMENT)),
+    db: Session = Depends(get_db),
+) -> ExplanationOut:
+    """Answers "What does this mean?" on a question: the organisation's saved AI explanation,
+    or a new one on its way (status "pending"; poll the GET until "ready" or "failed")."""
+    run = explanations.request(db, ctx, _version(version), question_id)
+    return _explanation_out(run)
+
+
+@router.get(
+    "/questions/{question_id}/explanation",
+    response_model=ExplanationOut,
+    status_code=status.HTTP_200_OK,
+)
+def get_explanation(
+    question_id: str = QuestionId,
+    version: int | None = None,
+    ctx: OrgContext = Depends(require_permission(Permission.VIEW_ASSESSMENTS)),
+    db: Session = Depends(get_db),
+) -> ExplanationOut:
+    """The latest explanation of a question in this organisation; 404 if nobody asked yet."""
+    run = explanations.latest(db, ctx, _version(version), question_id)
+    if run is None:
+        raise AppError("not_found", "Nobody has asked about this question yet.", 404)
+    return _explanation_out(run)

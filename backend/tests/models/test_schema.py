@@ -14,6 +14,7 @@ CLIENT_TABLES = {
     "readiness_responses",
     "readiness_consensus",
     "readiness_results",
+    "ai_runs",
 }
 
 

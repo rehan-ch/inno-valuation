@@ -19,6 +19,7 @@ from sqlalchemy.orm import Session
 
 from app.core.security import hash_password, throttle_key
 from app.models import (
+    AiRun,
     AuditEvent,
     ConsultantGrant,
     Invitation,
@@ -32,7 +33,7 @@ from app.models import (
     User,
     UserToken,
 )
-from app.models.enums import MembershipRole, UserTokenPurpose
+from app.models.enums import AiTouchpoint, MembershipRole, UserTokenPurpose
 
 _session: Session | None = None
 
@@ -196,3 +197,23 @@ class ReadinessResultFactory(BaseFactory[ReadinessResult]):
     participant_count = 1
     band_key = "foundation"
     priorities = LazyFunction(list)
+
+
+class AiRunFactory(BaseFactory[AiRun]):
+    """A queued explanation run with placeholder prompts."""
+
+    class Meta:
+        model = AiRun
+
+    class Params:
+        organisation = SubFactory(OrganisationFactory)
+
+    organisation_id = LazyAttribute(lambda o: o.organisation.id)
+    touchpoint = AiTouchpoint.EXPLAIN_QUESTION
+    subject_type = "readiness_question"
+    subject_id = "1:customer_journey_1"
+    model = "claude-sonnet-5-5"
+    effort = "low"
+    prompt_version = "1"
+    system_prompt = "system"
+    user_prompt = "user"

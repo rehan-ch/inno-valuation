@@ -12,6 +12,7 @@ from app.models.accounts import (
     User,
     UserToken,
 )
+from app.models.ai import AiRun
 from app.models.audit import AuditEvent
 from app.models.auth import SignInThrottle
 from app.models.readiness import (
@@ -22,6 +23,7 @@ from app.models.readiness import (
 )
 
 __all__ = [
+    "AiRun",
     "AuditEvent",
     "Base",
     "ConsultantGrant",

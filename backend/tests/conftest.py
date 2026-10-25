@@ -9,7 +9,7 @@ import os
 
 os.environ["ENVIRONMENT"] = "test"
 
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 
 import pytest
@@ -18,10 +18,12 @@ from fastapi.testclient import TestClient
 from sqlalchemy import Engine, create_engine
 from sqlalchemy.orm import Session
 
+from app.ai.client import AiError, AiReply, override_ai_client
 from app.core.deps import get_db
 from app.emails.backends import MemoryEmailBackend, override_email_backend
 from app.jobs.db import override_task_session
 from tests import factories
+from tests.ai.support import RecordedAiClient
 from tests.database import alembic_config, throwaway_database
 
 
@@ -34,6 +36,22 @@ def _never_open_a_browser(monkeypatch: pytest.MonkeyPatch) -> None:
 
     monkeypatch.setattr("webbrowser.open", refuse)
     monkeypatch.setattr("webbrowser.open_new_tab", refuse)
+
+
+@pytest.fixture
+def use_ai() -> Iterator[Callable[..., RecordedAiClient]]:
+    """``use_ai(reply, ...)`` answers the next AI calls with recorded replies. Without it,
+    AI calls in tests get the offline stand-in; a test never reaches the live API."""
+
+    def _use(*replies: AiReply | AiError) -> RecordedAiClient:
+        client = RecordedAiClient(*replies)
+        override_ai_client(client)
+        return client
+
+    try:
+        yield _use
+    finally:
+        override_ai_client(None)
 
 
 @pytest.fixture(scope="session")

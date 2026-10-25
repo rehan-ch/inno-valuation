@@ -53,6 +53,28 @@ class ReadinessStatus(StrEnum):
     FINAL = "final"
 
 
+class AiTouchpoint(StrEnum):
+    """The 8 places AI is used (docs/methodology/ai-touchpoints.md)."""
+
+    EXPLAIN_QUESTION = "explain_question"
+    CONTEXT_QUESTIONS = "context_questions"
+    PROPOSE_IQ_SCORES = "propose_iq_scores"
+    INTERPRET_RESULTS = "interpret_results"
+    BRIDGE_GAPS = "bridge_gaps"
+    RECOMMENDATIONS = "recommendations"
+    REPORT_NARRATIVE = "report_narrative"
+    CONSULTATION_NUDGE = "consultation_nudge"
+
+
+class AiRunStatus(StrEnum):
+    """One AI run, left to right: queued, running, then succeeded or failed for good."""
+
+    QUEUED = "queued"
+    RUNNING = "running"
+    SUCCEEDED = "succeeded"
+    FAILED = "failed"
+
+
 def enum_type(enum_cls: type[StrEnum], name: str, length: int = 20) -> Enum:
     """A VARCHAR column with a CHECK constraint named ``ck_<table>_<name>``.
 

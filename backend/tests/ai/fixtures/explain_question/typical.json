@@ -1,0 +1,23 @@
+{
+  "about": "Typical: a company with its details filled in. The reply is a hand-written stand-in in the model's output format until a live recording replaces it.",
+  "question_id": "customer_journey_2",
+  "organisation": {"name": "Harbour Foods", "industry": "Food retail", "size_band": "51-200", "country": "GB"},
+  "replies": [
+    {
+      "output": {
+        "dimension_key": "customer_journey",
+        "explanation": [
+          "This question asks whether you use what customers tell you to improve their experience.",
+          "It is not enough to collect feedback once; it should shape changes on a regular basis.",
+          "Think of reviews, complaints, surveys and what staff hear in store."
+        ],
+        "example": "A grocer reads its weekly reviews, sees that people struggle to find gluten-free items, and changes the shelf signs."
+      },
+      "model": "claude-sonnet-5-5",
+      "input_tokens": 612,
+      "output_tokens": 148,
+      "request_id": "req_typical_1"
+    }
+  ],
+  "expect": {"status": "succeeded", "attempts": 1}
+}

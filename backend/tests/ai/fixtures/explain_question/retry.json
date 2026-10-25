@@ -1,0 +1,30 @@
+{
+  "about": "Retry: the first answer breaks the house style (an em dash), the second follows it. One retry with the reason, then success.",
+  "question_id": "organizational_agility_1",
+  "organisation": {"name": "Northwind", "industry": "Logistics"},
+  "replies": [
+    {
+      "output": {
+        "dimension_key": "organizational_agility",
+        "explanation": [
+          "This question asks how quickly your teams can change course — for example in a crisis.",
+          "It looks at whether people can adapt without waiting for long approvals."
+        ],
+        "example": "When a port closes, a logistics team reroutes shipments the same day."
+      },
+      "request_id": "req_retry_1"
+    },
+    {
+      "output": {
+        "dimension_key": "organizational_agility",
+        "explanation": [
+          "This question asks how quickly your teams can change course, for example in a crisis.",
+          "It looks at whether people can adapt without waiting for long approvals."
+        ],
+        "example": "When a port closes, a logistics team reroutes shipments the same day."
+      },
+      "request_id": "req_retry_2"
+    }
+  ],
+  "expect": {"status": "succeeded", "attempts": 2}
+}
