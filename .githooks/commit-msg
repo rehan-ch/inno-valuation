@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Commit message rules: 'type(scope): summary', no AI attribution.
+# Commit message rules: 'type(scope): summary', no co-author or generator lines.
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 exec bin/check message "$1"

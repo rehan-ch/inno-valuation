@@ -1,5 +1,5 @@
 """AI output models: every output names its dimension, and none can carry a number the
-scoring engine owns (CLAUDE.md rules 3 and 4)."""
+scoring engine owns."""
 
 import importlib
 import pkgutil

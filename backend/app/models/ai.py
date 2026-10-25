@@ -1,7 +1,7 @@
 """The AI run log: one row per AI result, with everything needed to trace it.
 
 Every AI output is stored next to the prompt that produced it, the model, the raw response
-and the token use (CLAUDE.md rule 7, docs/methodology/ai-touchpoints.md "What is stored").
+and the token use, so every AI result can be traced.
 The subject is a ``subject_type`` plus a ``subject_id`` string, with no ORM polymorphism:
 for "explain a question" it is ``readiness_question`` and ``<version>:<question id>``.
 

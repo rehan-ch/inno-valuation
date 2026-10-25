@@ -11,7 +11,7 @@ from pydantic import AfterValidator, BaseModel, ConfigDict, StringConstraints
 
 from app.scoring.question_set import QUESTION_SET
 
-# House style for AI text (CLAUDE.md, ai-touchpoints rule 6).
+# House style for AI text: simple English, short sentences, no em dashes.
 _EM_DASH: Final = "—"
 
 
