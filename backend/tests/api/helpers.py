@@ -2,7 +2,7 @@
 
 from urllib.parse import parse_qs, urlparse
 
-import httpx
+import httpx2
 from fastapi.testclient import TestClient
 
 from app.core.sessions import CSRF_COOKIE, CSRF_HEADER, SESSION_COOKIE
@@ -12,8 +12,8 @@ from app.models.enums import MembershipRole
 from tests.factories import TEST_PASSWORD, MembershipFactory, OrganisationFactory, verified_user
 
 
-def sign_in(client: TestClient, email: str, password: str = TEST_PASSWORD) -> httpx.Response:
-    response: httpx.Response = client.post(
+def sign_in(client: TestClient, email: str, password: str = TEST_PASSWORD) -> httpx2.Response:
+    response: httpx2.Response = client.post(
         "/api/v1/auth/sign-in", json={"email": email, "password": password}
     )
     return response

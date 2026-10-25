@@ -43,7 +43,7 @@ Built in migration `0006_readiness` (`app/models/readiness.py`). Every table car
 
 ## AI
 - `ContextAnswers`: organisation, questions (jsonb), answers (jsonb), ai_run_id, answered_at. Used by touchpoints 3 to 6.
-- `AiRun`: see `docs/methodology/ai-touchpoints.md`. `subject_type` + `subject_id` columns (no ORM polymorphism magic).
+- `AiRun` (`ai_runs`): see `docs/methodology/ai-touchpoints.md`. `subject_type` + `subject_id` columns (no ORM polymorphism magic). A question explanation (touchpoint 1) is the run itself, subject `readiness_question` / `<version>:<question id>`; there is no separate explanation table.
 - `Recommendation`: subject (ReadinessResult or IqAssessment), dimension_key, fixed_text, ai_json, ai_run_id, priority_rank.
 - `Interpretation`: subject, summary, per_dimension (jsonb), ai_run_id.
 

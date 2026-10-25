@@ -165,3 +165,23 @@ class ResultOut(BaseModel):
     strengths: list[DimensionScoreOut]
     submitted_count: int
     finalised_at: datetime
+
+
+ExplanationStatus = Literal["pending", "ready", "failed"]
+
+
+class ExplanationOut(BaseModel):
+    """An AI explanation of one question (touchpoint 1). Helps only; it holds no number."""
+
+    question_id: str
+    question_set_version: int
+    # The dimension the explanation is about (every AI output names one).
+    dimension_key: str
+    dimension_name: str
+    status: ExplanationStatus
+    # 2 to 4 plain sentences and one example, once ready; null until then or on failure.
+    explanation: list[str] | None
+    example: str | None
+    # Sample text from the development stand-in, not a real AI answer.
+    sample: bool
+    created_at: datetime
