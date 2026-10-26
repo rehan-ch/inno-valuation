@@ -6,8 +6,12 @@ in exactly the same words: same model, prompt version and prompts. Changing the 
 details the prompt uses, the prompt itself or the model asks again.
 
 A run still waiting is shared too, so two people asking at once start one run. A run left
-waiting longer than ``STALE_AFTER`` (a worker that never picked it up) is failed, and the
-next ask starts a fresh one. A failed run is never reused: asking again tries again.
+waiting longer than the touchpoint's ``runner.stale_after`` window (a worker that never
+picked it up, or was lost) is failed, and the next ask starts a fresh one. A failed run is
+never reused: asking again tries again.
+
+Asks in one organisation are serialised with an advisory lock, so the daily count cannot
+be overshot by asks about different questions at the same moment.
 """
 
 import logging
@@ -20,7 +24,7 @@ from sqlalchemy.orm import Session
 
 from app.ai import runner
 from app.ai.client import OFFLINE_MODEL, is_offline
-from app.ai.config import get_ai_config
+from app.ai.config import TouchpointSettings, get_ai_config
 from app.ai.prompting import RenderedPrompt
 from app.ai.touchpoints import explain_question
 from app.core.errors import AppError
@@ -38,8 +42,6 @@ logger = logging.getLogger(__name__)
 # 60 questions twice over in a day stays well inside it.
 DAILY_LIMIT: Final = 150
 DAILY_LIMIT_PERIOD: Final = timedelta(days=1)
-
-STALE_AFTER: Final = timedelta(minutes=5)
 
 _PENDING: Final = frozenset({AiRunStatus.QUEUED, AiRunStatus.RUNNING})
 
@@ -74,9 +76,10 @@ def latest(db: Session, ctx: OrgContext, version: int, question_id: str) -> AiRu
     return db.scalars(_runs(ctx, version, question_id).limit(1)).first()
 
 
-def _lock_subject(db: Session, ctx: OrgContext, subject: str) -> None:
-    """Serialise asks about one question in one organisation until the transaction ends."""
-    key = f"{explain_question.KEY}:{ctx.organisation_id}:{subject}"
+def _lock_organisation_asks(db: Session, ctx: OrgContext) -> None:
+    """Serialise asks in one organisation until the transaction ends: one run per question
+    however many people ask at once, and a daily count that cannot be overshot."""
+    key = f"{explain_question.KEY}:{ctx.organisation_id}"
     db.execute(text("SELECT pg_advisory_xact_lock(hashtextextended(:key, 0))"), {"key": key})
 
 
@@ -86,7 +89,7 @@ def _reusable(
     *,
     version: int,
     question_id: str,
-    model: str,
+    settings: TouchpointSettings,
     prompt: RenderedPrompt,
 ) -> AiRun | None:
     """The newest succeeded or still-waiting run asked in exactly these words. Waiting runs
@@ -94,7 +97,7 @@ def _reusable(
     candidates = db.scalars(
         _runs(ctx, version, question_id).where(
             AiRun.status != AiRunStatus.FAILED,
-            AiRun.model == model,
+            AiRun.model == settings.model,
             AiRun.prompt_version == prompt.version,
             AiRun.system_prompt == prompt.system,
             AiRun.user_prompt == prompt.user,
@@ -102,11 +105,14 @@ def _reusable(
     ).all()
     live = not is_offline()
     now = datetime.now(UTC)
+    stale_after = runner.stale_after(settings)
     for run in candidates:
+        if run.status in _PENDING and now - run.created_at > stale_after:
+            # A no-op if a worker finished it meanwhile; the run is re-read either way.
+            runner.mark_failed(db, run, "The run did not finish in time.")
+        if run.status is AiRunStatus.FAILED:
+            continue
         if run.status in _PENDING:
-            if now - run.created_at > STALE_AFTER:
-                runner.mark_failed(run, "The run did not finish in time.")
-                continue
             return run
         # Sample text from the offline stand-in is never reused once the AI is connected.
         if live and run.response_model == OFFLINE_MODEL:
@@ -123,9 +129,9 @@ def request(db: Session, ctx: OrgContext, version: int, question_id: str) -> AiR
         raise AppError("ai_disabled", "Explanations are switched off.", 409)
     prompt = explain_question.render_prompt(question_set, question_id, ctx.organisation)
     subject = explain_question.subject_id(version, question_id)
-    _lock_subject(db, ctx, subject)
+    _lock_organisation_asks(db, ctx)
     found = _reusable(
-        db, ctx, version=version, question_id=question_id, model=settings.model, prompt=prompt
+        db, ctx, version=version, question_id=question_id, settings=settings, prompt=prompt
     )
     if found is not None:
         db.commit()  # keeps any stale run failed on the way, and releases the lock

@@ -11,8 +11,8 @@ from app.scoring.question_set import QUESTION_SET
 # bump its prompt_version, then update the pin (the digest is in the failure message).
 PINNED = {
     "explain_question": (
-        "1",
-        "ac5bc6bd3b30a2a449b6a5b990bea1d1214fcef24e48bbb4c492c7072ad1ddf6",
+        "2",
+        "0fff3255d1a840e71f47e8f68ab38a86372a1bdc34364e963e49b429b9c83b8b",
     ),
 }
 

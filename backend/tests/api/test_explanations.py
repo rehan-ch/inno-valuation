@@ -11,9 +11,11 @@ from fastapi.testclient import TestClient
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.ai import runner
 from app.ai.client import AiUnavailableError
+from app.ai.config import get_ai_config
 from app.models import AiRun, Organisation, User
-from app.models.enums import AiRunStatus, MembershipRole, OrganisationStatus
+from app.models.enums import AiRunStatus, AiTouchpoint, MembershipRole, OrganisationStatus
 from app.scoring.question_set import QUESTION_SET
 from app.services import explanations
 from tests.ai.support import RecordedAiClient, reply
@@ -143,7 +145,8 @@ def test_a_waiting_run_is_shared_and_a_stale_one_replaced(
     assert _ask(client).json()["status"] == "pending"  # the same run, still waiting
     assert ai.requests == []
 
-    asked.created_at = datetime.now(UTC) - explanations.STALE_AFTER - timedelta(seconds=1)
+    stale_after = runner.stale_after(get_ai_config().touchpoint(AiTouchpoint.EXPLAIN_QUESTION))
+    asked.created_at = datetime.now(UTC) - stale_after - timedelta(seconds=1)
     db.flush()
     assert _ask(client).json()["status"] == "ready"
     assert asked.status is AiRunStatus.FAILED

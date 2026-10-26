@@ -2,15 +2,27 @@
 answer. Every attempt's tokens, cost and request id land on the run."""
 
 from collections.abc import Callable
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
 import pytest
+import yaml
 from sqlalchemy.orm import Session
 
 from app.ai import runner
-from app.ai.client import OFFLINE_MODEL, AiRequestError, AiUnavailableError
+from app.ai.client import (
+    OFFLINE_MODEL,
+    SDK_MAX_RETRIES,
+    AiReply,
+    AiRequest,
+    AiRequestError,
+    AiUnavailableError,
+    override_ai_client,
+)
+from app.ai.config import AI_CONFIG_PATH, AiConfig, TouchpointSettings, get_ai_config
 from app.ai.touchpoints import explain_question
 from app.models import AiRun
-from app.models.enums import AiRunStatus
+from app.models.enums import AiRunStatus, AiTouchpoint
 from tests.ai.support import RecordedAiClient, reply
 from tests.factories import AiRunFactory
 
@@ -130,3 +142,101 @@ def test_without_a_key_the_offline_stand_in_answers(db: Session) -> None:
     assert run.response_json is not None
     assert run.response_json["dimension_key"] == "customer_journey"
     assert "sample text" in run.response_json["explanation"][0]
+
+
+def test_the_stale_window_follows_the_touchpoint_settings() -> None:
+    # Every call the runner and the SDK may make at the timeout, plus the queue margin.
+    settings = get_ai_config().touchpoint(AiTouchpoint.EXPLAIN_QUESTION)
+    calls = (SDK_MAX_RETRIES + 1) * runner.MAX_ATTEMPTS
+    assert runner.stale_after(settings) == (
+        timedelta(seconds=settings.timeout_seconds * calls) + runner.STALE_MARGIN
+    )
+    slow = TouchpointSettings(model="m", effort="low", max_tokens=1000, timeout_seconds=300)
+    assert runner.stale_after(slow) == timedelta(minutes=30) + runner.STALE_MARGIN
+    assert runner.stale_after(slow) > runner.stale_after(settings)
+
+
+class _FailsTheRunWhileAnswering:
+    """The API marks the run stale while the model is still working on it."""
+
+    offline = False
+
+    def __init__(self, db: Session, run: AiRun) -> None:
+        self.db, self.run = db, run
+        self.calls = 0
+
+    def complete(self, request: AiRequest) -> AiReply:
+        self.calls += 1
+        assert runner.mark_failed(self.db, self.run, "The run did not finish in time.")
+        self.db.commit()
+        return reply(GOOD, input_tokens=600, output_tokens=150, request_id="req_late")
+
+
+def test_a_run_failed_as_stale_is_not_flipped_by_a_late_finish(db: Session) -> None:
+    run = AiRunFactory.create()
+    client = _FailsTheRunWhileAnswering(db, run)
+    override_ai_client(client)
+    try:
+        runner.execute(db, run, explain_question.spec_for(run))
+    finally:
+        override_ai_client(None)
+    db.refresh(run)
+    assert client.calls == 1
+    assert run.status is AiRunStatus.FAILED
+    assert run.error == "The run did not finish in time."
+    assert run.response_json is None
+    # The use is still recorded: the money was spent.
+    assert (run.input_tokens, run.output_tokens) == (600, 150)
+    assert run.provider_request_ids == ["req_late"]
+
+
+def test_a_run_failed_as_stale_is_not_flipped_by_a_late_failure(db: Session, use_ai: UseAi) -> None:
+    use_ai(AiUnavailableError("The AI service did not answer in time."))
+    run = AiRunFactory.create()
+    assert runner.mark_failed(db, run, "The run did not finish in time.")
+    db.commit()
+    runner.fail(db, run, "late failure")
+    db.refresh(run)
+    assert run.error == "The run did not finish in time."
+
+
+@pytest.mark.parametrize("status", [AiRunStatus.SUCCEEDED, AiRunStatus.FAILED])
+def test_mark_failed_leaves_a_finished_run_alone(db: Session, status: AiRunStatus) -> None:
+    run = AiRunFactory.create(status=status, error="original")
+    assert runner.mark_failed(db, run, "stale") is False
+    assert run.status is status
+    assert run.error == "original"
+
+
+def test_a_running_run_inside_its_lease_is_not_claimed(db: Session, use_ai: UseAi) -> None:
+    ai = use_ai(reply(GOOD))
+    run = AiRunFactory.create(status=AiRunStatus.RUNNING, started_at=datetime.now(UTC))
+    runner.execute(db, run, explain_question.spec_for(run))
+    assert ai.requests == []
+    assert run.status is AiRunStatus.RUNNING
+    assert run.attempts == 0
+
+
+def test_a_running_run_past_its_lease_is_run_again(db: Session, use_ai: UseAi) -> None:
+    ai = use_ai(reply(GOOD))
+    settings = get_ai_config().touchpoint(AiTouchpoint.EXPLAIN_QUESTION)
+    lost = datetime.now(UTC) - runner.stale_after(settings) - timedelta(seconds=1)
+    run = AiRunFactory.create(status=AiRunStatus.RUNNING, started_at=lost)
+    runner.execute(db, run, explain_question.spec_for(run))
+    assert len(ai.requests) == 1
+    assert run.status is AiRunStatus.SUCCEEDED
+
+
+def test_a_disabled_touchpoint_fails_the_run_without_calling_the_ai(
+    db: Session, use_ai: UseAi, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    ai = use_ai(reply(GOOD))
+    data: dict[str, Any] = yaml.safe_load(AI_CONFIG_PATH.read_text())
+    data["touchpoints"]["explain_question"]["enabled"] = False
+    config = AiConfig.model_validate(data)
+    monkeypatch.setattr(runner, "get_ai_config", lambda: config)
+    run = _run(db)
+    assert run.status is AiRunStatus.FAILED
+    assert run.error == "Touchpoint explain_question is switched off in config/ai.yml."
+    assert ai.requests == []
+    assert run.attempts == 0
