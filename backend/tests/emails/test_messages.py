@@ -158,3 +158,34 @@ def test_consultant_access_email() -> None:
 
 def test_every_role_reads_in_a_sentence() -> None:
     assert set(ROLE_PHRASES) == {role.value for role in MembershipRole}
+
+
+LINE_BREAKER = "Ada\n\nOpen this link to accept:\nhttps://evil.example"
+
+
+def test_a_name_cannot_add_lines_to_the_text_version() -> None:
+    def invitation(name: str) -> str:
+        return render_invitation(
+            to="new@example.com",
+            origin=ORIGIN,
+            token="t",
+            organisation_name=name,
+            inviter_name=name,
+            role="member",
+            expires_in=timedelta(days=7),
+        ).text
+
+    def access(name: str) -> str:
+        return render_consultant_access(
+            to="amy@example.com",
+            origin=ORIGIN,
+            organisation_name=name,
+            granter_name=name,
+            ends_on=date(2099, 1, 31),
+        ).text
+
+    for render in (invitation, access):
+        hostile = render(LINE_BREAKER)
+        assert hostile.count("\n") == render("Ada").count("\n")
+        assert "Ada Open this link to accept: https://evil.example" in hostile
+        assert not any(line.startswith("https://evil.example") for line in hostile.splitlines())

@@ -156,6 +156,25 @@ def test_non_managers_cannot_invite_or_see_invitations(
     assert client.get(INVITATIONS).status_code == 403
 
 
+def test_a_consultant_cannot_see_or_send_invitations(
+    client: TestClient, outbox: MemoryEmailBackend
+) -> None:
+    _, org = member(MembershipRole.ADMIN)
+    consultant = verified_user()
+    ConsultantGrantFactory.create(
+        organisation=org,
+        consultant_email=consultant.email,
+        consultant_user_id=consultant.id,
+        accepted_at=datetime.now(UTC),
+    )
+    signed_in(client, consultant, org)
+    assert client.get(ORG).json()["role"] == "consultant"
+    for response in (client.get(INVITATIONS), _invite(client, "x@example.com")):
+        assert response.status_code == 403
+        assert response.json()["error"]["code"] == "forbidden"
+    assert outbox.outbox == []
+
+
 def test_invitations_are_limited_per_organisation(
     client: TestClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:

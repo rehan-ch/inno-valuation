@@ -3,8 +3,8 @@
 Each email has an HTML and a plain-text version. Emails hold no sensitive data: no
 passwords, no assessment content, nothing a reader of a forwarded email could misuse except
 the single-use link itself. Team emails name the organisation and the person who sent the
-invitation, nothing more. Those names are typed by users, so the subject lines stay fixed
-and the HTML version escapes them.
+invitation, nothing more. Those names are typed by users, so the subject lines stay fixed,
+the HTML version escapes them and both versions keep them on one line.
 """
 
 from dataclasses import dataclass
@@ -160,8 +160,19 @@ def render_consultant_access(
     )
 
 
+def _single_line(value: str) -> str:
+    """Whitespace runs, line breaks included, become one space. The schemas already refuse
+    control characters in names; this keeps a user-typed value from ever adding a line to
+    the plain-text version, whatever path it arrived by."""
+    return " ".join(value.split())
+
+
 def _render(template: str, subject: str, *, to: str, link: str, **context: str) -> EmailMessage:
-    values = {"product": PRODUCT_NAME, "link": link, **context}
+    values = {
+        "product": PRODUCT_NAME,
+        "link": link,
+        **{key: _single_line(value) for key, value in context.items()},
+    }
     return EmailMessage(
         to=to,
         subject=subject,

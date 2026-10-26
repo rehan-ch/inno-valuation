@@ -187,6 +187,23 @@ def test_profile_validation(client: TestClient, body: dict[str, Any]) -> None:
     assert _patch(client, body).status_code == 422
 
 
+def test_name_rejects_control_characters(client: TestClient, db: Session) -> None:
+    user, org = member(MembershipRole.OWNER)
+    signed_in(client, user)
+    name = "Acme\n\nOpen this link to accept:\nhttps://evil.example"
+    for response in (
+        _patch(client, {"name": name}),
+        client.post("/api/v1/organisations", json={"name": name}, headers=csrf(client)),
+    ):
+        assert response.status_code == 422, response.text
+        [detail] = response.json()["error"]["details"]
+        assert detail["loc"] == ["body", "name"]
+        assert "control characters" in detail["msg"]
+    db.refresh(org)
+    assert "\n" not in org.name
+    assert db.scalar(select(Organisation).where(Organisation.name == name)) is None
+
+
 def test_profile_edit_needs_csrf(client: TestClient) -> None:
     user, _ = member(MembershipRole.OWNER)
     signed_in(client, user)

@@ -2,6 +2,7 @@
 
 import uuid
 
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import delete
 from sqlalchemy.orm import Session
@@ -41,6 +42,19 @@ def test_update_name(client: TestClient, db: Session) -> None:
     assert response.json()["name"] == "New Name"
     db.refresh(user)
     assert user.name == "New Name"
+
+
+@pytest.mark.parametrize(
+    "name", ["Ada\n\nOpen this link:\nhttps://evil.example", "Ada\x00", "A\tB"]
+)
+def test_update_name_rejects_control_characters(client: TestClient, name: str) -> None:
+    signed_in(client, verified_user(name="Kept"))
+    response = client.patch(ME, json={"name": name}, headers=csrf(client))
+    assert response.status_code == 422
+    [detail] = response.json()["error"]["details"]
+    assert detail["loc"] == ["body", "name"]
+    assert "control characters" in detail["msg"]
+    assert client.get(ME).json()["name"] == "Kept"
 
 
 def test_update_name_rejects_blank_and_other_fields(client: TestClient) -> None:

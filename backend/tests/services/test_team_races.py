@@ -20,6 +20,7 @@ from app.core.security import hash_token, invitation_token_value
 from app.models import AuditEvent, Invitation, Membership, Organisation, User
 from app.models.enums import MembershipRole
 from app.services import invitations, members
+from app.services.audit import AuditAction
 
 
 @dataclass(frozen=True)
@@ -153,6 +154,58 @@ def test_accept_and_cancel_never_both_succeed(
             update(Invitation)
             .where(Invitation.id == world.invitation_id)
             .values(accepted_at=None, revoked_at=None)
+        )
+        session.commit()
+
+
+@pytest.mark.parametrize("attempt", range(5))
+def test_two_accepts_of_one_link_join_once(db_engine: Engine, world: World, attempt: int) -> None:
+    """Two clicks on the same link at the same moment: one joins, the other is refused,
+    and the person ends up with one membership and one audit event."""
+    del attempt
+
+    def accept() -> object:
+        with Session(db_engine) as session:
+            user = session.get(User, world.invitee_id)
+            assert user is not None
+            return invitations.accept(session, user, token=world.token)
+
+    results = _run_together(accept, accept)
+    won = [r for r in results if isinstance(r, Organisation)]
+    assert len(won) == 1
+    [lost] = [r for r in results if not isinstance(r, Organisation)]
+    assert _code(lost) == "invalid_invitation", repr(lost)
+
+    with Session(db_engine) as session:
+        memberships = session.scalars(
+            select(Membership).where(
+                Membership.organisation_id == world.org_id,
+                Membership.user_id == world.invitee_id,
+            )
+        ).all()
+        assert [m.role for m in memberships] == [MembershipRole.MEMBER]
+        invitation = session.get(Invitation, world.invitation_id)
+        assert invitation is not None
+        assert invitation.accepted_at is not None
+        accepted_events = session.scalars(
+            select(AuditEvent).where(
+                AuditEvent.organisation_id == world.org_id,
+                AuditEvent.action == AuditAction.INVITATION_ACCEPTED.value,
+            )
+        ).all()
+        assert len(accepted_events) == 1
+
+    # Reset for the next repetition.
+    with Session(db_engine) as session:
+        session.execute(
+            delete(Membership).where(
+                Membership.organisation_id == world.org_id,
+                Membership.user_id == world.invitee_id,
+            )
+        )
+        session.execute(delete(AuditEvent).where(AuditEvent.organisation_id == world.org_id))
+        session.execute(
+            update(Invitation).where(Invitation.id == world.invitation_id).values(accepted_at=None)
         )
         session.commit()
 

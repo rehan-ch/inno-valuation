@@ -13,7 +13,7 @@ from pydantic import (
 from app.core.permissions import OrgContext, OrgRole
 from app.models.accounts import DEFAULT_CURRENCY
 from app.models.enums import OrganisationStatus
-from app.schemas.common import Email, RequestModel
+from app.schemas.common import Email, NoControlCharacters, RequestModel
 
 
 def _blank_to_none(value: str | None) -> str | None:
@@ -33,7 +33,9 @@ LongText = Annotated[
     AfterValidator(_blank_to_none),
 ]
 OrganisationName = Annotated[
-    str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)
+    str,
+    StringConstraints(strip_whitespace=True, min_length=1, max_length=200),
+    NoControlCharacters,
 ]
 CountryCode = Annotated[str, StringConstraints(pattern=r"^[A-Z]{2}$")]  # ISO 3166-1 alpha-2
 CurrencyCode = Annotated[str, StringConstraints(pattern=r"^[A-Z]{3}$")]  # ISO 4217

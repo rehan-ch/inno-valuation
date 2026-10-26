@@ -99,6 +99,25 @@ def test_only_owners_and_admins_manage_access(client: TestClient, role: Membersh
     assert client.delete(f"{GRANTS}/{grant.id}", headers=csrf(client)).status_code == 403
 
 
+def test_a_consultant_cannot_see_or_give_access(
+    client: TestClient, outbox: MemoryEmailBackend
+) -> None:
+    _, org = member(MembershipRole.ADMIN)
+    amy = verified_user()
+    ConsultantGrantFactory.create(
+        organisation=org,
+        consultant_email=amy.email,
+        consultant_user_id=amy.id,
+        accepted_at=datetime.now(UTC),
+    )
+    signed_in(client, amy, org)
+    assert client.get(ORG).json()["role"] == "consultant"
+    for response in (client.get(GRANTS), _grant(client, "friend@example.com")):
+        assert response.status_code == 403
+        assert response.json()["error"]["code"] == "forbidden"
+    assert outbox.outbox == []
+
+
 def test_end_date_must_be_in_the_future(client: TestClient) -> None:
     admin, _ = member(MembershipRole.ADMIN)
     signed_in(client, admin)
