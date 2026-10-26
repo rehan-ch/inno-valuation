@@ -154,7 +154,7 @@ export function DashboardPage() {
 
       <section
         aria-label="At a glance"
-        className="grid grid-cols-2 divide-neutral-200 overflow-hidden rounded-lg border border-neutral-200 bg-white max-lg:gap-px max-lg:bg-neutral-200 lg:grid-cols-4 lg:divide-x"
+        className="grid grid-cols-2 divide-neutral-200 overflow-hidden rounded-lg border border-neutral-200 bg-white max-lg:gap-px max-lg:bg-neutral-200 lg:auto-cols-fr lg:grid-flow-col lg:divide-x"
       >
         <Stat label="Team members" value={state.members.length} />
         {manage && <Stat label="Invitations waiting" value={waitingInvitations.length} />}
@@ -340,21 +340,21 @@ function ReadinessCard({
     }
   } else if (latest.status === "final") {
     body = (
-      <span className="flex flex-wrap items-end gap-x-6 gap-y-2">
-        <span className="block">
+      <div className="flex flex-wrap items-end gap-x-6 gap-y-2">
+        <div>
           <Eyebrow>Readiness score</Eyebrow>
-          <span className="mt-1 block text-3xl font-semibold text-neutral-900 tabular-nums">
+          <p className="mt-1 text-3xl font-semibold text-neutral-900 tabular-nums">
             {latest.total}
             <span className="ml-1 text-base font-normal text-neutral-500">/ 300</span>
-          </span>
-        </span>
-        <span className="block pb-1">
-          <span className="block font-medium text-neutral-900">{latest.band_name}</span>
-          <span className="block text-neutral-600">
+          </p>
+        </div>
+        <div className="pb-1">
+          <p className="font-medium text-neutral-900">{latest.band_name}</p>
+          <p className="text-neutral-600">
             Final on {formatDate(latest.finalised_at ?? latest.created_at)}.
-          </span>
-        </span>
-      </span>
+          </p>
+        </div>
+      </div>
     );
     action = (
       <ActionLink href={assessmentHref(latest, manage)} primary>

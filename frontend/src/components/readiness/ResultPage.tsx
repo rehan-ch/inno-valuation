@@ -4,14 +4,13 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { Alert } from "@/components/ui/Alert";
+import { Bar } from "@/components/ui/Bar";
 import { Card, CardDescription, CardTitle, Eyebrow, PageHeader } from "@/components/ui/Card";
 import { Loading } from "@/components/ui/Loading";
 import { ApiError } from "@/lib/api/client";
 import { getResult } from "@/lib/api/readiness";
 import type { ResultOut } from "@/lib/api/types";
 import { formatDate } from "@/lib/format";
-
-import { Bar } from "./ScaleChoice";
 
 type State =
   | { kind: "loading" }

@@ -24,7 +24,15 @@ type State =
   | { kind: "error"; message: string };
 
 /** A main-navigation tab that marks the page it is on for styling and screen readers. */
-function NavLink({ href, children }: { href: string; children: ReactNode }) {
+function NavLink({
+  href,
+  className,
+  children,
+}: {
+  href: string;
+  className?: string;
+  children: ReactNode;
+}) {
   const pathname = usePathname();
   const current = pathname === href || pathname.startsWith(`${href}/`);
   return (
@@ -35,7 +43,7 @@ function NavLink({ href, children }: { href: string; children: ReactNode }) {
         current
           ? "border-primary font-medium text-neutral-900"
           : "border-transparent text-neutral-600 hover:border-neutral-300 hover:text-neutral-900"
-      }`}
+      }${className ? ` ${className}` : ""}`}
     >
       {children}
     </Link>
@@ -146,12 +154,12 @@ export function AppShell({ children }: { children: ReactNode }) {
           </Link>
           <div className="flex min-w-0 items-center gap-2">
             <OrgSwitcher />
-            <Link
-              href="/organisations/new"
-              className={buttonClass("ghost", "sm", "hidden sm:inline-flex")}
-            >
-              New organisation
-            </Link>
+            {/* Wrapped, because the button classes set display and would beat `hidden`. */}
+            <span className="hidden shrink-0 sm:block">
+              <Link href="/organisations/new" className={buttonClass("ghost", "sm")}>
+                New organisation
+              </Link>
+            </span>
             <Button variant="secondary" size="sm" onClick={() => void handleSignOut()}>
               Sign out
             </Button>
@@ -176,12 +184,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             <NavLink href="/consultant-access">My access</NavLink>
           )}
           <NavLink href="/account">Account</NavLink>
-          <Link
-            href="/organisations/new"
-            className="-mb-px inline-flex h-10 shrink-0 items-center border-b-2 border-transparent px-1 text-sm whitespace-nowrap text-neutral-600 hover:text-neutral-900 sm:hidden"
-          >
+          <NavLink href="/organisations/new" className="sm:hidden">
             New organisation
-          </Link>
+          </NavLink>
         </nav>
       </header>
       <main id="main" className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">

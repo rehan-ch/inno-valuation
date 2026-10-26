@@ -5,10 +5,12 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { Alert } from "@/components/ui/Alert";
+import { Bar } from "@/components/ui/Bar";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardDescription, CardTitle, PageHeader } from "@/components/ui/Card";
 import { Loading } from "@/components/ui/Loading";
+import { StickyBar, stickyScrollMargin } from "@/components/ui/StickyBar";
 import { ApiError } from "@/lib/api/client";
 import {
   beginConsensus,
@@ -21,7 +23,7 @@ import type { AssessmentOut, QuestionSetOut } from "@/lib/api/types";
 import { useSubmit } from "@/lib/forms";
 
 import { QuestionExplanation } from "./QuestionExplanation";
-import { Bar, ScaleChoice, StickyBar } from "./ScaleChoice";
+import { ScaleChoice } from "./ScaleChoice";
 import { saveFailureMessage, STATUS_LABELS, STATUS_TONES } from "./status";
 
 type State =
@@ -225,7 +227,7 @@ export function QuestionnairePage({ assessmentId }: { assessmentId: string }) {
           key={dimension.key}
           id={dimension.key}
           aria-labelledby={`${dimension.key}-title`}
-          className="scroll-mt-52 rounded-lg border border-neutral-200 bg-white"
+          className={`${stickyScrollMargin} rounded-lg border border-neutral-200 bg-white`}
         >
           <div className="border-b border-neutral-200 px-5 py-4">
             <h2 id={`${dimension.key}-title`} className="text-sm font-semibold text-neutral-900">

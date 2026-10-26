@@ -5,10 +5,12 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { Alert } from "@/components/ui/Alert";
+import { Bar } from "@/components/ui/Bar";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/Card";
 import { Loading } from "@/components/ui/Loading";
+import { StickyBar } from "@/components/ui/StickyBar";
 import { ApiError } from "@/lib/api/client";
 import {
   finaliseAssessment,
@@ -20,7 +22,7 @@ import {
 import type { ConsensusOut, QuestionConsensusOut, QuestionSetOut } from "@/lib/api/types";
 import { useSubmit } from "@/lib/forms";
 
-import { Bar, ScaleChoice, StickyBar } from "./ScaleChoice";
+import { ScaleChoice } from "./ScaleChoice";
 import { saveFailureMessage } from "./status";
 
 type State =
@@ -183,7 +185,7 @@ export function ConsensusPage({ assessmentId }: { assessmentId: string }) {
         <section
           key={dimension.key}
           aria-labelledby={`${dimension.key}-title`}
-          className="rounded-lg border border-neutral-200 bg-white"
+          className="overflow-hidden rounded-lg border border-neutral-200 bg-white"
         >
           <div className="border-b border-neutral-200 px-5 py-4">
             <h2 id={`${dimension.key}-title`} className="text-sm font-semibold text-neutral-900">
@@ -243,7 +245,9 @@ function ConsensusRow({
   const [note, setNote] = useState(row.note ?? "");
 
   return (
-    <li className={`px-5 py-4 ${row.wide_spread ? "border-l-2 border-l-amber-400 bg-amber-50/30" : ""}`}>
+    <li
+      className={`px-5 py-4 ${row.wide_spread ? "bg-amber-50/40 shadow-[inset_3px_0_0_var(--color-amber-400)]" : ""}`}
+    >
       <fieldset>
         <legend className="text-sm text-neutral-900">{text}</legend>
         {failed && (

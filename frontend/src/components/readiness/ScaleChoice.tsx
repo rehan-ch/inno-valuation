@@ -1,5 +1,3 @@
-import type { ReactNode } from "react";
-
 /** The 1 to 5 answer control: one connected row of equal cells, the chosen one filled.
  * Each cell is a real radio, so keyboard and screen-reader behaviour come for free. */
 export function ScaleChoice({
@@ -41,26 +39,5 @@ export function ScaleChoice({
         );
       })}
     </span>
-  );
-}
-
-/** A thin progress bar. Decorative: the figure next to it carries the meaning. */
-export function Bar({ value, maximum, tone = "primary" }: { value: number; maximum: number; tone?: "primary" | "accent" }) {
-  return (
-    <div className="mt-2 h-1.5 overflow-hidden rounded-sm bg-neutral-100" aria-hidden="true">
-      <div
-        className={`h-full rounded-sm transition-[width] ${tone === "accent" ? "bg-accent" : "bg-primary"}`}
-        style={{ width: `${Math.round((value / maximum) * 100)}%` }}
-      />
-    </div>
-  );
-}
-
-/** A sticky toolbar under the header for progress, save state and the main action. */
-export function StickyBar({ children }: { children: ReactNode }) {
-  return (
-    <div className="sticky top-(--app-header-h) z-10 -mx-4 border-y border-neutral-200 bg-white px-4 py-3 sm:mx-0 sm:rounded-lg sm:border">
-      {children}
-    </div>
   );
 }
