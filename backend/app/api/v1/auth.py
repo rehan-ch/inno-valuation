@@ -17,9 +17,11 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 CHECK_INBOX = "If this email can be used, we have sent a message to it. Check your inbox."
 
 
-def limit_by_address(request: Request, db: Session = Depends(get_db)) -> None:
+def limit_by_address(request: Request, db: Session) -> None:
     """The per-address limit on the routes that check a password or send an email to any
-    address given (see ``sign_in_throttle``). 429 ``too_many_attempts`` when exceeded."""
+    address given (see ``sign_in_throttle``). 429 ``too_many_attempts`` when exceeded.
+    Called from inside the handler, after the body is validated, so a malformed request
+    (422) never counts against the address."""
     auth_service.check_address_limit(db, request.client.host if request.client else None)
 
 
@@ -39,9 +41,11 @@ def verify_email(body: VerifyEmailIn, db: Session = Depends(get_db)) -> MessageO
     "/verify-email/resend",
     response_model=MessageOut,
     status_code=status.HTTP_202_ACCEPTED,
-    dependencies=[Depends(limit_by_address)],
 )
-def resend_verification(body: EmailIn, db: Session = Depends(get_db)) -> MessageOut:
+def resend_verification(
+    body: EmailIn, request: Request, db: Session = Depends(get_db)
+) -> MessageOut:
+    limit_by_address(request, db)
     auth_service.resend_verification(db, email=body.email)
     return MessageOut(message=CHECK_INBOX)
 
@@ -50,9 +54,11 @@ def resend_verification(body: EmailIn, db: Session = Depends(get_db)) -> Message
     "/sign-in",
     response_model=MeOut,
     status_code=status.HTTP_200_OK,
-    dependencies=[Depends(limit_by_address)],
 )
-def sign_in(body: SignInIn, response: Response, db: Session = Depends(get_db)) -> MeOut:
+def sign_in(
+    body: SignInIn, request: Request, response: Response, db: Session = Depends(get_db)
+) -> MeOut:
+    limit_by_address(request, db)
     result = auth_service.sign_in(db, email=body.email, password=body.password)
     claims = start_session(response, result.user, active_org_id=result.active_org_id)
     return me_response(db, result.user, claims.active_org_id)
@@ -76,9 +82,9 @@ def sign_out(
     "/password/forgot",
     response_model=MessageOut,
     status_code=status.HTTP_202_ACCEPTED,
-    dependencies=[Depends(limit_by_address)],
 )
-def forgot_password(body: EmailIn, db: Session = Depends(get_db)) -> MessageOut:
+def forgot_password(body: EmailIn, request: Request, db: Session = Depends(get_db)) -> MessageOut:
+    limit_by_address(request, db)
     auth_service.request_password_reset(db, email=body.email)
     return MessageOut(message=CHECK_INBOX)
 

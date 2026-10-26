@@ -895,3 +895,38 @@ def test_requests_queue_one_task_for_every_email(
     client.post(path, json={"email": "known@example.com"})
     kind = "verify_email" if path == RESEND else "reset_password"
     assert calls == [(kind, None), (kind, str(user.id))]
+
+
+def test_a_malformed_request_does_not_count_against_the_address(
+    client: TestClient, db: Session
+) -> None:
+    """The address is counted after the body is validated, so junk (422) cannot use up the
+    budget of a real request from the same address."""
+    for _ in range(sign_in_throttle.ADDRESS_MAX_REQUESTS):
+        assert client.post(FORGOT, json={}).status_code == 422
+    assert db.scalar(select(func.count()).select_from(SignInThrottle)) == 0
+    assert client.post(FORGOT, json={"email": "someone@example.com"}).status_code == 202
+
+
+def test_throttle_rows_are_dropped_once_their_window_and_lock_are_over(
+    client: TestClient, db: Session
+) -> None:
+    now = datetime.now(UTC)
+    over = now - sign_in_throttle.WINDOW - timedelta(seconds=1)
+    db.add(SignInThrottle(key_hash="a" * 64, attempt_count=3, window_started_at=over))
+    db.add(
+        SignInThrottle(
+            key_hash="b" * 64,
+            attempt_count=5,
+            window_started_at=over,
+            locked_until=now + timedelta(minutes=5),
+        )
+    )
+    db.add(SignInThrottle(key_hash="c" * 64, attempt_count=1, window_started_at=now))
+    db.flush()
+    assert client.post(FORGOT, json={"email": "someone@example.com"}).status_code == 202
+    keys = set(db.scalars(select(SignInThrottle.key_hash)).all())
+    assert "a" * 64 not in keys  # window over, not locked: gone
+    assert "b" * 64 in keys  # still locked: kept
+    assert "c" * 64 in keys  # window still running: kept
+    assert len(keys) == 3  # plus the row for this request's address

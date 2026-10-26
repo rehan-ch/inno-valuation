@@ -110,8 +110,8 @@ async function send(path: string, init: RequestInit): Promise<{ response: Respon
   );
 }
 
-/** A call whose 2xx answer is a JSON body. An empty or unparsable body is an error
- * (code invalid_response): use apiFetchNoContent for a call that answers with nothing. */
+/** A call whose 2xx answer is a JSON body. Every route answers with one, so an empty or
+ * unparsable body is an error (code invalid_response). */
 export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   const { response, text } = await send(path, init);
   try {
@@ -124,11 +124,6 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
       response.status,
     );
   }
-}
-
-/** A call whose 2xx answer carries nothing to read, e.g. a 204; any body is ignored. */
-export async function apiFetchNoContent(path: string, init: RequestInit = {}): Promise<void> {
-  await send(path, init);
 }
 
 export function getJson<T>(path: string, init?: RequestInit): Promise<T> {

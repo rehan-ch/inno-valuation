@@ -390,7 +390,14 @@ def _version(version: int | None) -> int:
 
 def _explanation_out(run: AiRun) -> ExplanationOut:
     version, question_id = explain_question_touchpoint.parse_subject(run.subject_id)
-    dimension = question_set_for(version).dimension_of_question(question_id)
+    try:
+        dimension = question_set_for(version).dimension_of_question(question_id)
+    except ScoringError as error:
+        raise AppError(
+            "question_set_unavailable",
+            f"This explanation uses question set version {version}, which is not available here.",
+            409,
+        ) from error
     output = run.response_json if run.status is AiRunStatus.SUCCEEDED else None
     return ExplanationOut(
         question_id=question_id,

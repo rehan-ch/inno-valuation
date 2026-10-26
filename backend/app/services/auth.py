@@ -26,6 +26,7 @@ from typing import Final
 
 from kombu.exceptions import OperationalError as BrokerError
 from sqlalchemy import delete, func, select
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -310,7 +311,13 @@ def sign_out(db: Session, user: User, claims: SessionClaims) -> None:
     now = datetime.now(UTC)
     db.execute(delete(RevokedSession).where(RevokedSession.expires_at <= now))
     if claims.expires_at > now:
-        db.add(RevokedSession(sid=claims.sid, user_id=user.id, expires_at=claims.expires_at))
+        # Two sign-outs with the same cookie (a double click, two tabs) both pass; the
+        # second finds the row already there.
+        db.execute(
+            pg_insert(RevokedSession)
+            .values(sid=claims.sid, user_id=user.id, expires_at=claims.expires_at)
+            .on_conflict_do_nothing(index_elements=[RevokedSession.sid])
+        )
     record(db, AuditAction.SIGNED_OUT, actor=user, target_type="user", target_id=user.id)
     db.commit()
 

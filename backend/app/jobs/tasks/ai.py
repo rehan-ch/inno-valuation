@@ -27,6 +27,9 @@ def run_ai(run_id: str) -> str:
         # The row lock is held until the runner's first commit, so two deliveries of the
         # same id cannot both claim the run.
         run = runner.lock(db, uuid.UUID(run_id))
+        if run is not None and runner.expired(run):
+            runner.fail(db, run, "The run waited too long for a worker.")
+            return run.status.value
         if run is None or not runner.claimable(run):
             db.rollback()
             logger.info("Skipped AI run %s: gone, finished or held by another worker", run_id)

@@ -62,3 +62,12 @@ def test_a_touchpoint_not_built_yet_fails_the_run(db: Session) -> None:
     run = AiRunFactory.create(touchpoint=AiTouchpoint.BRIDGE_GAPS)
     assert run_ai.delay(str(run.id)).get() == "failed"
     assert run.error == "Touchpoint bridge_gaps is not built yet."
+
+
+def test_a_queued_run_that_waited_too_long_is_failed_without_calling_the_ai(db: Session) -> None:
+    run = AiRunFactory.create(status=AiRunStatus.QUEUED, created_at=_long_ago())
+    assert run_ai.delay(str(run.id)).get() == "failed"
+    db.refresh(run)
+    assert run.status is AiRunStatus.FAILED
+    assert run.attempts == 0
+    assert "waited too long" in (run.error or "")

@@ -1,13 +1,15 @@
 """Service-level checks of the auth flows (the request tests cover the HTTP side)."""
 
+from datetime import UTC, datetime, timedelta
+
 import pytest
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.errors import AppError
-from app.core.security import user_token_value
+from app.core.security import SessionClaims, user_token_value
 from app.emails.backends import MemoryEmailBackend
-from app.models import AuditEvent, User
+from app.models import AuditEvent, RevokedSession, User
 from app.models.enums import MembershipRole, OrganisationStatus, UserTokenPurpose
 from app.services import auth, user_tokens
 from app.services.audit import AuditAction
@@ -119,3 +121,21 @@ def test_sign_in_refused_when_password_sign_in_is_off(
     with pytest.raises(AppError) as info:
         auth.sign_in(db, email="a@example.com", password=TEST_PASSWORD)
     assert info.value.code == "password_sign_in_disabled"
+
+
+def test_signing_out_twice_with_one_session_revokes_it_once(db: Session) -> None:
+    """A double click or two tabs: both calls pass, one revocation row results."""
+    user = verified_user()
+    claims = SessionClaims(
+        user_id=user.id,
+        session_version=user.session_version,
+        csrf="csrf",
+        active_org_id=None,
+        expires_at=datetime.now(UTC) + timedelta(hours=1),
+        sid="one-session",
+    )
+    auth.sign_out(db, user, claims)
+    auth.sign_out(db, user, claims)
+    rows = db.scalars(select(RevokedSession).where(RevokedSession.sid == "one-session")).all()
+    assert len(rows) == 1
+    assert auth.session_revoked(db, "one-session")

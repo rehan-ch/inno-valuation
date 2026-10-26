@@ -94,8 +94,11 @@ def clear(db: Session, normalised_email: str) -> None:
 
 
 def count_address_request(db: Session, address: str, now: datetime | None = None) -> bool:
-    """Count one request from ``address``; False when the window is full. Caller commits."""
+    """Count one request from ``address``; False when the window is full. Caller commits.
+    Also drops every row (address or email) whose window and lock are over, since such a
+    row would start from zero anyway; without this each address ever seen would stay."""
     now = now or datetime.now(UTC)
+    purge_finished(db, now)
     row = _locked_row_for_key(db, address_throttle_key(address))
     if row.window_started_at is None or row.window_started_at <= now - WINDOW:
         row.attempt_count = 0
@@ -105,6 +108,17 @@ def count_address_request(db: Session, address: str, now: datetime | None = None
     row.attempt_count += 1
     db.flush()
     return True
+
+
+def purge_finished(db: Session, now: datetime | None = None) -> None:
+    """Delete rows that no longer count: window over and not locked."""
+    now = now or datetime.now(UTC)
+    db.execute(
+        delete(SignInThrottle).where(
+            SignInThrottle.window_started_at <= now - WINDOW,
+            (SignInThrottle.locked_until.is_(None)) | (SignInThrottle.locked_until <= now),
+        )
+    )
 
 
 def _locked_row(db: Session, normalised_email: str) -> SignInThrottle:

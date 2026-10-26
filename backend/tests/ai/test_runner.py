@@ -240,3 +240,17 @@ def test_a_disabled_touchpoint_fails_the_run_without_calling_the_ai(
     assert run.error == "Touchpoint explain_question is switched off in config/ai.yml."
     assert ai.requests == []
     assert run.attempts == 0
+
+
+def test_a_queued_run_older_than_the_stale_window_is_not_run(db: Session, use_ai: UseAi) -> None:
+    """The API has given up on it (or will the moment anyone asks), so running it now
+    would pay for an answer nobody reads."""
+    ai = use_ai(reply(GOOD))
+    settings = get_ai_config().touchpoint(AiTouchpoint.EXPLAIN_QUESTION)
+    long_ago = datetime.now(UTC) - runner.stale_after(settings) - timedelta(seconds=1)
+    run = AiRunFactory.create(status=AiRunStatus.QUEUED, created_at=long_ago)
+    assert runner.expired(run)
+    assert not runner.claimable(run)
+    runner.execute(db, run, explain_question.spec_for(run))
+    assert ai.requests == []
+    assert run.status is AiRunStatus.QUEUED

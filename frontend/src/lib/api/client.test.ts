@@ -3,7 +3,6 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   ApiError,
   apiFetch,
-  apiFetchNoContent,
   apiUrl,
   getHealth,
   setUnauthorizedHandler,
@@ -97,22 +96,6 @@ describe("apiFetch", () => {
     );
 
     await expect(apiFetch("/x")).rejects.toMatchObject({ code: "invalid_response", status: 200 });
-  });
-
-  it("accepts an empty 204 from apiFetchNoContent and still reports errors", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, { status: 204 })));
-    await expect(apiFetchNoContent("/x", { method: "DELETE" })).resolves.toBeUndefined();
-
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue(
-        jsonResponse({ error: { code: "not_found", message: "Not found." }, status: 404 }, 404),
-      ),
-    );
-    await expect(apiFetchNoContent("/x", { method: "DELETE" })).rejects.toMatchObject({
-      code: "not_found",
-      status: 404,
-    });
   });
 });
 

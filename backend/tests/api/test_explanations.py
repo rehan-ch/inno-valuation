@@ -14,6 +14,8 @@ from sqlalchemy.orm import Session
 from app.ai import runner
 from app.ai.client import AiUnavailableError
 from app.ai.config import get_ai_config
+from app.api.v1.readiness import _explanation_out
+from app.core.errors import AppError
 from app.models import AiRun, Organisation, User
 from app.models.enums import AiRunStatus, AiTouchpoint, MembershipRole, OrganisationStatus
 from app.scoring.question_set import QUESTION_SET
@@ -252,3 +254,13 @@ def test_the_response_never_shows_prompts_or_use(client: TestClient, use_ai: Use
     body = _ask(client).json()
     for hidden in ("prompt", "model", "tokens", "cost", "raw", "error"):
         assert not [key for key in body if hidden in key]
+
+
+def test_an_explanation_on_an_unavailable_question_set_is_a_409(db: Session) -> None:
+    """Defence in depth: the routes check the version first, but a stored run on a version
+    this server no longer loads must still not turn into a 500."""
+    run = AiRunFactory.create(status=AiRunStatus.SUCCEEDED, subject_id="999:customer_journey_1")
+    with pytest.raises(AppError) as caught:
+        _explanation_out(run)
+    assert caught.value.status_code == 409
+    assert caught.value.code == "question_set_unavailable"
