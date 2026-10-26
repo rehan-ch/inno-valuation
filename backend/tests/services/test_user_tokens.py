@@ -38,7 +38,24 @@ def test_cooldown_blocks_a_second_token(db: Session) -> None:
     assert user_tokens.issue(db, user, VERIFY) is not None
 
 
-def test_new_token_voids_the_old_one(db: Session) -> None:
+def test_new_verification_token_voids_the_old_one(db: Session) -> None:
+    user = UserFactory.create()
+    first = user_tokens.issue(db, user, VERIFY)
+    assert first is not None
+    _age(first, 2)
+    second = user_tokens.issue(db, user, VERIFY)
+    assert second is not None
+    db.refresh(first)
+    assert not user_tokens.is_usable(first)
+    assert user_tokens.consume(db, user_token_value(first.id), VERIFY) is None
+    used = user_tokens.consume(db, user_token_value(second.id), VERIFY)
+    assert used is not None
+    assert used.user == user
+
+
+def test_new_reset_token_leaves_the_old_one_usable(db: Session) -> None:
+    """Anyone can ask for a reset link, so a flood must not kill the owner's link. Using
+    one link still voids the rest."""
     user = UserFactory.create()
     first = user_tokens.issue(db, user, RESET)
     assert first is not None
@@ -46,11 +63,11 @@ def test_new_token_voids_the_old_one(db: Session) -> None:
     second = user_tokens.issue(db, user, RESET)
     assert second is not None
     db.refresh(first)
-    assert not user_tokens.is_usable(first)
-    assert user_tokens.consume(db, user_token_value(first.id), RESET) is None
-    used = user_tokens.consume(db, user_token_value(second.id), RESET)
-    assert used is not None
-    assert used.user == user
+    assert user_tokens.is_usable(first)
+    assert user_tokens.is_usable(second)
+    assert user_tokens.consume(db, user_token_value(first.id), RESET) is first
+    db.refresh(second)
+    assert not user_tokens.is_usable(second)
 
 
 def test_consume_is_single_use_and_purpose_bound(db: Session) -> None:

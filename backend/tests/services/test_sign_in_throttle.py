@@ -84,6 +84,39 @@ def test_factory_row_is_not_locked(db: Session) -> None:
     assert row.locked_until is None
 
 
+# Per client address
+
+
+ADDRESS = "203.0.113.9"
+
+
+def test_address_limit_refuses_after_the_window_is_full(db: Session) -> None:
+    now = datetime.now(UTC)
+    for _ in range(throttle.ADDRESS_MAX_REQUESTS):
+        assert throttle.count_address_request(db, ADDRESS, now)
+    assert not throttle.count_address_request(db, ADDRESS, now)
+    # Another address has its own count, and the address itself is not stored.
+    assert throttle.count_address_request(db, "198.51.100.4", now)
+    assert all(ADDRESS not in row.key_hash for row in db.scalars(select(SignInThrottle)))
+
+
+def test_address_limit_restarts_after_the_window(db: Session) -> None:
+    start = datetime.now(UTC)
+    for _ in range(throttle.ADDRESS_MAX_REQUESTS):
+        throttle.count_address_request(db, ADDRESS, start)
+    assert not throttle.count_address_request(db, ADDRESS, start)
+    later = start + throttle.WINDOW + timedelta(seconds=1)
+    assert throttle.count_address_request(db, ADDRESS, later)
+
+
+def test_address_and_email_counts_are_separate(db: Session) -> None:
+    now = datetime.now(UTC)
+    for _ in range(throttle.ADDRESS_MAX_REQUESTS):
+        throttle.count_address_request(db, EMAIL, now)
+    # The same string as an email is a different key: it is not locked.
+    assert throttle.begin_attempt(db, EMAIL, now).allowed
+
+
 # Concurrency: real transactions on separate connections, outside the test rollback.
 
 

@@ -106,6 +106,17 @@ def throttle_key(normalised_email: str) -> str:
     ).hexdigest()
 
 
+def address_throttle_key(address: str) -> str:
+    """Keyed hash of a client address for the per-address limit, under its own key so it
+    can never collide with an email key. No address is stored."""
+    return hmac.new(_subkey("address-throttle:v1"), address.encode(), hashlib.sha256).hexdigest()
+
+
+def new_session_id() -> str:
+    """A random id for one session, so sign-out can revoke exactly that session."""
+    return secrets.token_urlsafe(16)
+
+
 def new_csrf_token() -> str:
     return secrets.token_urlsafe(32)
 
@@ -127,6 +138,8 @@ class SessionClaims:
     csrf: str
     active_org_id: uuid.UUID | None
     expires_at: datetime
+    # Random per session; a ``revoked_sessions`` row with this id ends the session early.
+    sid: str
 
 
 def encode_session(claims: SessionClaims) -> str:
@@ -134,6 +147,7 @@ def encode_session(claims: SessionClaims) -> str:
         "sub": str(claims.user_id),
         "sv": claims.session_version,
         "csrf": claims.csrf,
+        "sid": claims.sid,
         "org": str(claims.active_org_id) if claims.active_org_id else None,
         "aud": SESSION_AUDIENCE,
         "iat": int(datetime.now(UTC).timestamp()),
@@ -150,15 +164,18 @@ def decode_session(token: str) -> SessionClaims | None:
             _subkey("session-jwt:v1"),
             algorithms=[JWT_ALGORITHM],
             audience=SESSION_AUDIENCE,
-            options={"require": ["sub", "sv", "csrf", "aud", "iat", "exp"]},
+            options={"require": ["sub", "sv", "csrf", "sid", "aud", "iat", "exp"]},
         )
         org = payload.get("org")
         session_version = payload["sv"]
         csrf = payload["csrf"]
+        sid = payload["sid"]
         if (
             type(session_version) is not int  # bool is an int subclass; reject it
             or not isinstance(csrf, str)
             or not csrf
+            or not isinstance(sid, str)
+            or not sid
         ):
             return None
         return SessionClaims(
@@ -167,6 +184,7 @@ def decode_session(token: str) -> SessionClaims | None:
             csrf=csrf,
             active_org_id=uuid.UUID(org) if org else None,
             expires_at=datetime.fromtimestamp(payload["exp"], UTC),
+            sid=sid,
         )
     except (jwt.PyJWTError, ValueError, TypeError, AttributeError):
         return None

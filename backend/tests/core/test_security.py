@@ -30,6 +30,7 @@ def _claims(**overrides: object) -> SessionClaims:
         "csrf": "csrf-value",
         "active_org_id": uuid.uuid4(),
         "expires_at": datetime.now(UTC) + timedelta(hours=1),
+        "sid": "session-id",
     }
     values.update(overrides)
     return SessionClaims(**values)  # type: ignore[arg-type]
@@ -94,6 +95,36 @@ def test_session_round_trip() -> None:
     assert decoded.csrf == "csrf-value"
     assert decoded.active_org_id == claims.active_org_id
     assert decoded.expires_at == claims.expires_at.replace(microsecond=0)
+    assert decoded.sid == "session-id"
+
+
+def test_session_ids_are_random() -> None:
+    first, second = security.new_session_id(), security.new_session_id()
+    assert first != second
+    assert len(first) >= 20
+
+
+@pytest.mark.parametrize("sid", [None, "", 7])
+def test_session_without_a_usable_id_is_rejected(sid: object) -> None:
+    payload = {
+        "sub": str(uuid.uuid4()),
+        "sv": 1,
+        "csrf": "x",
+        "aud": SESSION_AUDIENCE,
+        "iat": 0,
+        "exp": int((datetime.now(UTC) + timedelta(hours=1)).timestamp()),
+    }
+    if sid is not None:
+        payload["sid"] = sid
+    token = jwt.encode(payload, security._subkey("session-jwt:v1"), algorithm="HS256")
+    assert decode_session(token) is None
+
+
+def test_address_throttle_key_is_separate_from_the_email_key() -> None:
+    key = security.address_throttle_key("203.0.113.9")
+    assert len(key) == 64
+    assert "203.0.113.9" not in key
+    assert key != throttle_key("203.0.113.9")
 
 
 def test_session_without_active_organisation() -> None:

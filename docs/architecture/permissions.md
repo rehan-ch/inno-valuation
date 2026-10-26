@@ -9,7 +9,7 @@ One table decides who may do what inside an organisation: `ROLE_PERMISSIONS` in 
 
 `current_org` re-checks the membership or grant on every request, so a removed member or an ended grant loses access at once (404 `not_found`).
 
-An archived organisation is view-only until the archive feature exists (Phase 8): it cannot be chosen as the active organisation, and only `organisation.view` and `team.view` still work. `require_permission(...)` enforces this; `require_role(...)` checks the role only, so routes that change data use `require_permission(...)`.
+An archived organisation is view-only until the archive feature exists (Phase 8): it cannot be chosen as the active organisation, and only `organisation.view`, `team.view` and `assessments.view` still work, so results stay readable. `require_permission(...)` enforces this; `require_role(...)` checks the role only, so routes that change data use `require_permission(...)`.
 
 ## Matrix (Phases 2 and 3)
 

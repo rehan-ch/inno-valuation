@@ -12,6 +12,11 @@ The order matters (``begin_attempt`` before the password check, ``attempt_failed
 2. On a wrong password, ``attempt_failed`` locks the email for ``LOCK_DURATION`` once the
    window holds ``MAX_ATTEMPTS`` attempts.
 3. On success, ``clear`` deletes the row.
+
+``count_address_request`` is a plain rate limit per client address on the same table, under
+its own key: at most ``ADDRESS_MAX_REQUESTS`` sign-in, forgot-password and resend requests
+per ``WINDOW``, whatever the email. It slows down an attacker who spreads guesses over many
+emails, and it caps how many reset or verification emails one address can trigger.
 """
 
 from dataclasses import dataclass
@@ -22,12 +27,13 @@ from sqlalchemy import delete, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
-from app.core.security import throttle_key
+from app.core.security import address_throttle_key, throttle_key
 from app.models import SignInThrottle
 
 MAX_ATTEMPTS: Final = 5
 WINDOW: Final = timedelta(minutes=15)
 LOCK_DURATION: Final = timedelta(minutes=15)
+ADDRESS_MAX_REQUESTS: Final = 30
 
 
 @dataclass(frozen=True)
@@ -87,8 +93,25 @@ def clear(db: Session, normalised_email: str) -> None:
     )
 
 
+def count_address_request(db: Session, address: str, now: datetime | None = None) -> bool:
+    """Count one request from ``address``; False when the window is full. Caller commits."""
+    now = now or datetime.now(UTC)
+    row = _locked_row_for_key(db, address_throttle_key(address))
+    if row.window_started_at is None or row.window_started_at <= now - WINDOW:
+        row.attempt_count = 0
+        row.window_started_at = now
+    if row.attempt_count >= ADDRESS_MAX_REQUESTS:
+        return False
+    row.attempt_count += 1
+    db.flush()
+    return True
+
+
 def _locked_row(db: Session, normalised_email: str) -> SignInThrottle:
-    key = throttle_key(normalised_email)
+    return _locked_row_for_key(db, throttle_key(normalised_email))
+
+
+def _locked_row_for_key(db: Session, key: str) -> SignInThrottle:
     # Create the row if missing, then lock it, so concurrent requests count one by one.
     db.execute(insert(SignInThrottle).values(key_hash=key).on_conflict_do_nothing())
     return db.scalars(

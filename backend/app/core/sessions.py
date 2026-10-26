@@ -23,6 +23,7 @@ from app.core.security import (
     decode_session,
     encode_session,
     new_csrf_token,
+    new_session_id,
 )
 from app.core.settings import get_settings
 from app.models import User
@@ -52,13 +53,14 @@ def session_lifetime() -> timedelta:
 def start_session(
     response: Response, user: User, *, active_org_id: uuid.UUID | None
 ) -> SessionClaims:
-    """A new session with a fresh CSRF token and the full lifetime."""
+    """A new session with its own id, a fresh CSRF token and the full lifetime."""
     claims = SessionClaims(
         user_id=user.id,
         session_version=user.session_version,
         csrf=new_csrf_token(),
         active_org_id=active_org_id,
         expires_at=datetime.now(UTC) + session_lifetime(),
+        sid=new_session_id(),
     )
     _set_cookies(response, claims)
     return claims
@@ -69,8 +71,8 @@ def refresh_session(
 ) -> SessionClaims:
     """Re-issue the same session with a new active organisation.
 
-    Keeps the CSRF token (requests already in flight stay valid) and the original end
-    time (switching organisation never extends a session).
+    Keeps the session id, the CSRF token (requests already in flight stay valid) and the
+    original end time (switching organisation never extends a session).
     """
     updated = SessionClaims(
         user_id=claims.user_id,
@@ -78,6 +80,7 @@ def refresh_session(
         csrf=claims.csrf,
         active_org_id=active_org_id,
         expires_at=claims.expires_at,
+        sid=claims.sid,
     )
     _set_cookies(response, updated)
     return updated

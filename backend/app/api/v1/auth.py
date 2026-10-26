@@ -1,7 +1,7 @@
 """Email and password sign-in. Routes without a session are protected from other sites by
 the router-wide origin check; routes with a session also need the CSRF header."""
 
-from fastapi import APIRouter, Depends, Response, status
+from fastapi import APIRouter, Depends, Request, Response, status
 from sqlalchemy.orm import Session
 
 from app.api.v1.me import me_response
@@ -17,6 +17,12 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 CHECK_INBOX = "If this email can be used, we have sent a message to it. Check your inbox."
 
 
+def limit_by_address(request: Request, db: Session = Depends(get_db)) -> None:
+    """The per-address limit on the routes that check a password or send an email to any
+    address given (see ``sign_in_throttle``). 429 ``too_many_attempts`` when exceeded."""
+    auth_service.check_address_limit(db, request.client.host if request.client else None)
+
+
 @router.post("/sign-up", response_model=MessageOut, status_code=status.HTTP_202_ACCEPTED)
 def sign_up(body: SignUpIn, db: Session = Depends(get_db)) -> MessageOut:
     auth_service.sign_up(db, email=body.email, name=body.name, password=body.password)
@@ -30,14 +36,22 @@ def verify_email(body: VerifyEmailIn, db: Session = Depends(get_db)) -> MessageO
 
 
 @router.post(
-    "/verify-email/resend", response_model=MessageOut, status_code=status.HTTP_202_ACCEPTED
+    "/verify-email/resend",
+    response_model=MessageOut,
+    status_code=status.HTTP_202_ACCEPTED,
+    dependencies=[Depends(limit_by_address)],
 )
 def resend_verification(body: EmailIn, db: Session = Depends(get_db)) -> MessageOut:
     auth_service.resend_verification(db, email=body.email)
     return MessageOut(message=CHECK_INBOX)
 
 
-@router.post("/sign-in", response_model=MeOut, status_code=status.HTTP_200_OK)
+@router.post(
+    "/sign-in",
+    response_model=MeOut,
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(limit_by_address)],
+)
 def sign_in(body: SignInIn, response: Response, db: Session = Depends(get_db)) -> MeOut:
     result = auth_service.sign_in(db, email=body.email, password=body.password)
     claims = start_session(response, result.user, active_org_id=result.active_org_id)
@@ -50,15 +64,20 @@ def sign_out(
     auth: AuthContext | None = Depends(session_if_csrf_valid),
     db: Session = Depends(get_db),
 ) -> MessageOut:
-    """Ends the session in this browser. Always clears the cookies; it is audited only with
-    a valid session and a passing CSRF check."""
+    """Ends the session in this browser, on the server too. Always clears the cookies; the
+    session is revoked and audited only with a valid session and a passing CSRF check."""
     if auth is not None:
-        auth_service.record_sign_out(db, auth.user)
+        auth_service.sign_out(db, auth.user, auth.claims)
     clear_session(response)
     return MessageOut(message="You are signed out.")
 
 
-@router.post("/password/forgot", response_model=MessageOut, status_code=status.HTTP_202_ACCEPTED)
+@router.post(
+    "/password/forgot",
+    response_model=MessageOut,
+    status_code=status.HTTP_202_ACCEPTED,
+    dependencies=[Depends(limit_by_address)],
+)
 def forgot_password(body: EmailIn, db: Session = Depends(get_db)) -> MessageOut:
     auth_service.request_password_reset(db, email=body.email)
     return MessageOut(message=CHECK_INBOX)

@@ -5,14 +5,16 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.errors import AppError
+from app.core.security import user_token_value
 from app.emails.backends import MemoryEmailBackend
 from app.models import AuditEvent, User
-from app.models.enums import MembershipRole
-from app.services import auth
+from app.models.enums import MembershipRole, OrganisationStatus, UserTokenPurpose
+from app.services import auth, user_tokens
 from app.services.audit import AuditAction
 from tests.factories import (
     TEST_PASSWORD,
     MembershipFactory,
+    OrganisationFactory,
     UserFactory,
     verified_user,
 )
@@ -34,6 +36,34 @@ def test_sign_in_picks_the_only_organisation(db: Session) -> None:
     result = auth.sign_in(db, email=user.email, password=TEST_PASSWORD)
     assert result.user == user
     assert result.active_org_id == membership.organisation_id
+
+
+def test_no_default_organisation_when_the_only_one_is_archived(db: Session) -> None:
+    user = verified_user()
+    archived = OrganisationFactory.create(status=OrganisationStatus.ARCHIVED)
+    MembershipFactory.create(user=user, organisation=archived, role=MembershipRole.OWNER)
+    assert auth._default_org(db, user) is None
+    assert auth.sign_in(db, email=user.email, password=TEST_PASSWORD).active_org_id is None
+
+
+def test_stale_contested_link_cannot_change_a_verified_users_password(db: Session) -> None:
+    """A link that required a password, used after the email is verified another way, is
+    spent but changes nothing: the password it carries is ignored."""
+    user = verified_user()
+    before = user.password_hash
+    token = user_tokens.issue(
+        db,
+        user,
+        UserTokenPurpose.VERIFY_EMAIL,
+        requires_password=True,
+        limit=user_tokens.SIGN_UP_LIMIT,
+    )
+    assert token is not None
+    auth.verify_email(db, token=user_token_value(token.id), password="an attackers choice 9")
+    db.refresh(user)
+    assert user.password_hash == before
+    assert user.session_version == 1
+    assert token.used_at is not None
 
 
 def test_failed_sign_in_audit(db: Session) -> None:
