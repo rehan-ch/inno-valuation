@@ -66,8 +66,8 @@ export interface paths {
         put?: never;
         /**
          * Sign Out
-         * @description Ends the session in this browser. Always clears the cookies; it is audited only with
-         *     a valid session and a passing CSRF check.
+         * @description Ends the session in this browser, on the server too. Always clears the cookies; the
+         *     session is revoked and audited only with a valid session and a passing CSRF check.
          */
         post: operations["sign_out_api_v1_auth_sign_out_post"];
         delete?: never;

@@ -42,9 +42,27 @@ describe("SignInForm", () => {
     expect(routerPush).toHaveBeenCalledWith("/invitations/accept#token=tok1");
   });
 
-  it("ignores a ?next= that would leave the site, like a backslash path", async () => {
+  it("follows a ?next= with a query, as the resolved path", async () => {
+    setLocation("/sign-in?next=%2Fteam%3Fx%3D1");
+    stubApi({ "POST /api/v1/auth/sign-in": fakeMe() });
+
+    render(<SignInForm />);
+    await fillAndSubmit();
+
+    expect(routerPush).toHaveBeenCalledWith("/team?x=1");
+  });
+
+  it.each([
+    // URL parsers drop tabs and newlines, so /\t/evil.com is really //evil.com.
+    ["a tab", "%2F%09%2Fevil.com"],
+    ["a newline", "%2F%0A%2Fevil.com"],
+    ["a carriage return", "%2F%0D%2Fevil.com"],
+    ["a scheme-relative URL", "%2F%2Fevil.com"],
     // URL parsers normalise backslashes, so /\evil.com is really //evil.com.
-    setLocation("/sign-in?next=%2F%5Cevil.com");
+    ["a backslash path", "%2F%5Cevil.com"],
+    ["an absolute URL", "https%3A%2F%2Fevil.com"],
+  ])("ignores a ?next= that would leave the site, like %s", async (_name, next) => {
+    setLocation(`/sign-in?next=${next}`);
     stubApi({ "POST /api/v1/auth/sign-in": fakeMe() });
 
     render(<SignInForm />);

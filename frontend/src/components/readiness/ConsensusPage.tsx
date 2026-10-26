@@ -20,6 +20,8 @@ import {
 import type { ConsensusOut, QuestionConsensusOut, QuestionSetOut } from "@/lib/api/types";
 import { useSubmit } from "@/lib/forms";
 
+import { saveFailureMessage } from "./status";
+
 type State =
   | { kind: "loading" }
   | { kind: "error"; message: string }
@@ -33,6 +35,10 @@ export function ConsensusPage({ assessmentId }: { assessmentId: string }) {
   const router = useRouter();
   const [state, setState] = useState<State>({ kind: "loading" });
   const [save, setSave] = useState<SaveState>("idle");
+  const [saveError, setSaveError] = useState<string | null>(null);
+  // Questions whose last change (agreed answer or note) failed to save. A later save that
+  // works does not clear them: each stays marked until it is changed again.
+  const [failed, setFailed] = useState<string[]>([]);
   // Saves run in order and the chain never rejects. The server's answer replaces the
   // screen only when no save is left in the queue, so quicker edits are never wiped.
   const queue = useRef<Promise<unknown>>(Promise.resolve());
@@ -77,7 +83,8 @@ export function ConsensusPage({ assessmentId }: { assessmentId: string }) {
     setState((prev) => (prev.kind === "ready" ? { ...prev, consensus } : prev));
   }
 
-  function persist(changes: Parameters<typeof saveConsensus>[1]) {
+  function persist(questionId: string, changes: Parameters<typeof saveConsensus>[1]) {
+    setFailed((prev) => prev.filter((id) => id !== questionId));
     setSave("saving");
     pending.current += 1;
     queue.current = queue.current
@@ -90,9 +97,11 @@ export function ConsensusPage({ assessmentId }: { assessmentId: string }) {
             showServer(updated);
           }
         },
-        async () => {
+        async (err: unknown) => {
           pending.current -= 1;
           setSave("error");
+          setSaveError(saveFailureMessage(err));
+          setFailed((prev) => (prev.includes(questionId) ? prev : [...prev, questionId]));
           // Show what the server holds, so an unsaved answer is neither shown nor counted.
           if (pending.current === 0) {
             try {
@@ -119,7 +128,7 @@ export function ConsensusPage({ assessmentId }: { assessmentId: string }) {
           }
         : prev,
     );
-    persist({ answers: { [questionId]: value } });
+    persist(questionId, { answers: { [questionId]: value } });
   }
 
   const agreedCount = consensus.questions.filter((q) => q.agreed !== null).length;
@@ -148,12 +157,16 @@ export function ConsensusPage({ assessmentId }: { assessmentId: string }) {
           </span>
           <span
             role="status"
+            aria-label="Save status"
             aria-live="polite"
             className={`text-xs ${save === "error" ? "text-red-700" : "text-neutral-500"}`}
           >
             {save === "saving" && "Saving..."}
-            {save === "saved" && "Saved"}
-            {save === "error" && "Not saved. Check your connection and choose again."}
+            {save === "saved" && failed.length === 0 && "Saved"}
+            {save === "saved" &&
+              failed.length > 0 &&
+              `Saved, but ${unsavedCount(failed.length)}. Change again where marked.`}
+            {save === "error" && saveError}
           </span>
           <FinaliseControl
             assessmentId={assessmentId}
@@ -189,8 +202,11 @@ export function ConsensusPage({ assessmentId }: { assessmentId: string }) {
                   text={question.text}
                   row={row}
                   scale={scale}
+                  failed={failed.includes(question.id)}
                   onAgree={(value) => agree(question.id, value)}
-                  onNote={(note) => persist({ notes: { [question.id]: note || null } })}
+                  onNote={(note) =>
+                    persist(question.id, { notes: { [question.id]: note || null } })
+                  }
                 />
               );
             })}
@@ -206,16 +222,22 @@ export function ConsensusPage({ assessmentId }: { assessmentId: string }) {
   );
 }
 
+function unsavedCount(n: number): string {
+  return n === 1 ? "1 change was not saved" : `${n} changes were not saved`;
+}
+
 function ConsensusRow({
   text,
   row,
   scale,
+  failed,
   onAgree,
   onNote,
 }: {
   text: string;
   row: QuestionConsensusOut;
   scale: number[];
+  failed: boolean;
   onAgree: (value: number) => void;
   onNote: (note: string) => void;
 }) {
@@ -225,6 +247,11 @@ function ConsensusRow({
     <li className={row.wide_spread ? "rounded-xl border-l-4 border-amber-400 pl-4" : undefined}>
       <fieldset>
         <legend className="text-sm text-neutral-900">{text}</legend>
+        {failed && (
+          <p className="mt-1 text-xs font-medium text-red-700">
+            Not saved. Set the agreed answer or note again.
+          </p>
+        )}
         <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-neutral-600">
           <span>
             {row.answers.map((a) => (

@@ -41,18 +41,23 @@ export function ReadinessListPage() {
   useEffect(() => {
     if (!activeOrgId) return;
     let cancelled = false;
-    listAssessments()
-      .then((assessments) => {
+    async function load() {
+      // Back to loading on a switch, so the previous organisation's assessments are never
+      // shown against the new one.
+      setState({ kind: "loading" });
+      try {
+        const assessments = await listAssessments();
         if (!cancelled) setState({ kind: "ready", assessments });
-      })
-      .catch((err: unknown) => {
+      } catch (err) {
         if (!cancelled) {
           setState({
             kind: "error",
             message: err instanceof ApiError ? err.message : "Something went wrong.",
           });
         }
-      });
+      }
+    }
+    void load();
     return () => {
       cancelled = true;
     };

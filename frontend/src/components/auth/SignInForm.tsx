@@ -11,13 +11,7 @@ import { TextField } from "@/components/ui/fields";
 import { resendVerification, signIn } from "@/lib/api/auth";
 import type { MeOut } from "@/lib/api/types";
 import { useSubmit } from "@/lib/forms";
-
-/** A same-site path from ?next=, or null. Rejects absolute and scheme-relative URLs;
- * backslashes count as slashes because URL parsers normalise them. */
-function safeNext(): string | null {
-  const next = new URLSearchParams(window.location.search).get("next");
-  return next && /^\/[^/\\]/.test(next) ? next : null;
-}
+import { safeNextFromLocation } from "@/lib/next-param";
 
 function landingPage(me: MeOut): string {
   if (me.memberships.length > 0) return "/dashboard";
@@ -46,7 +40,7 @@ export function SignInForm() {
     }
     const me = await run(() => signIn(email, password));
     // The hash (e.g. an invitation token) never reaches the server; carry it along.
-    if (me) router.push((safeNext() ?? landingPage(me)) + window.location.hash);
+    if (me) router.push((safeNextFromLocation() ?? landingPage(me)) + window.location.hash);
   }
 
   async function handleResend() {

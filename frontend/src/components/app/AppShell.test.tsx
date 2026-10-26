@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { getJson } from "@/lib/api/client";
 import { errorResponse, fakeMe, stubApi } from "@/test/api";
 import { routerPush, routerReplace, setLocation } from "@/test/navigation";
 
@@ -85,6 +86,28 @@ describe("AppShell", () => {
       expect(routerReplace).toHaveBeenCalledWith("/sign-in?next=%2Fteam%3Fx%3D1"),
     );
     expect(screen.queryByText("Page content")).not.toBeInTheDocument();
+  });
+
+  it("sends the visitor to sign in when a later call answers 401", async () => {
+    setLocation("/team?x=1");
+    stubApi({
+      "GET /api/v1/me": fakeMe(),
+      "GET /api/v1/organisation": errorResponse("not_authenticated", "Please sign in.", 401),
+    });
+    const user = userEvent.setup();
+
+    render(
+      <AppShell>
+        <button onClick={() => void getJson("/organisation").catch(() => undefined)}>
+          Load the organisation
+        </button>
+      </AppShell>,
+    );
+    await user.click(await screen.findByRole("button", { name: "Load the organisation" }));
+
+    await vi.waitFor(() =>
+      expect(routerReplace).toHaveBeenCalledWith("/sign-in?next=%2Fteam%3Fx%3D1"),
+    );
   });
 
   it("switches the active organisation from the switcher", async () => {

@@ -10,5 +10,8 @@ export function renderWithMe(ui: ReactNode, me: MeOut) {
   const update = vi.fn();
   const refresh = vi.fn().mockResolvedValue(undefined);
   const result = render(<MeProvider value={{ me, update, refresh }}>{ui}</MeProvider>);
-  return { ...result, update, refresh };
+  /** Re-render with another account, e.g. after a switch in the organisation switcher. */
+  const setMe = (next: MeOut) =>
+    result.rerender(<MeProvider value={{ me: next, update, refresh }}>{ui}</MeProvider>);
+  return { ...result, update, refresh, setMe };
 }
