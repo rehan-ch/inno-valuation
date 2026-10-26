@@ -1,7 +1,8 @@
 import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { setUnauthorizedHandler } from "@/lib/api/client";
 import type { ConsensusOut, ResultOut } from "@/lib/api/types";
 import {
   errorResponse,
@@ -13,7 +14,7 @@ import {
 } from "@/test/api";
 import type { RecordedCall } from "@/test/api";
 import { renderWithMe } from "@/test/me";
-import { routerPush } from "@/test/navigation";
+import { routerPush, routerReplace } from "@/test/navigation";
 
 import { ConsensusPage } from "./ConsensusPage";
 import { QuestionnairePage } from "./QuestionnairePage";
@@ -64,9 +65,52 @@ describe("ReadinessListPage", () => {
     // No second assessment while one is open, but a final one does not block.
     expect(screen.getByRole("button", { name: "Start a readiness assessment" })).toBeInTheDocument();
   });
+
+  it("reloads the list, from a loading state, after a switch in the header", async () => {
+    const BETA = "99999999-9999-9999-9999-999999999999";
+    let releaseLoad: () => void = () => {};
+    let loads = 0;
+    stubApi({
+      "GET /api/v1/readiness/assessments": () => {
+        loads += 1;
+        return loads === 1
+          ? [fakeAssessmentSummary({ status: "collecting", created_by_name: "Olive Owner" })]
+          : new Promise((resolve) => {
+              releaseLoad = () => resolve([]);
+            });
+      },
+    });
+    const me = fakeMe({
+      memberships: [
+        ...fakeMe().memberships,
+        {
+          organisation_id: BETA,
+          organisation_name: "Beta Ltd",
+          organisation_status: "active",
+          role: "owner",
+        },
+      ],
+    });
+
+    const { setMe } = renderWithMe(<ReadinessListPage />, me);
+    expect(await screen.findByText(/by Olive Owner/)).toBeInTheDocument();
+    // An open assessment means no Start card.
+    expect(screen.queryByRole("button", { name: "Start a readiness assessment" })).not.toBeInTheDocument();
+
+    setMe({ ...me, active_organisation_id: BETA });
+
+    // The old organisation's assessment is gone while the new list loads.
+    expect(await screen.findByText("Loading assessments...")).toBeInTheDocument();
+    expect(screen.queryByText(/by Olive Owner/)).not.toBeInTheDocument();
+    releaseLoad();
+    expect(await screen.findByText("No assessment yet.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Start a readiness assessment" })).toBeInTheDocument();
+  });
 });
 
 describe("QuestionnairePage", () => {
+  afterEach(() => setUnauthorizedHandler(null));
+
   it("saves each answer as it is chosen and shows it saved", async () => {
     const calls = stubApi({
       [`GET ${A}`]: fakeAssessment(),
@@ -154,7 +198,9 @@ describe("QuestionnairePage", () => {
     });
     await user.click(within(question).getByRole("radio", { name: "4" }));
 
-    expect(await screen.findByText(/Not saved/)).toBeInTheDocument();
+    expect(await screen.findByRole("status", { name: "Save status" })).toHaveTextContent(
+      /Not saved/,
+    );
     expect(within(question).getByRole("radio", { name: "4" })).not.toBeChecked();
     expect(screen.getByText("0 of 4 answered")).toBeInTheDocument();
   });
@@ -192,6 +238,120 @@ describe("QuestionnairePage", () => {
 
     expect(await screen.findByText(/Your answers are submitted/)).toBeInTheDocument();
     expect(order).toEqual(["save", "submit"]);
+  });
+
+  it("keeps a failed answer marked after a later save works", async () => {
+    let saves = 0;
+    stubApi({
+      [`GET ${A}`]: fakeAssessment(),
+      "GET /api/v1/readiness/question-set": fakeQuestionSet(),
+      [`PATCH ${A}/my-answers`]: (call: RecordedCall) => {
+        saves += 1;
+        return saves === 1
+          ? errorResponse("unknown_error", "The server returned an error (500).", 500)
+          : fakeAssessment({
+              my_answers: (call.body as { answers: Record<string, number> }).answers,
+            });
+      },
+    });
+    const user = userEvent.setup();
+
+    renderWithMe(<QuestionnairePage assessmentId={ID} />, fakeMe());
+    const first = await screen.findByRole("group", {
+      name: "Do you understand the end-to-end experience?",
+    });
+    const second = screen.getByRole("group", { name: "Is feedback integrated?" });
+    await user.click(within(first).getByRole("radio", { name: "4" }));
+    expect(await screen.findByRole("status", { name: "Save status" })).toHaveTextContent(
+      /Not saved/,
+    );
+    await user.click(within(second).getByRole("radio", { name: "3" }));
+
+    expect(await screen.findByRole("status", { name: "Save status" })).toHaveTextContent(
+      "Saved, but 1 answer was not saved. Choose again where marked.",
+    );
+    expect(within(first).getByText("Not saved. Choose your answer again.")).toBeInTheDocument();
+    expect(within(second).queryByText(/Not saved/)).not.toBeInTheDocument();
+    expect(screen.getByText("1 of 4 answered")).toBeInTheDocument();
+
+    // Choosing the marked question again clears the mark once the save works.
+    await user.click(within(first).getByRole("radio", { name: "5, Strongly Agree" }));
+    expect(await screen.findByText("Saved")).toBeInTheDocument();
+    expect(within(first).queryByText(/Not saved/)).not.toBeInTheDocument();
+  });
+
+  it("says a 403 is about permission, not the connection", async () => {
+    stubApi({
+      [`GET ${A}`]: fakeAssessment(),
+      "GET /api/v1/readiness/question-set": fakeQuestionSet(),
+      [`PATCH ${A}/my-answers`]: errorResponse("forbidden", "Not allowed.", 403),
+    });
+    const user = userEvent.setup();
+
+    renderWithMe(<QuestionnairePage assessmentId={ID} />, fakeMe());
+    const question = await screen.findByRole("group", {
+      name: "Do you understand the end-to-end experience?",
+    });
+    await user.click(within(question).getByRole("radio", { name: "4" }));
+
+    const status = await screen.findByRole("status", { name: "Save status" });
+    await vi.waitFor(() => expect(status).toHaveTextContent(/Not saved/));
+    expect(status).toHaveTextContent("You do not have permission to change this.");
+    expect(status).not.toHaveTextContent(/connection/);
+  });
+
+  it("hands a 401 from a save to the registered handler", async () => {
+    const handler = vi.fn();
+    setUnauthorizedHandler(handler);
+    stubApi({
+      [`GET ${A}`]: fakeAssessment(),
+      "GET /api/v1/readiness/question-set": fakeQuestionSet(),
+      [`PATCH ${A}/my-answers`]: errorResponse("not_authenticated", "Please sign in.", 401),
+    });
+    const user = userEvent.setup();
+
+    renderWithMe(<QuestionnairePage assessmentId={ID} />, fakeMe());
+    const question = await screen.findByRole("group", {
+      name: "Do you understand the end-to-end experience?",
+    });
+    await user.click(within(question).getByRole("radio", { name: "4" }));
+
+    await vi.waitFor(() => expect(handler).toHaveBeenCalledTimes(1));
+    expect(await screen.findByRole("status", { name: "Save status" })).toHaveTextContent(
+      /session has ended/,
+    );
+  });
+
+  it("locks the answers while the submit runs", async () => {
+    let releaseSubmit: () => void = () => {};
+    stubApi({
+      [`GET ${A}`]: fakeAssessment({ my_answers: ALL, my_status: "in_progress" }),
+      "GET /api/v1/readiness/question-set": fakeQuestionSet(),
+      [`POST ${A}/my-answers/submit`]: () =>
+        new Promise((resolve) => {
+          releaseSubmit = () =>
+            resolve(
+              fakeAssessment({
+                my_answers: ALL,
+                my_status: "submitted",
+                my_submitted_at: "2026-10-21T10:00:00Z",
+              }),
+            );
+        }),
+    });
+    const user = userEvent.setup();
+
+    renderWithMe(<QuestionnairePage assessmentId={ID} />, fakeMe());
+    const question = await screen.findByRole("group", { name: "Is feedback integrated?" });
+    expect(within(question).getByRole("radio", { name: "4" })).toBeEnabled();
+    await user.click(screen.getByRole("button", { name: "Submit my answers" }));
+    await user.click(screen.getByRole("button", { name: "Submit now" }));
+
+    expect(within(question).getByRole("radio", { name: "4" })).toBeDisabled();
+    releaseSubmit();
+
+    expect(await screen.findByText(/Your answers are submitted/)).toBeInTheDocument();
+    expect(within(question).getByRole("radio", { name: "4" })).toBeDisabled();
   });
 
   it("tells an investor that their role watches", async () => {
@@ -266,6 +426,101 @@ describe("ConsensusPage", () => {
     expect(screen.getByRole("button", { name: "Finalise the result" })).toBeDisabled();
   });
 
+  it("saves a note when its field loses focus", async () => {
+    const calls = stubApi({
+      [`GET ${A}`]: fakeAssessment({ status: "consensus" }),
+      [`GET ${A}/consensus`]: fakeConsensus(),
+      "GET /api/v1/readiness/question-set": fakeQuestionSet(),
+      [`PATCH ${A}/consensus`]: fakeConsensus(),
+    });
+    const user = userEvent.setup();
+
+    renderWithMe(<ConsensusPage assessmentId={ID} />, fakeMe());
+    const question = await screen.findByRole("group", {
+      name: "Do you understand the end-to-end experience?",
+    });
+    const row = question.closest("li") as HTMLElement;
+    await user.type(within(row).getByLabelText("Note for this question"), "Agreed after a chat");
+    expect(calls.filter((c) => c.method === "PATCH")).toHaveLength(0);
+    await user.tab();
+
+    expect(calls.at(-1)).toMatchObject({
+      method: "PATCH",
+      path: `${A}/consensus`,
+      body: { answers: {}, notes: { customer_journey_1: "Agreed after a chat" } },
+    });
+    expect(await screen.findByText("Saved")).toBeInTheDocument();
+  });
+
+  it("goes to the result when the assessment is already final", async () => {
+    routerReplace.mockClear();
+    const calls = stubApi({
+      [`GET ${A}`]: fakeAssessment({ status: "final", finalised_at: "2026-10-21T12:00:00Z" }),
+    });
+
+    renderWithMe(<ConsensusPage assessmentId={ID} />, fakeMe());
+
+    await vi.waitFor(() => expect(routerReplace).toHaveBeenCalledWith(`/readiness/${ID}/result`));
+    expect(calls.map((c) => c.path)).toEqual([A]);
+  });
+
+  it("keeps a failed change marked after a later save works", async () => {
+    let saves = 0;
+    stubApi({
+      [`GET ${A}`]: fakeAssessment({ status: "consensus" }),
+      [`GET ${A}/consensus`]: fakeConsensus(),
+      "GET /api/v1/readiness/question-set": fakeQuestionSet(),
+      [`PATCH ${A}/consensus`]: () => {
+        saves += 1;
+        return saves === 1
+          ? errorResponse("unknown_error", "The server returned an error (500).", 500)
+          : fakeConsensus({ customer_journey_2: 4 });
+      },
+    });
+    const user = userEvent.setup();
+
+    renderWithMe(<ConsensusPage assessmentId={ID} />, fakeMe());
+    const first = await screen.findByRole("group", {
+      name: "Do you understand the end-to-end experience?",
+    });
+    const second = screen.getByRole("group", { name: "Is feedback integrated?" });
+    await user.click(within(first).getByRole("radio", { name: "Agreed answer 4" }));
+    expect(await screen.findByRole("status", { name: "Save status" })).toHaveTextContent(
+      /Not saved/,
+    );
+    await user.click(within(second).getByRole("radio", { name: "Agreed answer 4" }));
+
+    expect(await screen.findByRole("status", { name: "Save status" })).toHaveTextContent(
+      "Saved, but 1 change was not saved. Change again where marked.",
+    );
+    expect(
+      within(first).getByText("Not saved. Set the agreed answer or note again."),
+    ).toBeInTheDocument();
+    expect(within(second).queryByText(/Not saved/)).not.toBeInTheDocument();
+    expect(screen.getByText("1 of 4 agreed")).toBeInTheDocument();
+  });
+
+  it("says a 403 is about permission, not the connection", async () => {
+    stubApi({
+      [`GET ${A}`]: fakeAssessment({ status: "consensus" }),
+      [`GET ${A}/consensus`]: fakeConsensus(),
+      "GET /api/v1/readiness/question-set": fakeQuestionSet(),
+      [`PATCH ${A}/consensus`]: errorResponse("forbidden", "Not allowed.", 403),
+    });
+    const user = userEvent.setup();
+
+    renderWithMe(<ConsensusPage assessmentId={ID} />, fakeMe());
+    const question = await screen.findByRole("group", {
+      name: "Do you understand the end-to-end experience?",
+    });
+    await user.click(within(question).getByRole("radio", { name: "Agreed answer 4" }));
+
+    const status = await screen.findByRole("status", { name: "Save status" });
+    await vi.waitFor(() => expect(status).toHaveTextContent(/Not saved/));
+    expect(status).toHaveTextContent("You do not have permission to change this.");
+    expect(status).not.toHaveTextContent(/connection/);
+  });
+
   it("finalises once every answer is agreed and opens the result", async () => {
     routerPush.mockClear();
     const calls = stubApi({
@@ -332,5 +587,22 @@ describe("ResultPage", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("If scoring low, streamline channels.")).toBeInTheDocument();
     expect(screen.getByText(/answers from 3 people/)).toBeInTheDocument();
+  });
+
+  it("shows the permission message when the result is not for this person", async () => {
+    stubApi({
+      [`GET ${A}/result`]: errorResponse(
+        "forbidden",
+        "You do not have access to this organisation's results.",
+        403,
+      ),
+    });
+
+    renderWithMe(<ResultPage assessmentId={ID} />, fakeMe());
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "You do not have access to this organisation's results.",
+    );
+    expect(screen.queryByRole("region", { name: "Total" })).not.toBeInTheDocument();
   });
 });

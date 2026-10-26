@@ -54,7 +54,7 @@ class ReadinessStatus(StrEnum):
 
 
 class AiTouchpoint(StrEnum):
-    """The 8 places AI is used (docs/methodology/ai-touchpoints.md)."""
+    """The 8 places AI is used. Each one has its model settings in config/ai.yml."""
 
     EXPLAIN_QUESTION = "explain_question"
     CONTEXT_QUESTIONS = "context_questions"

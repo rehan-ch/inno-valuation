@@ -18,6 +18,14 @@ node_modules/
 # OS / editor
 .DS_Store
 
-# Agent notes that `next dev` writes into frontend/
-frontend/*.md
-!frontend/README.md
+# Agent notes that `next dev` writes into frontend/ (the matching assistant file is
+# excluded per clone by bin/setup, with the other personal paths)
+frontend/AGENTS.md
+
+# Working material that is not part of the product
+reference/
+files3/
+ask-amy/
+planning/
+docs/*.docx
+.personal/

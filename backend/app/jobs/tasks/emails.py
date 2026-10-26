@@ -46,6 +46,7 @@ TOKEN_PURPOSES = {
 
 SENT = "sent"
 SKIPPED = "skipped"
+QUEUED = "queued"  # a request task issued a token and queued the send
 
 
 @celery_app.task(
@@ -76,7 +77,13 @@ def request_account_email(kind: str, user_id: str | None) -> str:
 
     The request queues this task for every email, known or not (``user_id`` is None when no
     account matched), so both paths cost the request the same. Idempotent: a re-delivered
-    task hits the per-user rate limit and sends nothing more.
+    task hits the per-user rate limit and queues nothing more.
+
+    The token is issued here, once, and the send is queued as its own ``send_account_email``
+    task rather than called in-process: a direct call bypasses that task's retries (Celery
+    raises instead of retrying when a task is called directly), so a passing provider error
+    would lose the email while the cooldown was already spent. As its own task the send
+    gets the retries with backoff, and the token id is its idempotency key.
     """
     email_kind = AccountEmail(kind)
     if user_id is None:
@@ -90,9 +97,8 @@ def request_account_email(kind: str, user_id: str | None) -> str:
             logger.info("No %s email for user %s (not eligible or rate limited)", kind, user_id)
             return SKIPPED
         token_id = str(token.id)
-    # Same worker, same process: send now rather than queueing a second task.
-    result: str = send_account_email(kind, user_id, token_id)
-    return result
+    send_account_email.delay(kind, user_id, token_id)
+    return QUEUED
 
 
 @celery_app.task(

@@ -1,6 +1,7 @@
-{# Shared rules for every system prompt (docs/methodology/ai-touchpoints.md, "Rules for
-   every prompt"). Included by the touchpoint templates, never rendered alone. A change
-   here changes every prompt: bump the prompt_version of each template. #}
+{# Shared rules for every system prompt: the methodology is the baseline, user text is
+   data, no arithmetic, every item names its dimension, plain English, JSON only.
+   Included by the touchpoint templates, never rendered alone. A change here changes
+   every prompt: bump the prompt_version of each template. #}
 Use the 12 Dimensions of Innovation methodology as the baseline. Reason from it first, then extend.
 
 Rules that always apply:

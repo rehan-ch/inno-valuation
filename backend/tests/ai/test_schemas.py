@@ -78,5 +78,8 @@ def test_a_valid_explanation_passes() -> None:
 def test_bad_explanations_are_refused(change: dict[str, Any], message: str) -> None:
     data = {**_valid(), **change}
     data = {k: v for k, v in data.items() if v is not None}
-    with pytest.raises(ValidationError, match=message):
+    with pytest.raises(ValidationError, match=message) as raised:
         ExplainQuestionOutput.model_validate(data)
+    # The messages land in run.error (see runner.parse_output), so they never echo what
+    # the model wrote.
+    assert not [e for e in raised.value.errors() if "made_up" in e["msg"]]

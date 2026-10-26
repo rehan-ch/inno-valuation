@@ -25,6 +25,16 @@ export function apiUrl(path: string): string {
   return `${apiBaseUrl()}${API_PREFIX}${cleanPath}`;
 }
 
+// The signed-in shell registers what to do when the session has gone (any call answers
+// 401): send the visitor to sign in. Nothing is registered on the auth pages or in tests,
+// so a 401 there is just the error it always was.
+let unauthorizedHandler: (() => void) | null = null;
+
+/** Register the reaction to a 401 from any API call, or null to react no further. */
+export function setUnauthorizedHandler(handler: (() => void) | null): void {
+  unauthorizedHandler = handler;
+}
+
 // The backend sets a readable CSRF cookie (`__Host-csrf_token` on https, `csrf_token`
 // locally) and expects its value back in this header on every unsafe request.
 const CSRF_HEADER = "X-CSRF-Token";
@@ -54,17 +64,9 @@ function isErrorEnvelope(value: unknown): value is ApiErrorEnvelope {
   );
 }
 
-async function readJson(response: Response): Promise<unknown> {
-  const text = await response.text();
-  if (!text) return undefined;
-  try {
-    return JSON.parse(text);
-  } catch {
-    return undefined;
-  }
-}
-
-export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
+/** Sends the request and rejects with an ApiError on a network failure or a non-2xx
+ * status. A 2xx comes back with its body text, still unparsed. */
+async function send(path: string, init: RequestInit): Promise<{ response: Response; text: string }> {
   const headers = new Headers(init.headers);
   if (!headers.has("Accept")) headers.set("Accept", "application/json");
   // Only JSON strings get a JSON content type; FormData and Blob bodies set their own.
@@ -88,20 +90,40 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
     throw new ApiError("network_error", "We could not reach the server.", 0);
   }
 
-  const body = await readJson(response);
+  const text = await response.text();
+  if (response.ok) return { response, text };
 
-  if (!response.ok) {
-    if (isErrorEnvelope(body)) {
-      throw new ApiError(body.error.code, body.error.message, response.status);
-    }
+  if (response.status === 401) unauthorizedHandler?.();
+  let body: unknown;
+  try {
+    body = text ? JSON.parse(text) : undefined;
+  } catch {
+    body = undefined;
+  }
+  if (isErrorEnvelope(body)) {
+    throw new ApiError(body.error.code, body.error.message, response.status);
+  }
+  throw new ApiError(
+    "unknown_error",
+    `The server returned an error (${response.status}).`,
+    response.status,
+  );
+}
+
+/** A call whose 2xx answer is a JSON body. Every route answers with one, so an empty or
+ * unparsable body is an error (code invalid_response). */
+export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const { response, text } = await send(path, init);
+  try {
+    if (!text) throw new Error("empty body");
+    return JSON.parse(text) as T;
+  } catch {
     throw new ApiError(
-      "unknown_error",
-      `The server returned an error (${response.status}).`,
+      "invalid_response",
+      "The server sent an answer we could not read.",
       response.status,
     );
   }
-
-  return body as T;
 }
 
 export function getJson<T>(path: string, init?: RequestInit): Promise<T> {

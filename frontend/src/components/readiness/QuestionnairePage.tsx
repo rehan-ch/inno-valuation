@@ -21,7 +21,7 @@ import type { AssessmentOut, QuestionSetOut } from "@/lib/api/types";
 import { useSubmit } from "@/lib/forms";
 
 import { QuestionExplanation } from "./QuestionExplanation";
-import { STATUS_LABELS, STATUS_TONES } from "./status";
+import { saveFailureMessage, STATUS_LABELS, STATUS_TONES } from "./status";
 
 type State =
   | { kind: "loading" }
@@ -36,6 +36,12 @@ export function QuestionnairePage({ assessmentId }: { assessmentId: string }) {
   const [state, setState] = useState<State>({ kind: "loading" });
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [save, setSave] = useState<SaveState>("idle");
+  const [saveError, setSaveError] = useState<string | null>(null);
+  // Questions whose last save failed. A later save that works does not clear them: each
+  // stays marked until it is chosen again, so no answer is lost in silence.
+  const [failed, setFailed] = useState<string[]>([]);
+  // The submit lives here so the answers can lock while it runs.
+  const submit = useSubmit();
   // Saves run one after another, so two quick clicks on one question land in order.
   // The chain never rejects: each save handles its own failure.
   const queue = useRef<Promise<unknown>>(Promise.resolve());
@@ -72,12 +78,16 @@ export function QuestionnairePage({ assessmentId }: { assessmentId: string }) {
   const { assessment, questions } = state;
   const editable =
     assessment.status === "collecting" && assessment.can_answer && !assessment.my_submitted_at;
+  // A change made while the submit is in flight would be saved after it and rejected.
+  const locked = !editable || submit.busy;
   const answered = Object.keys(answers).length;
   const total = assessment.question_count;
 
   function choose(questionId: string, value: number) {
+    if (locked) return;
     const previous = answers[questionId];
     setAnswers((prev) => ({ ...prev, [questionId]: value }));
+    setFailed((prev) => prev.filter((id) => id !== questionId));
     setSave("saving");
     pending.current += 1;
     queue.current = queue.current
@@ -90,9 +100,11 @@ export function QuestionnairePage({ assessmentId }: { assessmentId: string }) {
             setState((prev) => (prev.kind === "ready" ? { ...prev, assessment: updated } : prev));
           }
         },
-        () => {
+        (err: unknown) => {
           pending.current -= 1;
           setSave("error");
+          setSaveError(saveFailureMessage(err));
+          setFailed((prev) => (prev.includes(questionId) ? prev : [...prev, questionId]));
           // Show what the server holds, so the unsaved choice is not counted and choosing
           // it again is a real change that retries the save.
           setAnswers((prev) => {
@@ -158,15 +170,20 @@ export function QuestionnairePage({ assessmentId }: { assessmentId: string }) {
             </span>
             <span
               role="status"
+              aria-label="Save status"
               aria-live="polite"
               className={`text-xs ${save === "error" ? "text-red-700" : "text-neutral-500"}`}
             >
               {save === "saving" && "Saving..."}
-              {save === "saved" && "Saved"}
-              {save === "error" && "Not saved. Check your connection and choose again."}
+              {save === "saved" && failed.length === 0 && "Saved"}
+              {save === "saved" &&
+                failed.length > 0 &&
+                `Saved, but ${unsavedCount(failed.length)}. Choose again where marked.`}
+              {save === "error" && saveError}
             </span>
             {editable && (
               <SubmitControl
+                submit={submit}
                 ready={answered === total}
                 waitForSaves={() => queue.current}
                 onSubmitted={(updated) =>
@@ -222,8 +239,13 @@ export function QuestionnairePage({ assessmentId }: { assessmentId: string }) {
           <ol className="mt-4 space-y-5">
             {dimension.questions.map((question) => (
               <li key={question.id}>
-                <fieldset disabled={!editable}>
+                <fieldset disabled={locked}>
                   <legend className="text-sm text-neutral-900">{question.text}</legend>
+                  {failed.includes(question.id) && (
+                    <p className="mt-1 text-xs font-medium text-red-700">
+                      Not saved. Choose your answer again.
+                    </p>
+                  )}
                   <div className="mt-2 flex flex-wrap items-center gap-2">
                     <span className="hidden text-xs text-neutral-500 sm:inline">
                       {questions.scale.labels[String(questions.scale.min)]}
@@ -271,18 +293,24 @@ export function QuestionnairePage({ assessmentId }: { assessmentId: string }) {
   );
 }
 
+function unsavedCount(n: number): string {
+  return n === 1 ? "1 answer was not saved" : `${n} answers were not saved`;
+}
+
 function SubmitControl({
+  submit,
   ready,
   assessmentId,
   waitForSaves,
   onSubmitted,
 }: {
+  submit: ReturnType<typeof useSubmit>;
   ready: boolean;
   assessmentId: string;
   waitForSaves: () => Promise<unknown>;
   onSubmitted: (assessment: AssessmentOut) => void;
 }) {
-  const { busy, error, run } = useSubmit();
+  const { busy, error, run } = submit;
   const [confirming, setConfirming] = useState(false);
 
   async function handleSubmit() {

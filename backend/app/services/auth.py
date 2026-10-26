@@ -25,18 +25,19 @@ from datetime import UTC, datetime, timedelta
 from typing import Final
 
 from kombu.exceptions import OperationalError as BrokerError
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.emails import normalise_email
 from app.core.errors import AppError
 from app.core.passwords import check_new_password
-from app.core.security import hash_password, verify_password
+from app.core.security import SessionClaims, hash_password, verify_password
 from app.core.settings import get_settings
 from app.emails.messages import AccountEmail
 from app.jobs.tasks.emails import request_account_email, send_account_email
-from app.models import AuditEvent, Membership, Organisation, User
+from app.models import AuditEvent, Membership, Organisation, RevokedSession, User
 from app.models.enums import OrganisationStatus, UserTokenPurpose
 from app.services import sign_in_throttle, user_tokens
 from app.services.audit import AuditAction, record
@@ -68,6 +69,19 @@ def _too_many_attempts() -> AppError:
         "Too many attempts. Wait 15 minutes, or reset your password.",
         429,
     )
+
+
+def check_address_limit(db: Session, address: str | None) -> None:
+    """Count one sign-in, forgot-password or resend request from ``address`` and refuse it
+    with 429 when the address has made too many lately. Commits, so the count sticks
+    whatever the request does next. No address means no client (a script); nothing counted.
+    """
+    if address is None:
+        return
+    allowed = sign_in_throttle.count_address_request(db, address)
+    db.commit()
+    if not allowed:
+        raise _too_many_attempts()
 
 
 def _require_password_sign_in() -> None:
@@ -260,9 +274,10 @@ def sign_in(db: Session, *, email: str, password: str) -> SignInResult:
 
 
 def _record_failure(db: Session, user: User | None, reason: str) -> None:
-    """Audit a failed sign-in for an existing account. Unknown emails leave no row at all,
-    so guessing cannot fill the table; the actor id identifies the account, so no email is
-    stored. Throttled attempts are audited once, when the lock starts."""
+    """Audit a failed sign-in or password check for an existing account. Unknown emails
+    leave no row at all, so guessing cannot fill the table; the actor id identifies the
+    account, so no email is stored. Throttled attempts are audited once, when the lock
+    starts."""
     if user is None:
         return
     record(
@@ -289,9 +304,26 @@ def _default_org(db: Session, user: User) -> uuid.UUID | None:
     return org_ids[0]
 
 
-def record_sign_out(db: Session, user: User) -> None:
+def sign_out(db: Session, user: User, claims: SessionClaims) -> None:
+    """End this one session on the server: its id is refused from now on, while the
+    user's other sessions carry on. Also drops revocations of sessions that have expired
+    by themselves, so the table only ever holds live sessions."""
+    now = datetime.now(UTC)
+    db.execute(delete(RevokedSession).where(RevokedSession.expires_at <= now))
+    if claims.expires_at > now:
+        # Two sign-outs with the same cookie (a double click, two tabs) both pass; the
+        # second finds the row already there.
+        db.execute(
+            pg_insert(RevokedSession)
+            .values(sid=claims.sid, user_id=user.id, expires_at=claims.expires_at)
+            .on_conflict_do_nothing(index_elements=[RevokedSession.sid])
+        )
     record(db, AuditAction.SIGNED_OUT, actor=user, target_type="user", target_id=user.id)
     db.commit()
+
+
+def session_revoked(db: Session, sid: str) -> bool:
+    return db.scalar(select(RevokedSession.id).where(RevokedSession.sid == sid)) is not None
 
 
 # Passwords
@@ -339,11 +371,15 @@ def change_password(db: Session, user: User, *, current_password: str, new_passw
     # Before the throttle, so a refused new password does not cost an attempt.
     check_new_password(new_password, email=user.email, name=user.name)
     attempt = sign_in_throttle.begin_attempt(db, user.email)
-    db.commit()
     if not attempt.allowed:
+        if attempt.newly_locked:
+            _record_failure(db, user, "locked")
+        db.commit()
         raise _too_many_attempts()
+    db.commit()
     if not verify_password(user.password_hash, current_password).ok:
         newly_locked = sign_in_throttle.attempt_failed(db, user.email)
+        _record_failure(db, user, "locked" if newly_locked else "invalid_password")
         db.commit()
         if newly_locked:
             raise _too_many_attempts()

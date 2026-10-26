@@ -1,7 +1,8 @@
 """FastAPI dependencies shared by every router.
 
 - ``current_session``: a valid session cookie for an active, verified user whose session
-  version still matches; on unsafe methods also the CSRF check. 401 ``not_authenticated``.
+  version still matches and that was not ended by sign-out; on unsafe methods also the CSRF
+  check. 401 ``not_authenticated``.
 - ``current_user``: the user of ``current_session``.
 - ``current_org``: the active organisation from the session, re-checked against the
   membership (or a live consultant grant) on every request. 404 ``not_found`` when access
@@ -26,6 +27,7 @@ from app.core.sessions import read_session
 from app.db.session import get_db
 from app.models import User
 from app.services.access import resolve_org_access
+from app.services.auth import session_revoked
 
 __all__ = [
     "AuthContext",
@@ -55,6 +57,7 @@ def _authenticate(request: Request, db: Session) -> AuthContext | None:
         or not user.is_active
         or user.email_verified_at is None
         or user.session_version != claims.session_version
+        or session_revoked(db, claims.sid)
     ):
         return None
     return AuthContext(user=user, claims=claims)

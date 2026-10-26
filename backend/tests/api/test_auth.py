@@ -7,15 +7,15 @@ from typing import Any
 import pytest
 from argon2 import PasswordHasher
 from fastapi.testclient import TestClient
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.core.security import SessionClaims, encode_session, verify_password
+from app.core.security import SessionClaims, encode_session, throttle_key, verify_password
 from app.core.sessions import CSRF_COOKIE, SESSION_COOKIE
 from app.core.settings import get_settings
 from app.emails.backends import MemoryEmailBackend
 from app.emails.messages import SUBJECTS, AccountEmail
-from app.models import AuditEvent, SignInThrottle, User, UserToken
+from app.models import AuditEvent, RevokedSession, SignInThrottle, User, UserToken
 from app.models.enums import MembershipRole, UserTokenPurpose
 from app.services import sign_in_throttle
 from app.services.audit import AuditAction
@@ -418,11 +418,14 @@ def test_sign_in_works_again_after_the_lock_ends(client: TestClient, db: Session
     verified_user(email="person@example.com")
     for _ in range(sign_in_throttle.MAX_ATTEMPTS):
         sign_in(client, "person@example.com", "wrong password")
-    row = db.scalars(select(SignInThrottle)).one()
+    email_key = throttle_key("person@example.com")
+    row = db.scalars(select(SignInThrottle).where(SignInThrottle.key_hash == email_key)).one()
     row.locked_until = datetime.now(UTC) - timedelta(seconds=1)
     db.flush()
     assert sign_in(client, "person@example.com").status_code == 200
-    assert db.scalars(select(SignInThrottle)).all() == []
+    # The email row is gone; only the per-address count remains.
+    assert db.scalar(select(SignInThrottle).where(SignInThrottle.key_hash == email_key)) is None
+    assert db.scalar(select(func.count()).select_from(SignInThrottle)) == 1
 
 
 def test_disabled_user_cannot_sign_in(client: TestClient) -> None:
@@ -477,6 +480,7 @@ def test_tampered_or_expired_session_is_rejected(client: TestClient) -> None:
             csrf="x",
             active_org_id=None,
             expires_at=datetime.now(UTC) - timedelta(seconds=1),
+            sid="x",
         )
     )
     client.cookies.delete(SESSION_COOKIE)
@@ -500,6 +504,40 @@ def test_sign_out_clears_the_session(client: TestClient, db: Session) -> None:
     assert CSRF_COOKIE not in client.cookies
     assert client.get(ME).status_code == 401
     assert len(_events(db, AuditAction.SIGNED_OUT)) == 1
+
+
+def test_sign_out_revokes_the_session_on_the_server(client: TestClient, db: Session) -> None:
+    """A copy of the cookie kept after sign-out is refused; other sessions carry on."""
+    user = verified_user()
+    signed_in(client, user)
+    other_device = session_cookies(client)
+    signed_in(client, user)
+    this_device = session_cookies(client)
+
+    assert client.post(SIGN_OUT, headers=csrf(client)).status_code == 200
+    use_cookies(client, this_device)
+    assert client.get(ME).status_code == 401
+    assert client.patch(ME, json={"name": "X"}, headers=csrf(client)).status_code == 401
+    use_cookies(client, other_device)
+    assert client.get(ME).status_code == 200
+
+    [row] = db.scalars(select(RevokedSession)).all()
+    assert row.user_id == user.id
+    assert row.expires_at > datetime.now(UTC)
+
+
+def test_sign_out_purges_expired_revocations(client: TestClient, db: Session) -> None:
+    user = verified_user()
+    db.add(
+        RevokedSession(
+            sid="old", user_id=user.id, expires_at=datetime.now(UTC) - timedelta(seconds=1)
+        )
+    )
+    db.flush()
+    signed_in(client, user)
+    assert client.post(SIGN_OUT, headers=csrf(client)).status_code == 200
+    assert [row.sid for row in db.scalars(select(RevokedSession))] != ["old"]
+    assert db.scalar(select(RevokedSession).where(RevokedSession.sid == "old")) is None
 
 
 def test_sign_out_without_csrf_clears_cookies_but_is_not_audited(
@@ -564,9 +602,10 @@ def test_reset_password_sets_the_password_and_ends_sessions(
     assert len(_events(db, AuditAction.PASSWORD_RESET)) == 1
 
 
-def test_reset_voids_other_reset_links(
+def test_a_new_reset_link_keeps_the_old_one_and_using_one_voids_the_rest(
     client: TestClient, db: Session, outbox: MemoryEmailBackend
 ) -> None:
+    """Someone else asking for a reset must not kill the link the owner already holds."""
     verified_user(email="person@example.com")
     client.post(FORGOT, json={"email": "person@example.com"})
     first = token_from(outbox.outbox[0])
@@ -575,12 +614,14 @@ def test_reset_voids_other_reset_links(
     db.flush()
     client.post(FORGOT, json={"email": "person@example.com"})
     second = token_from(outbox.outbox[1])
+    assert first != second
+    assert db.scalars(select(UserToken).where(UserToken.used_at.is_(None))).all() != []
 
     assert (
-        client.post(RESET, json={"token": first, "new_password": NEW_PASSWORD}).status_code == 400
+        client.post(RESET, json={"token": first, "new_password": NEW_PASSWORD}).status_code == 200
     )
     assert (
-        client.post(RESET, json={"token": second, "new_password": NEW_PASSWORD}).status_code == 200
+        client.post(RESET, json={"token": second, "new_password": NEW_PASSWORD}).status_code == 400
     )
     usable = db.scalars(select(UserToken).where(UserToken.used_at.is_(None))).all()
     assert usable == []
@@ -645,6 +686,35 @@ def test_change_password_needs_the_current_password(client: TestClient) -> None:
     assert response.json()["error"]["code"] == "invalid_password"
 
 
+def test_change_password_lockout_is_audited(client: TestClient, db: Session) -> None:
+    user = verified_user(email="person@example.com")
+    signed_in(client, user)
+    codes = [
+        client.post(
+            CHANGE_PASSWORD,
+            json={"current_password": "not my password", "new_password": NEW_PASSWORD},
+            headers=csrf(client),
+        ).json()["error"]["code"]
+        for _ in range(sign_in_throttle.MAX_ATTEMPTS)
+    ]
+    assert codes == ["invalid_password"] * (sign_in_throttle.MAX_ATTEMPTS - 1) + [
+        "too_many_attempts"
+    ]
+    # Locked: even the right password is refused, and sign-in shares the lock.
+    locked = client.post(
+        CHANGE_PASSWORD,
+        json={"current_password": TEST_PASSWORD, "new_password": NEW_PASSWORD},
+        headers=csrf(client),
+    )
+    assert locked.status_code == 429
+    assert locked.json()["error"]["code"] == "too_many_attempts"
+    assert sign_in(client, "person@example.com").status_code == 429
+    reasons = [event.details["reason"] for event in _events(db, AuditAction.SIGN_IN_FAILED)]
+    assert reasons.count("invalid_password") == sign_in_throttle.MAX_ATTEMPTS - 1
+    assert reasons.count("locked") == 1
+    assert all(event.actor_user_id == user.id for event in _events(db, AuditAction.SIGN_IN_FAILED))
+
+
 def test_change_password_needs_csrf(client: TestClient) -> None:
     signed_in(client, verified_user())
     response = client.post(
@@ -652,6 +722,40 @@ def test_change_password_needs_csrf(client: TestClient) -> None:
     )
     assert response.status_code == 403
     assert response.json()["error"]["code"] == "csrf_failed"
+
+
+# Per client address
+
+
+@pytest.mark.parametrize(
+    ("path", "body"),
+    [
+        ("/api/v1/auth/sign-in", {"email": "{n}@example.com", "password": "whatever it is"}),
+        (FORGOT, {"email": "{n}@example.com"}),
+        (RESEND, {"email": "{n}@example.com"}),
+    ],
+)
+def test_one_address_is_limited_across_every_email(
+    client: TestClient, path: str, body: dict[str, str]
+) -> None:
+    for n in range(sign_in_throttle.ADDRESS_MAX_REQUESTS):
+        response = client.post(path, json={k: v.format(n=n) for k, v in body.items()})
+        assert response.status_code != 429, n
+    over = client.post(path, json={k: v.format(n="over") for k, v in body.items()})
+    assert over.status_code == 429
+    assert over.json()["error"]["code"] == "too_many_attempts"
+
+
+def test_address_limit_also_refuses_the_right_password(client: TestClient, db: Session) -> None:
+    user = verified_user(email="person@example.com")
+    for _ in range(sign_in_throttle.ADDRESS_MAX_REQUESTS):
+        client.post(FORGOT, json={"email": "nobody@example.com"})
+    assert sign_in(client, user.email).status_code == 429
+    # The address count is not the email lock: the same email from a fresh address is fine.
+    row = db.scalars(select(SignInThrottle)).one()
+    row.window_started_at = datetime.now(UTC) - sign_in_throttle.WINDOW - timedelta(seconds=1)
+    db.flush()
+    assert sign_in(client, user.email).status_code == 200
 
 
 # Pre-registration takeover
@@ -791,3 +895,38 @@ def test_requests_queue_one_task_for_every_email(
     client.post(path, json={"email": "known@example.com"})
     kind = "verify_email" if path == RESEND else "reset_password"
     assert calls == [(kind, None), (kind, str(user.id))]
+
+
+def test_a_malformed_request_does_not_count_against_the_address(
+    client: TestClient, db: Session
+) -> None:
+    """The address is counted after the body is validated, so junk (422) cannot use up the
+    budget of a real request from the same address."""
+    for _ in range(sign_in_throttle.ADDRESS_MAX_REQUESTS):
+        assert client.post(FORGOT, json={}).status_code == 422
+    assert db.scalar(select(func.count()).select_from(SignInThrottle)) == 0
+    assert client.post(FORGOT, json={"email": "someone@example.com"}).status_code == 202
+
+
+def test_throttle_rows_are_dropped_once_their_window_and_lock_are_over(
+    client: TestClient, db: Session
+) -> None:
+    now = datetime.now(UTC)
+    over = now - sign_in_throttle.WINDOW - timedelta(seconds=1)
+    db.add(SignInThrottle(key_hash="a" * 64, attempt_count=3, window_started_at=over))
+    db.add(
+        SignInThrottle(
+            key_hash="b" * 64,
+            attempt_count=5,
+            window_started_at=over,
+            locked_until=now + timedelta(minutes=5),
+        )
+    )
+    db.add(SignInThrottle(key_hash="c" * 64, attempt_count=1, window_started_at=now))
+    db.flush()
+    assert client.post(FORGOT, json={"email": "someone@example.com"}).status_code == 202
+    keys = set(db.scalars(select(SignInThrottle.key_hash)).all())
+    assert "a" * 64 not in keys  # window over, not locked: gone
+    assert "b" * 64 in keys  # still locked: kept
+    assert "c" * 64 in keys  # window still running: kept
+    assert len(keys) == 3  # plus the row for this request's address

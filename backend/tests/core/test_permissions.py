@@ -2,7 +2,13 @@
 
 import re
 
-from app.core.permissions import ROLE_PERMISSIONS, OrgRole, Permission, has_permission
+from app.core.permissions import (
+    READ_ONLY_PERMISSIONS,
+    ROLE_PERMISSIONS,
+    OrgRole,
+    Permission,
+    has_permission,
+)
 from app.core.settings import REPO_ROOT
 from app.models.enums import MembershipRole
 
@@ -37,6 +43,12 @@ def test_consultant_is_read_only() -> None:
         Permission.VIEW_ORGANISATION,
         Permission.VIEW_ASSESSMENTS,
     }
+
+
+def test_archived_organisation_keeps_viewing_only() -> None:
+    # Results stay readable in an archived organisation; nothing else does.
+    expected = {Permission.VIEW_ORGANISATION, Permission.VIEW_TEAM, Permission.VIEW_ASSESSMENTS}
+    assert expected == READ_ONLY_PERMISSIONS
 
 
 def test_platform_admin_is_not_a_role() -> None:

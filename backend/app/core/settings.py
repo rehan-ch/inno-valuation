@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Literal
 from urllib.parse import urlsplit
 
-from pydantic import Field, model_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BACKEND_DIR = Path(__file__).resolve().parents[2]
@@ -73,6 +73,13 @@ class Settings(BaseSettings):
     session_lifetime_days: int = Field(default=7, ge=1, le=30)
     # The version of the terms of use a new account accepts. Change it when the terms change.
     terms_version: str = "2026-10-13"
+
+    @field_validator("frontend_origin")
+    @classmethod
+    def _normalise_frontend_origin(cls, value: str) -> str:
+        """An origin has no trailing slash. One is easy to paste in, so it is dropped here,
+        once, and CORS, the origin check and email links all see the same value."""
+        return value.strip().rstrip("/")
 
     @model_validator(mode="after")
     def _check_secret_key(self) -> "Settings":

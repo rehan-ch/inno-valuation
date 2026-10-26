@@ -13,6 +13,26 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  commits:
+    # What the pre-push hook checks before code leaves a machine, repeated here so a
+    # skipped hook cannot slip a secret or an attribution line into the repository.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: bin/check selftest
+      - name: Secrets and attribution in the commits under review
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          if ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then
+            # A push that created the branch, or a rewritten history: scan the last commit.
+            BASE="$(git rev-parse "$HEAD~1")"
+          fi
+          bin/check range "$BASE" "$HEAD"
+
   backend:
     runs-on: ubuntu-latest
     services:

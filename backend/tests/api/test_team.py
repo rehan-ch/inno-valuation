@@ -210,6 +210,29 @@ def test_only_an_owner_gives_the_owner_role(client: TestClient, db: Session) -> 
     assert _patch_role(client, target, "owner").status_code == 200
 
 
+def test_admin_changes_and_removes_another_admin(client: TestClient, db: Session) -> None:
+    """Only owners are protected from admins; admins are peers."""
+    _, org = member(MembershipRole.OWNER)
+    admin, _ = member(MembershipRole.ADMIN, org)
+    demoted, _ = member(MembershipRole.ADMIN, org)
+    removed, _ = member(MembershipRole.ADMIN, org)
+    signed_in(client, admin)
+
+    response = _patch_role(client, _membership(db, org, demoted.id), "member")
+    assert response.status_code == 200, response.text
+    assert response.json()["role"] == "member"
+    assert _membership(db, org, demoted.id).role is MembershipRole.MEMBER
+    [changed] = _events(db, AuditAction.MEMBER_ROLE_CHANGED)
+    assert changed.details == {"from": "admin", "to": "member"}
+
+    target = _membership(db, org, removed.id)
+    assert _remove(client, target).status_code == 200
+    assert db.get(Membership, target.id) is None
+    [gone] = _events(db, AuditAction.MEMBER_REMOVED)
+    assert gone.details == {"role": "admin"}
+    assert gone.target_id == removed.id
+
+
 def test_admin_cannot_change_or_remove_an_owner(client: TestClient, db: Session) -> None:
     owner, org = member(MembershipRole.OWNER)
     member(MembershipRole.OWNER, org)

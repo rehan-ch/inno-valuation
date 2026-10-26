@@ -74,7 +74,15 @@ def test_https_frontend_origin_accepted_in_production(origin: str) -> None:
     settings = Settings(
         _env_file=None, environment="production", secret_key=STRONG_KEY, frontend_origin=origin
     )
-    assert settings.frontend_origin == origin
+    # Stored without the trailing slash, so CORS and the origin check see one value.
+    assert settings.frontend_origin == LIVE_ORIGIN
+
+
+def test_frontend_origin_trailing_slash_dropped_locally() -> None:
+    settings = Settings(
+        _env_file=None, environment="development", frontend_origin="http://localhost:3000/"
+    )
+    assert settings.frontend_origin == "http://localhost:3000"
 
 
 def test_local_frontend_origin_allowed_in_development() -> None:

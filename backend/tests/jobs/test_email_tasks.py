@@ -6,11 +6,15 @@ import logging
 import urllib.parse
 import uuid
 import webbrowser
+from collections.abc import Iterator
 from datetime import UTC, datetime, timedelta
 from typing import Any, ClassVar
 
 import pytest
 import resend
+from fastapi.testclient import TestClient
+from resend.exceptions import ResendError
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.security import invitation_token_value, user_token_value
@@ -24,7 +28,9 @@ from app.emails.backends import (
     get_email_backend,
     override_email_backend,
 )
+from app.jobs.celery_app import celery_app
 from app.jobs.tasks.emails import (
+    QUEUED,
     SENT,
     SKIPPED,
     request_account_email,
@@ -36,6 +42,7 @@ from app.models.enums import OrganisationStatus, UserTokenPurpose
 from app.services import user_tokens
 from app.services.audit import AuditAction
 from tests.factories import (
+    TEST_PASSWORD,
     AuditEventFactory,
     ConsultantGrantFactory,
     InvitationFactory,
@@ -120,12 +127,112 @@ def test_request_task_issues_and_sends_a_reset_link(
     db: Session, outbox: MemoryEmailBackend
 ) -> None:
     user = UserFactory.create(email="reset@example.com")
-    assert request_account_email.delay("reset_password", str(user.id)).get() == SENT
+    assert request_account_email.delay("reset_password", str(user.id)).get() == QUEUED
     [message] = outbox.outbox
     assert "/reset-password#token=" in message.link
     # A re-delivered task hits the rate limit and sends nothing more.
     assert request_account_email.delay("reset_password", str(user.id)).get() == SKIPPED
     assert len(outbox.outbox) == 1
+
+
+def test_request_task_queues_the_send_as_its_own_task(
+    db: Session, outbox: MemoryEmailBackend, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The send runs as a queued task, not a direct call, so it keeps its retries."""
+    user = UserFactory.create()
+    queued: list[tuple[Any, ...]] = []
+    monkeypatch.setattr(send_account_email, "delay", lambda *args: queued.append(args))
+    assert request_account_email.delay("verify_email", str(user.id)).get() == QUEUED
+    [token] = db.scalars(select(UserToken).where(UserToken.user_id == user.id)).all()
+    assert queued == [("verify_email", str(user.id), str(token.id))]
+    assert outbox.outbox == []
+
+
+# Provider errors are retried
+
+
+class _FlakyBackend(MemoryEmailBackend):
+    """Fails the first ``failures`` sends the way Resend does, then delivers."""
+
+    def __init__(self, failures: int) -> None:
+        super().__init__()
+        self.failures = failures
+        self.attempts = 0
+
+    def send(self, message: Any, *, idempotency_key: str) -> None:
+        self.attempts += 1
+        if self.attempts <= self.failures:
+            raise ResendError(
+                code=500,
+                error_type="internal_server_error",
+                message="Try again later",
+                suggested_action="Retry",
+            )
+        super().send(message, idempotency_key=idempotency_key)
+
+
+@pytest.fixture
+def eager_retries(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Let eager tasks retry. With ``task_eager_propagates`` on, Celery re-raises a retry
+    before handling it, so an eager task never runs again; off, ``apply`` re-runs it the
+    way a worker would, and a task that gives up still raises from ``get``."""
+    monkeypatch.setattr(celery_app.conf, "task_eager_propagates", False)
+
+
+@pytest.fixture
+def flaky(outbox: MemoryEmailBackend, eager_retries: None) -> Iterator[_FlakyBackend]:
+    """The provider fails once, then delivers. Replaces ``outbox`` for the test."""
+    backend = _FlakyBackend(failures=1)
+    override_email_backend(backend)
+    try:
+        yield backend
+    finally:
+        override_email_backend(outbox)
+
+
+def test_forgot_password_email_survives_a_provider_error(db: Session, flaky: _FlakyBackend) -> None:
+    user = UserFactory.create(email="reset@example.com")
+    assert request_account_email.delay("reset_password", str(user.id)).get() == QUEUED
+    assert flaky.attempts == 2
+    [message] = flaky.outbox
+    assert message.to == "reset@example.com"
+    assert "/reset-password#token=" in message.link
+    # The retry re-sent the same token: no second token, and the cooldown was not hit.
+    [token] = db.scalars(select(UserToken).where(UserToken.user_id == user.id)).all()
+    assert user_token_value(token.id) in message.link
+
+
+def test_sign_up_email_survives_a_provider_error(
+    client: TestClient, db: Session, flaky: _FlakyBackend
+) -> None:
+    response = client.post(
+        "/api/v1/auth/sign-up",
+        json={
+            "email": "new.person@example.com",
+            "name": "New Person",
+            "password": TEST_PASSWORD,
+            "accepted_terms": True,
+        },
+    )
+    assert response.status_code < 300, response.text
+    assert flaky.attempts == 2
+    [message] = flaky.outbox
+    assert message.to == "new.person@example.com"
+    assert "/verify-email#token=" in message.link
+
+
+@pytest.mark.usefixtures("eager_retries")
+def test_a_provider_that_keeps_failing_gives_up(db: Session, outbox: MemoryEmailBackend) -> None:
+    backend = _FlakyBackend(failures=10)
+    override_email_backend(backend)
+    try:
+        user_id, token_id = _verify_token(db)
+        with pytest.raises(ResendError):
+            send_account_email.delay("verify_email", user_id, token_id).get()
+    finally:
+        override_email_backend(outbox)
+    assert backend.attempts == 4  # the first try plus max_retries
+    assert backend.outbox == []
 
 
 def test_request_task_refuses_other_kinds(db: Session) -> None:

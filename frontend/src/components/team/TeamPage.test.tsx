@@ -1,8 +1,9 @@
 import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
+  errorResponse,
   fakeInvitation,
   fakeMe,
   fakeMember,
@@ -101,6 +102,77 @@ describe("TeamPage", () => {
       path: "/api/v1/organisation/members/66666666-6666-6666-6666-666666666666",
     });
     expect(screen.queryByText("Mia Member")).not.toBeInTheDocument();
+  });
+
+  it("holds the other rows' actions while a removal is running", async () => {
+    const mia = fakeMember({
+      id: "66666666-6666-6666-6666-666666666666",
+      name: "Mia Member",
+      email: "mia@example.com",
+      role: "member",
+    });
+    const noah = fakeMember({
+      id: "77777777-7777-7777-7777-777777777777",
+      name: "Noah Member",
+      email: "noah@example.com",
+      role: "member",
+    });
+    let releaseRemove: () => void = () => {};
+    stubApi({
+      "GET /api/v1/organisation": fakeOrganisation(),
+      "GET /api/v1/organisation/members": [fakeMember(), mia, noah],
+      "GET /api/v1/organisation/invitations": [],
+      "DELETE /api/v1/organisation/members/66666666-6666-6666-6666-666666666666": () =>
+        new Promise((resolve) => {
+          releaseRemove = () => resolve({ message: "The member is removed." });
+        }),
+    });
+    const user = userEvent.setup();
+
+    renderWithMe(<TeamPage />, fakeMe());
+    const miaRow = (await screen.findByText("Mia Member")).closest("li") as HTMLElement;
+    const noahRow = screen.getByText("Noah Member").closest("li") as HTMLElement;
+    await user.click(within(miaRow).getByRole("button", { name: "Remove" }));
+    await user.click(within(miaRow).getByRole("button", { name: "Remove member?" }));
+
+    expect(within(noahRow).getByRole("button", { name: "Remove" })).toBeDisabled();
+    expect(screen.getByLabelText("Role of Noah Member")).toBeDisabled();
+    releaseRemove();
+
+    await vi.waitFor(() => expect(screen.queryByText("Mia Member")).not.toBeInTheDocument());
+    expect(within(noahRow).getByRole("button", { name: "Remove" })).toBeEnabled();
+    expect(screen.getByLabelText("Role of Noah Member")).toBeEnabled();
+  });
+
+  it("closes the removal question again when the removal fails", async () => {
+    const mia = fakeMember({
+      id: "66666666-6666-6666-6666-666666666666",
+      name: "Mia Member",
+      email: "mia@example.com",
+      role: "member",
+    });
+    stubApi({
+      "GET /api/v1/organisation": fakeOrganisation(),
+      "GET /api/v1/organisation/members": [fakeMember(), mia],
+      "GET /api/v1/organisation/invitations": [],
+      "DELETE /api/v1/organisation/members/66666666-6666-6666-6666-666666666666": errorResponse(
+        "last_owner",
+        "The organisation needs at least one owner.",
+        409,
+      ),
+    });
+    const user = userEvent.setup();
+
+    renderWithMe(<TeamPage />, fakeMe());
+    const row = (await screen.findByText("Mia Member")).closest("li") as HTMLElement;
+    await user.click(within(row).getByRole("button", { name: "Remove" }));
+    await user.click(within(row).getByRole("button", { name: "Remove member?" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "The organisation needs at least one owner.",
+    );
+    expect(within(row).getByRole("button", { name: "Remove" })).toBeEnabled();
+    expect(within(row).queryByRole("button", { name: "Remove member?" })).not.toBeInTheDocument();
   });
 
   it("names the person's role when confirming a removal", async () => {

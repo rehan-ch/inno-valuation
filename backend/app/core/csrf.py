@@ -42,7 +42,9 @@ def require_trusted_origin(request: Request) -> None:
     origin = request.headers.get("origin")
     # "null" (sandboxed frames, some redirects) never equals the frontend origin.
     if origin is not None:
-        if origin.rstrip("/") != get_settings().frontend_origin.rstrip("/"):
+        # The setting is stored without a trailing slash; browsers send none either, but a
+        # hand-made header with one is still the same origin.
+        if origin.rstrip("/") != get_settings().frontend_origin:
             raise csrf_failed()
         return
     if request.headers.get("sec-fetch-site") == "cross-site":

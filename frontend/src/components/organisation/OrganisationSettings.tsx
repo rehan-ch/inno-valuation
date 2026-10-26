@@ -31,18 +31,23 @@ export function OrganisationSettings() {
   useEffect(() => {
     if (!activeOrgId) return;
     let cancelled = false;
-    getOrganisation()
-      .then((org) => {
+    async function load() {
+      // Back to loading on a switch, so the previous organisation's form is never shown
+      // (or saved) against the new one.
+      setState({ kind: "loading" });
+      try {
+        const org = await getOrganisation();
         if (!cancelled) setState({ kind: "ready", org });
-      })
-      .catch((err: unknown) => {
+      } catch (err) {
         if (!cancelled) {
           setState({
             kind: "error",
             message: err instanceof ApiError ? err.message : "Something went wrong.",
           });
         }
-      });
+      }
+    }
+    void load();
     return () => {
       cancelled = true;
     };
@@ -93,6 +98,8 @@ export function OrganisationSettings() {
         description="The profile and currency of the active organisation."
       />
       <SettingsForm
+        // The fields are seeded from the organisation once, so a new organisation gets a new form.
+        key={org.id}
         org={org}
         onSaved={(saved) =>
           setState((prev) => (prev.kind === "ready" ? { ...prev, org: saved } : prev))

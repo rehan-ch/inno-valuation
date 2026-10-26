@@ -1,4 +1,4 @@
-# Per-touchpoint AI settings. Keys match docs/methodology/ai-touchpoints.md.
+# Per-touchpoint AI settings, one entry per AiTouchpoint (app/models/enums.py).
 # Loaded and checked by app/ai/config.py; an unknown key or a bad value fails loudly.
 #
 # effort: low | medium | high | xhigh | max. The API no longer takes temperature (API

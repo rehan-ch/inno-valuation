@@ -67,8 +67,13 @@ def _summary(
 ) -> AssessmentSummaryOut:
     band_name = None
     if overview.result is not None:
-        bands = question_set_for(assessment.question_set_version).readiness_bands
-        band_name = next(b.name for b in bands if b.key == overview.result.band_key)
+        # A list row needs no question text, so an assessment on a question set version
+        # this server does not have still lists; only its band name is left blank.
+        try:
+            bands = question_set_for(assessment.question_set_version).readiness_bands
+        except ScoringError:
+            bands = ()
+        band_name = next((b.name for b in bands if b.key == overview.result.band_key), None)
     return AssessmentSummaryOut(
         id=assessment.id,
         status=assessment.status,
@@ -86,7 +91,7 @@ def _summary(
 
 def _detail(db: Session, ctx: OrgContext, assessment: ReadinessAssessment) -> AssessmentOut:
     overview = readiness.overviews(db, ctx.user.id, [assessment])[assessment.id]
-    question_set = question_set_for(assessment.question_set_version)
+    question_set = readiness.question_set_of(assessment)
     answers_by_role = _answers_by_role(ctx)
     own = overview.own if answers_by_role else None
     can_manage = ctx.can(Permission.MANAGE_ASSESSMENTS)
@@ -300,7 +305,7 @@ def _result_out(db: Session, assessment: ReadinessAssessment) -> ResultOut:
     result = readiness.result_of(db, assessment)
     if result is None or assessment.finalised_at is None:
         raise AppError("not_found", "This assessment has no result yet.", 404)
-    question_set = question_set_for(assessment.question_set_version)
+    question_set = readiness.question_set_of(assessment)
     band = next(b for b in question_set.readiness_bands if b.key == result.band_key)
     dimension_max = question_set.dimension_max
     dimensions = [
@@ -385,7 +390,14 @@ def _version(version: int | None) -> int:
 
 def _explanation_out(run: AiRun) -> ExplanationOut:
     version, question_id = explain_question_touchpoint.parse_subject(run.subject_id)
-    dimension = question_set_for(version).dimension_of_question(question_id)
+    try:
+        dimension = question_set_for(version).dimension_of_question(question_id)
+    except ScoringError as error:
+        raise AppError(
+            "question_set_unavailable",
+            f"This explanation uses question set version {version}, which is not available here.",
+            409,
+        ) from error
     output = run.response_json if run.status is AiRunStatus.SUCCEEDED else None
     return ExplanationOut(
         question_id=question_id,

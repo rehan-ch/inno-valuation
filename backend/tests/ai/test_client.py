@@ -46,8 +46,29 @@ class _FakeMessages:
         self.outcome = outcome
         self.calls: list[dict[str, Any]] = []
 
-    def create(self, **kwargs: Any) -> object:
-        self.calls.append(kwargs)
+    def create(
+        self,
+        *,
+        model: str,
+        max_tokens: int,
+        system: str,
+        messages: list[dict[str, str]],
+        output_config: dict[str, Any],
+        betas: list[str],
+        fallbacks: str,
+    ) -> object:
+        # The exact keyword set the real call uses, so a renamed SDK parameter fails here.
+        self.calls.append(
+            {
+                "model": model,
+                "max_tokens": max_tokens,
+                "system": system,
+                "messages": messages,
+                "output_config": output_config,
+                "betas": betas,
+                "fallbacks": fallbacks,
+            }
+        )
         if isinstance(self.outcome, Exception):
             raise self.outcome
         return self.outcome

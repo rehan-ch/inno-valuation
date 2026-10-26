@@ -3,9 +3,12 @@
 Only the SHA-256 hash is stored. The raw token is derived from the row id and the secret key
 (``user_token_value``), so the email task can rebuild the link from the id alone.
 
-Issuing a token voids the user's other outstanding tokens of the same purpose, so only the
-newest link works. Using a token marks it used and voids the rest. ``used_at`` therefore
-means "no longer usable", whether clicked or replaced.
+Issuing a verification token voids the user's other outstanding verification tokens, so
+only the newest link works. A new reset link leaves earlier ones alive until they expire or
+one is used: forgot password can be asked for by anyone who knows the email, so a flood of
+requests must not kill the link the owner is holding. Using a token of either purpose marks
+it used and voids the rest. ``used_at`` therefore means "no longer usable", whether clicked
+or replaced.
 
 A verification token from a contested sign-up has ``requires_password`` set; using it
 needs a new password (see ``app.services.auth``). Once an account has had such a token,
@@ -72,9 +75,10 @@ def issue(
     )
     if (recent or 0) >= limit.count:
         return None
-    if purpose is UserTokenPurpose.VERIFY_EMAIL and not requires_password:
-        requires_password = is_contested(db, user)
-    _void_outstanding(db, user, purpose, now)
+    if purpose is UserTokenPurpose.VERIFY_EMAIL:
+        if not requires_password:
+            requires_password = is_contested(db, user)
+        _void_outstanding(db, user, purpose, now)
     token = UserToken(
         user_id=user.id,
         purpose=purpose,

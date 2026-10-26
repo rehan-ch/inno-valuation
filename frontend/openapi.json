@@ -2255,7 +2255,7 @@
     },
     "/api/v1/auth/sign-out": {
       "post": {
-        "description": "Ends the session in this browser. Always clears the cookies; it is audited only with\na valid session and a passing CSRF check.",
+        "description": "Ends the session in this browser, on the server too. Always clears the cookies; the\nsession is revoked and audited only with a valid session and a passing CSRF check.",
         "operationId": "sign_out_api_v1_auth_sign_out_post",
         "responses": {
           "200": {

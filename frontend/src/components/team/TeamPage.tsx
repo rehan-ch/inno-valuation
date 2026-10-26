@@ -296,6 +296,8 @@ function InvitationsCard({
                 label="Cancel"
                 confirmLabel="Cancel invitation?"
                 busy={busy && busyId === invitation.id}
+                // One action at a time: the other rows wait while this one runs.
+                disabled={busy && busyId !== invitation.id}
                 onConfirm={() => void handleCancel(invitation.id)}
               />
             </span>
@@ -362,12 +364,13 @@ function MembersCard({
             <span className="text-neutral-500">joined {formatDate(member.joined_at)}</span>
             <span className="ml-auto flex items-center gap-3">
               {mayEdit(member) ? (
+                // One action at a time: every row waits while one is running.
                 <>
                   <SelectField
                     label={`Role of ${member.name}`}
                     labelHidden
                     value={member.role}
-                    disabled={busy && busyId === member.id}
+                    disabled={busy}
                     onChange={(e) =>
                       void handleRoleChange(member, e.target.value as MembershipRole)
                     }
@@ -382,6 +385,7 @@ function MembersCard({
                     label="Remove"
                     confirmLabel={`Remove ${roleLabel(member.role).toLowerCase()}?`}
                     busy={busy && busyId === member.id}
+                    disabled={busy && busyId !== member.id}
                     onConfirm={() => void handleRemove(member)}
                   />
                 </>

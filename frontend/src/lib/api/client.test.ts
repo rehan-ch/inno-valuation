@@ -1,6 +1,12 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { ApiError, apiFetch, apiUrl, getHealth } from "./client";
+import {
+  ApiError,
+  apiFetch,
+  apiUrl,
+  getHealth,
+  setUnauthorizedHandler,
+} from "./client";
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -75,5 +81,74 @@ describe("apiFetch", () => {
     const getHeaders = new Headers((fetchMock.mock.calls[1] as [string, RequestInit])[1].headers);
     expect(getHeaders.get("X-CSRF-Token")).toBeNull();
     document.cookie = "csrf_token=; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+  });
+
+  it("rejects a 2xx with an empty body as invalid_response", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("", { status: 200 })));
+
+    await expect(apiFetch("/x")).rejects.toMatchObject({ code: "invalid_response", status: 200 });
+  });
+
+  it("rejects a 2xx whose body is not JSON as invalid_response", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(new Response("<html>Gateway</html>", { status: 200 })),
+    );
+
+    await expect(apiFetch("/x")).rejects.toMatchObject({ code: "invalid_response", status: 200 });
+  });
+});
+
+describe("setUnauthorizedHandler", () => {
+  afterEach(() => setUnauthorizedHandler(null));
+
+  it("calls the registered handler on a 401 and still throws the error", async () => {
+    const handler = vi.fn();
+    setUnauthorizedHandler(handler);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        jsonResponse({ error: { code: "not_authenticated", message: "Please sign in." } }, 401),
+      ),
+    );
+
+    await expect(apiFetch("/me", { method: "PATCH", body: "{}" })).rejects.toMatchObject({
+      code: "not_authenticated",
+      status: 401,
+    });
+    expect(handler).toHaveBeenCalledTimes(1);
+  });
+
+  it("leaves a 403 and a 2xx to the caller", async () => {
+    const handler = vi.fn();
+    setUnauthorizedHandler(handler);
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValueOnce(
+          jsonResponse({ error: { code: "forbidden", message: "Not allowed." } }, 403),
+        )
+        .mockResolvedValueOnce(jsonResponse({ message: "ok" })),
+    );
+
+    await expect(apiFetch("/x")).rejects.toMatchObject({ code: "forbidden", status: 403 });
+    await expect(apiFetch("/x")).resolves.toEqual({ message: "ok" });
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it("does nothing on a 401 once the handler is cleared", async () => {
+    const handler = vi.fn();
+    setUnauthorizedHandler(handler);
+    setUnauthorizedHandler(null);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        jsonResponse({ error: { code: "not_authenticated", message: "Please sign in." } }, 401),
+      ),
+    );
+
+    await expect(apiFetch("/me")).rejects.toMatchObject({ status: 401 });
+    expect(handler).not.toHaveBeenCalled();
   });
 });

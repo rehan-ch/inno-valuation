@@ -17,7 +17,9 @@ _EM_DASH: Final = "—"
 
 def _known_dimension(key: str) -> str:
     if key not in QUESTION_SET.dimension_keys:
-        raise ValueError(f"{key!r} is not a dimension key")
+        # Generic on purpose: the message lands in run.error, so it must not echo the
+        # model's output.
+        raise ValueError("not a dimension key")
     return key
 
 

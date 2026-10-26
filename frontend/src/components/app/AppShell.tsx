@@ -12,9 +12,10 @@ import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { Loading } from "@/components/ui/Loading";
 import { signOut } from "@/lib/api/auth";
-import { ApiError } from "@/lib/api/client";
+import { ApiError, setUnauthorizedHandler } from "@/lib/api/client";
 import { getMe } from "@/lib/api/me";
 import type { MeOut } from "@/lib/api/types";
+import { signInHref } from "@/lib/next-param";
 import { activeMembership, canManage } from "@/lib/roles";
 
 type State =
@@ -69,8 +70,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       setState({ kind: "ready", me });
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
-        const next = window.location.pathname + window.location.search;
-        router.replace(`/sign-in?next=${encodeURIComponent(next)}${window.location.hash}`);
+        router.replace(signInHref());
         return;
       }
       setState({
@@ -84,6 +84,15 @@ export function AppShell({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch on mount; state is set only once the response arrives
     void load();
   }, [load]);
+
+  // Once signed in, a 401 from any later call (the session expired or was ended elsewhere)
+  // sends the visitor to sign in and back here afterwards. The initial load above handles
+  // its own 401, so the handler is registered only once the shell is ready.
+  useEffect(() => {
+    if (!ready) return;
+    setUnauthorizedHandler(() => router.replace(signInHref()));
+    return () => setUnauthorizedHandler(null);
+  }, [ready, router]);
 
   async function handleSignOut() {
     try {

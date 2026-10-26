@@ -3,7 +3,9 @@ import { cleanup } from "@testing-library/react";
 import { afterEach } from "vitest";
 
 // jsdom has no <dialog> showModal/close yet; reflect the open state so the
-// Modal component works in tests.
+// Modal component works in tests. A real showModal would also trap focus and make the
+// rest of the page inert; this stand-in does neither, so the Modal tests do not cover
+// focus trapping or inertness.
 if (typeof HTMLDialogElement.prototype.showModal !== "function") {
   HTMLDialogElement.prototype.showModal = function (this: HTMLDialogElement) {
     this.open = true;

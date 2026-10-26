@@ -1,10 +1,12 @@
 """CSRF token, origin check and CORS."""
 
+import pytest
 from fastapi.routing import APIRoute
 from fastapi.testclient import TestClient
 
+from app.core import csrf as csrf_module
 from app.core.sessions import CSRF_COOKIE, CSRF_HEADER
-from app.core.settings import get_settings
+from app.core.settings import Settings, get_settings
 from app.main import CORS_METHODS, app
 from tests.api.helpers import csrf, sign_in, signed_in
 from tests.factories import verified_user
@@ -67,6 +69,31 @@ def test_frontend_origin_can_sign_in(client: TestClient) -> None:
     user = verified_user()
     client.headers["Origin"] = get_settings().frontend_origin
     assert sign_in(client, user.email).status_code == 200
+
+
+@pytest.mark.parametrize("trailing_slash", [False, True])
+def test_frontend_origin_header_passes_with_or_without_trailing_slash(
+    client: TestClient, trailing_slash: bool
+) -> None:
+    user = verified_user()
+    origin = get_settings().frontend_origin + ("/" if trailing_slash else "")
+    client.headers["Origin"] = origin
+    assert sign_in(client, user.email).status_code == 200
+
+
+@pytest.mark.parametrize("trailing_slash", [False, True])
+def test_frontend_origin_setting_passes_with_or_without_trailing_slash(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch, trailing_slash: bool
+) -> None:
+    """A setting pasted with a trailing slash is the same origin as the browser sends."""
+    configured = "http://localhost:3000" + ("/" if trailing_slash else "")
+    settings = Settings(_env_file=None, environment="test", frontend_origin=configured)
+    monkeypatch.setattr(csrf_module, "get_settings", lambda: settings)
+    user = verified_user()
+    client.headers["Origin"] = "http://localhost:3000"
+    assert sign_in(client, user.email).status_code == 200
+    client.headers["Origin"] = "http://localhost:3001"
+    assert sign_in(client, user.email).status_code == 403
 
 
 def test_cross_site_origin_is_rejected_even_with_a_valid_token(client: TestClient) -> None:

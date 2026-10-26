@@ -1,5 +1,6 @@
-{# prompt_version: 1
-   Touchpoint 1, explain a readiness question (docs/methodology/ai-touchpoints.md).
+{# prompt_version: 2
+   Touchpoint 1, explain a readiness question in plain words, fitted to the company's
+   industry when it is known. Never a score, and never advice on which answer to pick.
    Variables:
      dimension  the question's dimension from the question set (key, name, description,
                 sub_aspects), passed in, never retyped

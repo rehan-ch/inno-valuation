@@ -217,32 +217,13 @@ function GrantsCard({
 }) {
   const { busy, error, run } = useSubmit();
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [newEndDate, setNewEndDate] = useState("");
-  const [dateError, setDateError] = useState<string | null>(null);
+  const [editing, setEditing] = useState<ConsultantGrantOut | null>(null);
 
   async function handleRevoke(id: string) {
     setBusyId(id);
     const grant = await run(() => revokeGrant(id));
     setBusyId(null);
     if (grant) onUpdated(grant);
-  }
-
-  async function handleEndDateChange(event: FormEvent, id: string) {
-    event.preventDefault();
-    // Without a date, endOfDayUtc would send a malformed instant.
-    if (!newEndDate) {
-      setDateError("Choose an end date.");
-      return;
-    }
-    setBusyId(id);
-    const grant = await run(() => changeGrantEndDate(id, endOfDayUtc(newEndDate)));
-    setBusyId(null);
-    if (grant) {
-      onUpdated(grant);
-      setEditingId(null);
-      setNewEndDate("");
-    }
   }
 
   return (
@@ -276,60 +257,90 @@ function GrantsCard({
                     : `ends ${formatDate(grant.expires_at)}`}
                 </span>
                 {open && (
+                  // One action at a time: every row waits while one is running.
                   <span className="ml-auto flex flex-wrap items-center gap-3">
-                    <Button
-                      variant="secondary"
-                      onClick={() => {
-                        setEditingId(grant.id);
-                        setNewEndDate("");
-                        setDateError(null);
-                      }}
-                    >
+                    <Button variant="secondary" disabled={busy} onClick={() => setEditing(grant)}>
                       Change end date
                     </Button>
                     <ConfirmButton
                       label="Revoke"
                       confirmLabel="End access now?"
                       busy={busy && busyId === grant.id}
+                      disabled={busy && busyId !== grant.id}
                       onConfirm={() => void handleRevoke(grant.id)}
                     />
                   </span>
-                )}
-                {editingId === grant.id && (
-                  <Modal open title="Change end date" onClose={() => setEditingId(null)}>
-                    <form
-                      onSubmit={(e) => void handleEndDateChange(e, grant.id)}
-                      className="space-y-4"
-                      noValidate
-                    >
-                      <TextField
-                        label={`New end date for ${grant.email}`}
-                        type="date"
-                        required
-                        hint="Access ends at the end of the chosen day (UTC)."
-                        error={dateError ?? undefined}
-                        value={newEndDate}
-                        onChange={(e) => {
-                          setNewEndDate(e.target.value);
-                          setDateError(null);
-                        }}
-                      />
-                      <div className="flex justify-end gap-3">
-                        <Button variant="secondary" onClick={() => setEditingId(null)}>
-                          Cancel
-                        </Button>
-                        <Button type="submit" busy={busy && busyId === grant.id}>
-                          Save
-                        </Button>
-                      </div>
-                    </form>
-                  </Modal>
                 )}
               </li>
             );
           })}
         </ul>
       )}
+      {editing && (
+        <EndDateModal
+          grant={editing}
+          onClose={() => setEditing(null)}
+          onSaved={(grant) => {
+            onUpdated(grant);
+            setEditing(null);
+          }}
+        />
+      )}
     </Card>
+  );
+}
+
+/** Its own submit state, so a failure shows inside the dialog: while the dialog is open,
+ * the page behind it is inert and an error there would go unseen. */
+function EndDateModal({
+  grant,
+  onClose,
+  onSaved,
+}: {
+  grant: ConsultantGrantOut;
+  onClose: () => void;
+  onSaved: (grant: ConsultantGrantOut) => void;
+}) {
+  const { busy, error, run } = useSubmit();
+  const [newEndDate, setNewEndDate] = useState("");
+  const [dateError, setDateError] = useState<string | null>(null);
+
+  async function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+    // Without a date, endOfDayUtc would send a malformed instant.
+    if (!newEndDate) {
+      setDateError("Choose an end date.");
+      return;
+    }
+    const saved = await run(() => changeGrantEndDate(grant.id, endOfDayUtc(newEndDate)));
+    if (saved) onSaved(saved);
+  }
+
+  return (
+    <Modal open title="Change end date" onClose={onClose}>
+      <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4" noValidate>
+        {error && <Alert tone="error">{error.message}</Alert>}
+        <TextField
+          label={`New end date for ${grant.email}`}
+          type="date"
+          required
+          hint="Access ends at the end of the chosen day (UTC)."
+          error={dateError ?? undefined}
+          value={newEndDate}
+          onChange={(e) => {
+            setNewEndDate(e.target.value);
+            setDateError(null);
+          }}
+        />
+        <div className="flex justify-end gap-3">
+          <Button variant="secondary" disabled={busy} onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="submit" busy={busy}>
+            Save
+          </Button>
+        </div>
+      </form>
+    </Modal>
   );
 }
