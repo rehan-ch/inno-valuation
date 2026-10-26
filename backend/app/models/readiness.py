@@ -1,6 +1,6 @@
 """Readiness assessments: each person's answers, the agreed answers, the final result.
 
-The shape follows docs/architecture/data-model.md. Answers are JSONB maps of
+Three tables: assessments, responses and results. Answers are JSONB maps of
 ``{question_id: 1..5}``; the database checks every value is a whole number on the
 readiness scale, and the service layer checks the ids against the question set.
 A ``ReadinessResult`` row is written once when the assessment becomes ``final`` and
@@ -9,7 +9,8 @@ is never changed afterwards (service layer rule, proven by a test in P3.04).
 Foreign key behaviour: everything under an assessment dies with it, and an
 assessment dies with its organisation. A deleted participant takes their own
 answers along; the agreed answers and the result survive with ``set_by`` /
-``created_by`` becoming NULL.
+``created_by`` becoming NULL. The consensus row remembers how many people had
+submitted when agreeing began, so the result can still count them afterwards.
 """
 
 import uuid
@@ -53,8 +54,12 @@ class ReadinessAssessment(UuidPrimaryKey, Timestamps, Base):
         ForeignKey("organisations.id", ondelete="CASCADE")
     )
     question_set_version: Mapped[int]
+    # A new assessment collects answers at once; ``draft`` is kept in the enum for old
+    # clients but nothing creates one.
     status: Mapped[ReadinessStatus] = mapped_column(
-        enum_type(ReadinessStatus, "readiness_status"), default=ReadinessStatus.DRAFT
+        enum_type(ReadinessStatus, "readiness_status"),
+        default=ReadinessStatus.COLLECTING,
+        server_default=text("'collecting'"),
     )
     # The organisation's weights at finalising time, as validate_weights returns them.
     # They never change any score; they only order tied priorities (Amy Q2, Q23).
@@ -106,6 +111,7 @@ class ReadinessConsensus(UuidPrimaryKey, Timestamps, Base):
     __table_args__ = (
         UniqueConstraint("assessment_id"),
         _answers_1_to_5("answers"),
+        CheckConstraint("participant_count >= 1", name="participant_count_positive"),
         Index("ix_readiness_consensus_organisation_id", "organisation_id"),
     )
 
@@ -122,6 +128,9 @@ class ReadinessConsensus(UuidPrimaryKey, Timestamps, Base):
     notes: Mapped[dict[str, Any]] = mapped_column(
         JSONB, default=dict, server_default=text("'{}'::jsonb")
     )
+    # How many people had submitted when agreeing began. Fixed then, because a response
+    # goes when its person is deleted and the result must still count them.
+    participant_count: Mapped[int]
     set_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL"), index=True
     )

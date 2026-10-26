@@ -461,13 +461,54 @@ def _build(data: object) -> QuestionSet:
 
 QUESTION_SET: QuestionSet = load_question_set()
 
-_REGISTRY: Mapping[int, QuestionSet] = {QUESTION_SET.version: QUESTION_SET}
+
+def _older_versions(source: Path, latest: QuestionSet) -> dict[int, QuestionSet]:
+    """The ``<stem>.v<N>.yml`` siblings of ``source``, each checked against its name."""
+    older: dict[int, QuestionSet] = {}
+    for sibling in sorted(source.parent.glob(f"{source.stem}.v*{source.suffix}")):
+        tag = sibling.name[len(source.stem) + 2 : -len(source.suffix)]
+        if not tag.isdigit():
+            continue
+        loaded = load_question_set(sibling)
+        if loaded.version != int(tag):
+            raise ScoringError(
+                f"Question set {sibling} is named v{tag} but declares version {loaded.version}"
+            )
+        if loaded.version >= latest.version:
+            raise ScoringError(
+                f"Question set {sibling} (version {loaded.version}) must be older than "
+                f"{source} (version {latest.version})"
+            )
+        older[loaded.version] = loaded
+    return older
+
+
+def load_registry(path: Path | str | None = None) -> Mapping[int, QuestionSet]:
+    """Every question set version known from one place (spec 9).
+
+    ``path`` (default: ``default_question_set_path()``) is the authoritative latest version.
+    Older versions live beside it as ``<stem>.v<N>.yml`` and are loaded too, so an
+    assessment started on an earlier version can still be read and scored after a bump.
+    Each sibling must declare the version in its name and be older than the main file.
+    """
+    source = Path(path).resolve() if path is not None else default_question_set_path()
+    latest = load_question_set(source)
+    return MappingProxyType({latest.version: latest, **_older_versions(source, latest)})
+
+
+_REGISTRY: Mapping[int, QuestionSet] = MappingProxyType(
+    {
+        QUESTION_SET.version: QUESTION_SET,
+        **_older_versions(default_question_set_path(), QUESTION_SET),
+    }
+)
 
 
 def question_set_for(version: int) -> QuestionSet:
     """The question set of a stored ``question_set_version`` (spec 9).
 
-    Today only the loaded version is known. Unknown or non-integer versions raise ScoringError.
+    Known versions are the main file and its ``.v<N>`` siblings (``load_registry``).
+    Unknown or non-integer versions raise ScoringError.
     """
     if not isinstance(version, int) or isinstance(version, bool):
         raise ScoringError(f"question_set_version must be an integer, got {describe(version)}")

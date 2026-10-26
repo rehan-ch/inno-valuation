@@ -10,11 +10,16 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models import AuditEvent, Organisation, ReadinessResult, User
-from app.models.enums import MembershipRole, OrganisationStatus
+from app.models.enums import MembershipRole, OrganisationStatus, ReadinessStatus
 from app.scoring.question_set import QUESTION_SET
 from app.services.audit import AuditAction
 from tests.api.helpers import csrf, member, signed_in
-from tests.factories import ConsultantGrantFactory, verified_user
+from tests.factories import (
+    ConsultantGrantFactory,
+    ReadinessAssessmentFactory,
+    ReadinessResultFactory,
+    verified_user,
+)
 
 BASE = "/api/v1/readiness"
 QUESTION_IDS = QUESTION_SET.all_question_ids()
@@ -489,3 +494,137 @@ def test_an_archived_organisation_keeps_your_answers_read_only(
     refused = _answer(client, assessment_id, {QUESTION_IDS[1]: 3})
     assert refused.status_code == 403
     assert refused.json()["error"]["code"] == "organisation_archived"
+
+
+def test_finalising_survives_every_submitter_being_deleted(client: TestClient, db: Session) -> None:
+    """The only person who submitted deletes their account while the facilitator agrees
+    the answers. The result still counts them, and the organisation is not stuck."""
+    owner, org = member(MembershipRole.OWNER)
+    leaver, _ = member(MembershipRole.MEMBER, org)
+    _as(client, owner, org)
+    assessment_id = _start(client).json()["id"]
+    _as(client, leaver, org)
+    _answer(client, assessment_id, _all(4))
+    _submit(client, assessment_id)
+    _as(client, owner, org)
+    assert _post(client, assessment_id, "consensus/begin").json()["participants"] == [leaver.name]
+
+    db.delete(db.get(User, leaver.id))
+    db.flush()
+    assert client.get(f"{BASE}/assessments/{assessment_id}/consensus").json()["participants"] == []
+
+    _agree(client, assessment_id, _all(4))
+    final = _post(client, assessment_id, "finalise")
+    assert final.status_code == 200, final.text
+    assert final.json()["submitted_count"] == 1
+    assert final.json()["total"] == 240
+    assert client.get(f"{BASE}/assessments/{assessment_id}/result").json()["submitted_count"] == 1
+    assert _start(client).status_code == 201  # the next assessment can begin
+
+
+def test_finalising_twice_writes_one_result(client: TestClient, db: Session) -> None:
+    owner, org = member(MembershipRole.OWNER)
+    assessment_id = _finished(client, [owner], org)
+    first = db.scalar(select(ReadinessResult))
+    assert first is not None
+    before = (first.id, first.computed_at)
+
+    again = _post(client, assessment_id, "finalise")
+    assert again.status_code == 409
+    assert again.json()["error"]["code"] == "wrong_status"
+
+    db.expire_all()
+    results = db.scalars(select(ReadinessResult)).all()
+    assert [(r.id, r.computed_at) for r in results] == [before]
+    assert client.get(f"{BASE}/assessments/{assessment_id}/result").json()["total"] == 180
+
+
+def test_finalising_while_collecting_is_refused(client: TestClient) -> None:
+    owner, org = member(MembershipRole.OWNER)
+    _as(client, owner, org)
+    assessment_id = _start(client).json()["id"]
+    _answer(client, assessment_id, _all(3))
+    _submit(client, assessment_id)
+    response = _post(client, assessment_id, "finalise")
+    assert response.status_code == 409
+    assert response.json()["error"]["code"] == "wrong_status"
+    assert client.get(f"{BASE}/assessments/{assessment_id}/result").status_code == 404
+
+
+@pytest.mark.parametrize(
+    "answers", [{QUESTION_IDS[0]: 0}, {QUESTION_IDS[0]: 6}, {"not_a_question": 3}]
+)
+def test_agreed_answers_off_the_scale_or_unknown_are_refused(
+    client: TestClient, answers: dict[str, int]
+) -> None:
+    owner, org = member(MembershipRole.OWNER)
+    _as(client, owner, org)
+    assessment_id = _start(client).json()["id"]
+    _answer(client, assessment_id, _all(3))
+    _submit(client, assessment_id)
+    _post(client, assessment_id, "consensus/begin")
+    response = _agree(client, assessment_id, answers)
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "invalid_answers"
+    assert client.get(f"{BASE}/assessments/{assessment_id}/consensus").json()["agreed_count"] == 0
+
+
+def test_an_admin_can_start_and_finalise(client: TestClient) -> None:
+    owner, org = member(MembershipRole.OWNER)
+    admin, _ = member(MembershipRole.ADMIN, org)
+    _as(client, admin, org)
+    started = _start(client)
+    assert started.status_code == 201, started.text
+    assessment_id = started.json()["id"]
+    assert started.json()["can_manage"] is True
+    for person in (owner, admin):
+        _as(client, person, org)
+        _answer(client, assessment_id, _all(4))
+        _submit(client, assessment_id)
+    _as(client, admin, org)
+    assert _post(client, assessment_id, "consensus/begin").status_code == 200
+    assert _agree(client, assessment_id, _all(4)).status_code == 200
+    final = _post(client, assessment_id, "finalise")
+    assert final.status_code == 200, final.text
+    assert final.json()["submitted_count"] == 2
+
+
+def test_an_assessment_on_an_unknown_question_set_version_still_lists(
+    client: TestClient, db: Session
+) -> None:
+    """After a question set bump, old assessments on a version this server lacks keep the
+    list working; only their own detail and result say why they cannot be shown."""
+    owner, org = member(MembershipRole.OWNER)
+    current_id = _finished(client, [owner], org)
+    old = ReadinessAssessmentFactory.create(
+        organisation=org,
+        question_set_version=999,
+        status=ReadinessStatus.FINAL,
+        started_at=datetime.now(UTC),
+        finalised_at=datetime.now(UTC),
+    )
+    ReadinessResultFactory.create(
+        assessment=old,
+        organisation_id=org.id,
+        total=190,
+        band_key="building_blocks",
+        per_dimension={d.key: 15 for d in QUESTION_SET.dimensions},
+        category_scores={c.key: 0 for c in QUESTION_SET.categories},
+    )
+    db.flush()
+
+    listed = client.get(f"{BASE}/assessments")
+    assert listed.status_code == 200, listed.text
+    rows = {row["id"]: row for row in listed.json()}
+    assert set(rows) == {current_id, str(old.id)}
+    assert rows[current_id]["band_name"] == "Building Blocks"
+    assert rows[str(old.id)]["total"] == 190
+    assert rows[str(old.id)]["band_name"] is None
+    assert rows[str(old.id)]["question_set_version"] == 999
+
+    for path in ("", "/result"):
+        response = client.get(f"{BASE}/assessments/{old.id}{path}")
+        assert response.status_code == 409, response.text
+        assert response.json()["error"]["code"] == "question_set_unavailable"
+        assert "version 999" in response.json()["error"]["message"]
+    assert client.get(f"{BASE}/assessments/{current_id}/result").json()["total"] == 180

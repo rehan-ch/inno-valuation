@@ -64,6 +64,20 @@ def _invalid_answers(error: ScoringError) -> AppError:
     return AppError("invalid_answers", str(error), 422)
 
 
+def question_set_of(assessment: ReadinessAssessment) -> QuestionSet:
+    """The question set an assessment was started on. 409 ``question_set_unavailable`` when
+    this server does not have that version, so one old assessment never breaks the rest."""
+    try:
+        return question_set_for(assessment.question_set_version)
+    except ScoringError as error:
+        raise AppError(
+            "question_set_unavailable",
+            f"This assessment uses question set version {assessment.question_set_version}, "
+            "which is not available here.",
+            409,
+        ) from error
+
+
 # Reading
 
 
@@ -262,7 +276,7 @@ def save_answers(
     if assessment.status is not ReadinessStatus.COLLECTING:
         raise _wrong_status("Answers are closed: the team is agreeing its answers now.")
     _require_can_answer(db, ctx)
-    question_set = question_set_for(assessment.question_set_version)
+    question_set = question_set_of(assessment)
     try:
         readiness.validate_answers(changes, question_set)
     except ScoringError as error:
@@ -308,7 +322,7 @@ def submit_answers(db: Session, ctx: OrgContext, assessment_id: uuid.UUID) -> Re
     _require_can_answer(db, ctx)
     # Locked, so a save still in flight finishes first and is counted.
     response = own_response(db, assessment, ctx.user.id, lock=True)
-    question_set = question_set_for(assessment.question_set_version)
+    question_set = question_set_of(assessment)
     answered = response.answers if response is not None else {}
     missing = [q for q in question_set.all_question_ids() if q not in answered]
     if response is None or missing:
@@ -342,7 +356,9 @@ def begin_consensus(db: Session, ctx: OrgContext, assessment_id: uuid.UUID) -> R
     members.actor_role(ctx.organisation, db, ctx)
     if assessment.status is not ReadinessStatus.COLLECTING:
         raise _wrong_status("Agreeing the answers has already started.")
-    if submitted_count(db, assessment) == 0:
+    # Counted under the lock, after any submit in flight: no submission lands later.
+    submitted = submitted_count(db, assessment)
+    if submitted == 0:
         raise AppError(
             "no_submissions", "Nobody has submitted answers yet, so there is nothing to agree.", 409
         )
@@ -353,6 +369,9 @@ def begin_consensus(db: Session, ctx: OrgContext, assessment_id: uuid.UUID) -> R
             assessment_id=assessment.id,
             answers={},
             notes={},
+            # Remembered now: a response goes when its person is deleted, and the result
+            # must still say how many people the agreed answers came from.
+            participant_count=submitted,
             set_by_user_id=ctx.user.id,
         )
     )
@@ -363,7 +382,7 @@ def begin_consensus(db: Session, ctx: OrgContext, assessment_id: uuid.UUID) -> R
         organisation_id=ctx.organisation_id,
         target_type="readiness_assessment",
         target_id=assessment.id,
-        details={"submitted": submitted_count(db, assessment)},
+        details={"submitted": submitted},
     )
     db.commit()
     return assessment
@@ -407,7 +426,7 @@ def consensus_table(
 ) -> list[QuestionConsensus]:
     """Per question, in book order: each submitted answer, the mean, the spread, and the
     agreed answer and note so far. ``submitted`` is the submitted responses, people loaded."""
-    question_set: QuestionSet = question_set_for(assessment.question_set_version)
+    question_set = question_set_of(assessment)
     consensus = consensus_of(db, assessment)
     agreed = consensus.answers if consensus is not None else {}
     notes = consensus.notes if consensus is not None else {}
@@ -449,7 +468,7 @@ def save_consensus(
     members.actor_role(ctx.organisation, db, ctx)
     if assessment.status is not ReadinessStatus.CONSENSUS:
         raise _wrong_status("Agreed answers can only be set while the team is agreeing them.")
-    question_set = question_set_for(assessment.question_set_version)
+    question_set = question_set_of(assessment)
     try:
         readiness.validate_answers(answers, question_set)
         for question_id in notes:
@@ -492,10 +511,12 @@ def finalise(db: Session, ctx: OrgContext, assessment_id: uuid.UUID) -> Readines
     members.actor_role(ctx.organisation, db, ctx)
     if assessment.status is not ReadinessStatus.CONSENSUS:
         raise _wrong_status("Only an assessment whose answers are being agreed can be finalised.")
-    question_set = question_set_for(assessment.question_set_version)
+    question_set = question_set_of(assessment)
     consensus = consensus_of(db, assessment)
-    agreed = consensus.answers if consensus is not None else {}
-    scored = readiness.score_readiness(agreed, question_set)
+    if consensus is None:  # begin_consensus always writes one; guard against a bad row
+        raise _wrong_status("Agreeing the answers has not started.")
+    scored = readiness.score_readiness(consensus.answers, question_set)
+    # PROVISIONAL: see open-questions Q6 (one assessment type, every question required)
     if not scored.complete or scored.total is None or scored.band is None:
         raise AppError(
             "answers_incomplete",
@@ -504,6 +525,7 @@ def finalise(db: Session, ctx: OrgContext, assessment_id: uuid.UUID) -> Readines
             422,
         )
     by_category = categories.readiness_categories(scored, question_set)
+    # PROVISIONAL: see open-questions Q23 (weights order the idea list only, not this one)
     ranked = priorities.readiness_priorities(scored, question_set=question_set)
     now = datetime.now(UTC)
     result = ReadinessResult(
@@ -514,8 +536,8 @@ def finalise(db: Session, ctx: OrgContext, assessment_id: uuid.UUID) -> Readines
         total=scored.total,
         band_key=scored.band.key,
         priorities=[{"rank": p.rank, "key": p.key, "score": p.score} for p in ranked.items],
-        # Stored, not counted later: responses go when their person is deleted.
-        participant_count=submitted_count(db, assessment),
+        # From when agreeing began, not counted now: responses go with deleted people.
+        participant_count=consensus.participant_count,
         computed_at=now,
     )
     db.add(result)

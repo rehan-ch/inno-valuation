@@ -183,6 +183,7 @@ class ReadinessConsensusFactory(BaseFactory[ReadinessConsensus]):
     assessment = SubFactory(ReadinessAssessmentFactory)
     organisation_id = LazyAttribute(lambda o: o.assessment.organisation_id)
     answers = LazyFunction(dict)
+    participant_count = 1
 
 
 class ReadinessResultFactory(BaseFactory[ReadinessResult]):

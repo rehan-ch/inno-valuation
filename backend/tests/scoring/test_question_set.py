@@ -19,6 +19,7 @@ from app.scoring.question_set import (
     QUESTION_SET_PATH_ENV,
     default_question_set_path,
     load_question_set,
+    load_registry,
     question_set_for,
 )
 from tests.scoring.support import raw_question_set, write_variant
@@ -163,6 +164,46 @@ def test_question_set_for_known_version() -> None:
 def test_question_set_for_rejects_unknown_or_non_int(version: Any) -> None:
     with pytest.raises(ScoringError, match="question_set_version"):
         question_set_for(version)
+
+
+def test_registry_loads_older_versions_beside_the_main_file(tmp_path: Path) -> None:
+    """``dimensions.yml`` (version 2) with ``dimensions.v1.yml`` next to it: both are known,
+    the main file stays the latest, and the lookup tells them apart."""
+    latest = write_variant(
+        tmp_path, lambda d: d.update(question_set_version=2), name="dimensions.yml"
+    )
+    write_variant(tmp_path, lambda d: None, name="dimensions.v1.yml")
+    tmp_path.joinpath("dimensions.vx.yml").write_text("not a version\n", encoding="utf-8")
+
+    registry = load_registry(latest)
+
+    assert sorted(registry) == [1, 2]
+    assert registry[2].version == 2
+    assert registry[1].version == 1
+    assert registry[1].dimension_keys == registry[2].dimension_keys
+    with pytest.raises(TypeError):
+        registry[3] = registry[2]  # type: ignore[index]
+
+
+def test_registry_without_siblings_knows_the_main_file_only(tmp_path: Path) -> None:
+    only = write_variant(tmp_path, lambda d: d.update(question_set_version=4))
+    assert list(load_registry(only)) == [4]
+
+
+def test_registry_rejects_a_sibling_whose_name_and_version_disagree(tmp_path: Path) -> None:
+    latest = write_variant(
+        tmp_path, lambda d: d.update(question_set_version=3), name="dimensions.yml"
+    )
+    write_variant(tmp_path, lambda d: d.update(question_set_version=2), name="dimensions.v1.yml")
+    with pytest.raises(ScoringError, match="named v1 but declares version 2"):
+        load_registry(latest)
+
+
+def test_registry_keeps_the_main_file_as_the_latest(tmp_path: Path) -> None:
+    latest = write_variant(tmp_path, lambda d: None, name="dimensions.yml")
+    write_variant(tmp_path, lambda d: d.update(question_set_version=2), name="dimensions.v2.yml")
+    with pytest.raises(ScoringError, match="must be older than"):
+        load_registry(latest)
 
 
 def test_default_path_is_the_repo_file(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -19,6 +19,7 @@ from app.models import (
 )
 from app.models.enums import ReadinessStatus
 from tests.factories import (
+    OrganisationFactory,
     ReadinessAssessmentFactory,
     ReadinessConsensusFactory,
     ReadinessResponseFactory,
@@ -30,10 +31,29 @@ from tests.models.test_accounts import _insert, expect_violation
 
 def test_assessment_defaults(db: Session) -> None:
     assessment = ReadinessAssessmentFactory.create()
-    assert assessment.status is ReadinessStatus.DRAFT
+    assert assessment.status is ReadinessStatus.COLLECTING
     assert assessment.weights_snapshot is None
     assert assessment.started_at is None
     assert assessment.finalised_at is None
+
+
+def test_a_fresh_assessment_collects_answers_in_the_database_too(db: Session) -> None:
+    """The column default is ``collecting`` as well, so a row written without a status
+    (another tool, a raw insert) never lands in the dead ``draft`` state."""
+    organisation = OrganisationFactory.create()
+    db.flush()
+    _insert(db, "readiness_assessments", organisation_id=organisation.id, question_set_version=1)
+    status = db.scalar(
+        select(ReadinessAssessment.status).where(
+            ReadinessAssessment.organisation_id == organisation.id
+        )
+    )
+    assert status is ReadinessStatus.COLLECTING
+
+
+def test_consensus_participant_count_is_positive(db: Session) -> None:
+    with expect_violation(db, "ck_readiness_consensus_participant_count_positive"):
+        ReadinessConsensusFactory.create(participant_count=0)
 
 
 def test_valid_answers_are_accepted(db: Session) -> None:
@@ -74,6 +94,7 @@ def test_one_consensus_and_one_result_per_assessment(db: Session) -> None:
             "readiness_consensus",
             organisation_id=consensus.organisation_id,
             assessment_id=consensus.assessment_id,
+            participant_count=1,
         )
     result = ReadinessResultFactory.create(per_dimension={"cj": 10}, total=120)
     db.flush()
@@ -142,3 +163,4 @@ def test_a_deleted_participant_takes_their_answers_but_consensus_survives(db: Se
     assert survivor is not None
     assert survivor.id == consensus.id
     assert survivor.set_by_user_id is None
+    assert survivor.participant_count == 1  # still counts the person who answered

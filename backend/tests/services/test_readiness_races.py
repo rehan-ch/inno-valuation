@@ -14,12 +14,14 @@ import pytest
 from sqlalchemy import Engine, delete, select
 from sqlalchemy.orm import Session
 
+from app.core.errors import AppError
 from app.core.permissions import OrgContext, OrgRole
 from app.models import (
     AuditEvent,
     Membership,
     Organisation,
     ReadinessAssessment,
+    ReadinessConsensus,
     ReadinessResponse,
     User,
 )
@@ -149,3 +151,134 @@ def test_submit_waits_for_a_save_in_flight(db_engine: Engine, world: World) -> N
         assert response is not None
         assert response.submitted_at is not None
         assert len(response.answers) == len(IDS)
+
+
+def _hold_assessment_lock(session: Session, world: World, *, share: bool) -> ReadinessAssessment:
+    """Session A: a status change (``FOR UPDATE``) or a submit (``FOR SHARE``) in flight."""
+    assessment = session.scalar(
+        select(ReadinessAssessment)
+        .where(ReadinessAssessment.id == world.assessment_id)
+        .with_for_update(read=share)
+    )
+    assert assessment is not None
+    return assessment
+
+
+def _fill_answers(db_engine: Engine, world: World) -> None:
+    with Session(db_engine) as session:
+        response = session.scalar(
+            select(ReadinessResponse).where(ReadinessResponse.assessment_id == world.assessment_id)
+        )
+        assert response is not None
+        response.answers = dict.fromkeys(IDS, 3)
+        session.commit()
+
+
+def test_begin_consensus_waits_for_a_submit_in_flight(db_engine: Engine, world: World) -> None:
+    """A submit holds the share lock; agreeing waits for it and then counts that person."""
+    _fill_answers(db_engine, world)
+    errors: list[BaseException] = []
+
+    def begin() -> None:
+        try:
+            with Session(db_engine) as session_b:
+                readiness.begin_consensus(session_b, _ctx(session_b, world), world.assessment_id)
+        except BaseException as error:
+            errors.append(error)
+
+    with Session(db_engine) as session_a:
+        _hold_assessment_lock(session_a, world, share=True)
+        response = session_a.scalar(
+            select(ReadinessResponse).where(ReadinessResponse.assessment_id == world.assessment_id)
+        )
+        assert response is not None
+        response.submitted_at = datetime.now(UTC)
+        session_a.flush()
+        thread = threading.Thread(target=begin)
+        thread.start()
+        thread.join(timeout=1)
+        assert thread.is_alive(), "begin_consensus must wait for the submit's share lock"
+        session_a.commit()
+    thread.join(timeout=10)
+    assert not errors  # the submission was counted, not refused as "no_submissions"
+
+    with Session(db_engine) as session:
+        consensus = session.scalar(
+            select(ReadinessConsensus).where(
+                ReadinessConsensus.assessment_id == world.assessment_id
+            )
+        )
+        assert consensus is not None
+        assert consensus.participant_count == 1
+
+
+def test_a_submit_after_consensus_began_is_refused(db_engine: Engine, world: World) -> None:
+    """Agreeing holds the update lock; a submit waits and then sees answering is closed."""
+    _fill_answers(db_engine, world)
+    errors: list[BaseException] = []
+
+    def submit() -> None:
+        try:
+            with Session(db_engine) as session_b:
+                readiness.submit_answers(session_b, _ctx(session_b, world), world.assessment_id)
+        except BaseException as error:
+            errors.append(error)
+
+    with Session(db_engine) as session_a:
+        assessment = _hold_assessment_lock(session_a, world, share=False)
+        assessment.status = ReadinessStatus.CONSENSUS
+        session_a.flush()
+        thread = threading.Thread(target=submit)
+        thread.start()
+        thread.join(timeout=1)
+        assert thread.is_alive(), "submit must wait for the status change's lock"
+        session_a.commit()
+    thread.join(timeout=10)
+    assert len(errors) == 1
+    assert isinstance(errors[0], AppError)
+    assert errors[0].code == "wrong_status"
+
+    with Session(db_engine) as session:
+        response = session.scalar(
+            select(ReadinessResponse).where(ReadinessResponse.assessment_id == world.assessment_id)
+        )
+        assert response is not None
+        assert response.submitted_at is None
+
+
+def test_two_starts_at_once_open_exactly_one_assessment(db_engine: Engine, world: World) -> None:
+    """Both starts lock the organisation; the second one sees the first one's assessment."""
+    with Session(db_engine) as session:
+        assessment = session.get(ReadinessAssessment, world.assessment_id)
+        assert assessment is not None
+        assessment.status = ReadinessStatus.FINAL  # nothing open: both may try to start
+        session.commit()
+    ready = threading.Barrier(2)
+    outcomes: list[str] = []
+
+    def start() -> None:
+        with Session(db_engine) as session:
+            ctx = _ctx(session, world)
+            ready.wait(timeout=5)
+            try:
+                readiness.start_assessment(session, ctx)
+            except AppError as error:
+                outcomes.append(error.code)
+            else:
+                outcomes.append("started")
+
+    threads = [threading.Thread(target=start) for _ in range(2)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join(timeout=10)
+    assert sorted(outcomes) == ["assessment_open", "started"]
+
+    with Session(db_engine) as session:
+        open_ones = session.scalars(
+            select(ReadinessAssessment.id).where(
+                ReadinessAssessment.organisation_id == world.org_id,
+                ReadinessAssessment.status != ReadinessStatus.FINAL,
+            )
+        ).all()
+        assert len(open_ones) == 1
