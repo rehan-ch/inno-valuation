@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { Alert } from "@/components/ui/Alert";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Card, CardTitle, PageHeader } from "@/components/ui/Card";
+import { Card, CardDescription, CardTitle, PageHeader } from "@/components/ui/Card";
 import { Loading } from "@/components/ui/Loading";
 import { ApiError } from "@/lib/api/client";
 import {
@@ -21,6 +21,7 @@ import type { AssessmentOut, QuestionSetOut } from "@/lib/api/types";
 import { useSubmit } from "@/lib/forms";
 
 import { QuestionExplanation } from "./QuestionExplanation";
+import { Bar, ScaleChoice, StickyBar } from "./ScaleChoice";
 import { saveFailureMessage, STATUS_LABELS, STATUS_TONES } from "./status";
 
 type State =
@@ -128,18 +129,20 @@ export function QuestionnairePage({ assessmentId }: { assessmentId: string }) {
       <PageHeader
         title="Readiness questions"
         description="Answer each statement for your organisation as it is today: 1 means strongly disagree, 5 strongly agree."
+        actions={
+          <>
+            <Badge tone={STATUS_TONES[assessment.status]}>{STATUS_LABELS[assessment.status]}</Badge>
+            {assessment.status === "final" && (
+              <Link
+                href={`/readiness/${assessment.id}/result`}
+                className="text-sm font-medium text-primary hover:underline"
+              >
+                See the result
+              </Link>
+            )}
+          </>
+        }
       />
-      <div className="flex flex-wrap items-center gap-3">
-        <Badge tone={STATUS_TONES[assessment.status]}>{STATUS_LABELS[assessment.status]}</Badge>
-        {assessment.status === "final" && (
-          <Link
-            href={`/readiness/${assessment.id}/result`}
-            className="text-sm font-medium text-primary hover:underline"
-          >
-            See the result
-          </Link>
-        )}
-      </div>
 
       {assessment.my_submitted_at && (
         <Alert tone="success">
@@ -163,9 +166,9 @@ export function QuestionnairePage({ assessmentId }: { assessmentId: string }) {
       )}
 
       {assessment.my_answers !== null && (
-        <div className="sticky top-(--app-header-h) z-10 rounded-2xl border border-neutral-200 bg-white/90 p-4 shadow-sm backdrop-blur">
+        <StickyBar>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-            <span className="text-sm font-medium text-neutral-900">
+            <span className="text-sm font-medium text-neutral-900 tabular-nums">
               {answered} of {total} answered
             </span>
             <span
@@ -195,26 +198,18 @@ export function QuestionnairePage({ assessmentId }: { assessmentId: string }) {
               />
             )}
           </div>
-          <div
-            className="mt-3 h-1.5 overflow-hidden rounded-full bg-neutral-100"
-            aria-hidden="true"
-          >
-            <div
-              className="h-full rounded-full bg-accent transition-all"
-              style={{ width: `${(answered / total) * 100}%` }}
-            />
-          </div>
-          <nav aria-label="Dimensions" className="mt-3 flex flex-wrap gap-2">
+          <Bar value={answered} maximum={total} tone="accent" />
+          <nav aria-label="Dimensions" className="mt-3 flex flex-wrap gap-1.5">
             {questions.dimensions.map((d) => {
               const done = d.questions.filter((q) => q.id in answers).length;
               return (
                 <a
                   key={d.key}
                   href={`#${d.key}`}
-                  className={`rounded-full border px-2.5 py-0.5 text-xs ${
+                  className={`rounded-md border px-2 py-0.5 text-xs tabular-nums transition-colors ${
                     done === d.questions.length
-                      ? "border-accent/40 bg-accent/10 text-neutral-900"
-                      : "border-neutral-200 text-neutral-600 hover:border-neutral-300"
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                      : "border-neutral-200 bg-white text-neutral-600 hover:border-neutral-300 hover:text-neutral-900"
                   }`}
                 >
                   {d.name} {done}/{d.questions.length}
@@ -222,7 +217,7 @@ export function QuestionnairePage({ assessmentId }: { assessmentId: string }) {
               );
             })}
           </nav>
-        </div>
+        </StickyBar>
       )}
 
       {questions.dimensions.map((dimension) => (
@@ -230,15 +225,18 @@ export function QuestionnairePage({ assessmentId }: { assessmentId: string }) {
           key={dimension.key}
           id={dimension.key}
           aria-labelledby={`${dimension.key}-title`}
-          className="scroll-mt-48 rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm"
+          className="scroll-mt-52 rounded-lg border border-neutral-200 bg-white"
         >
-          <h2 id={`${dimension.key}-title`} className="text-base font-semibold text-neutral-900">
-            {dimension.order}. {dimension.name}
-          </h2>
-          <p className="mt-1 text-sm text-neutral-600">{dimension.description}</p>
-          <ol className="mt-4 space-y-5">
+          <div className="border-b border-neutral-200 px-5 py-4">
+            <h2 id={`${dimension.key}-title`} className="text-sm font-semibold text-neutral-900">
+              <span className="mr-2 text-neutral-400 tabular-nums">{dimension.order}.</span>
+              {dimension.name}
+            </h2>
+            <p className="mt-1 text-sm text-neutral-600">{dimension.description}</p>
+          </div>
+          <ol className="divide-y divide-neutral-100">
             {dimension.questions.map((question) => (
-              <li key={question.id}>
+              <li key={question.id} className="px-5 py-4">
                 <fieldset disabled={locked}>
                   <legend className="text-sm text-neutral-900">{question.text}</legend>
                   {failed.includes(question.id) && (
@@ -246,35 +244,20 @@ export function QuestionnairePage({ assessmentId }: { assessmentId: string }) {
                       Not saved. Choose your answer again.
                     </p>
                   )}
-                  <div className="mt-2 flex flex-wrap items-center gap-2">
-                    <span className="hidden text-xs text-neutral-500 sm:inline">
+                  <div className="mt-2.5 flex flex-wrap items-center gap-3">
+                    <span className="hidden w-28 text-right text-xs text-neutral-500 sm:inline">
                       {questions.scale.labels[String(questions.scale.min)]}
                     </span>
-                    {scale.map((value) => {
-                      const chosen = answers[question.id] === value;
-                      const label = questions.scale.labels[String(value)];
-                      return (
-                        <label
-                          key={value}
-                          className={`flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border text-sm font-medium transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-primary has-[:disabled]:cursor-not-allowed ${
-                            chosen
-                              ? "border-primary bg-primary text-white"
-                              : "border-neutral-300 bg-white text-neutral-700 hover:border-primary"
-                          }`}
-                        >
-                          <input
-                            type="radio"
-                            name={question.id}
-                            value={value}
-                            checked={chosen}
-                            onChange={() => choose(question.id, value)}
-                            aria-label={label ? `${value}, ${label}` : String(value)}
-                            className="sr-only"
-                          />
-                          {value}
-                        </label>
-                      );
-                    })}
+                    <ScaleChoice
+                      name={question.id}
+                      scale={scale}
+                      value={answers[question.id]}
+                      onChange={(value) => choose(question.id, value)}
+                      ariaLabel={(value) => {
+                        const label = questions.scale.labels[String(value)];
+                        return label ? `${value}, ${label}` : String(value);
+                      }}
+                    />
                     <span className="hidden text-xs text-neutral-500 sm:inline">
                       {questions.scale.labels[String(questions.scale.max)]}
                     </span>
@@ -358,21 +341,21 @@ function FacilitatorPanel({ assessment }: { assessment: AssessmentOut }) {
   return (
     <Card>
       <CardTitle>Team progress</CardTitle>
-      <p className="mt-1 text-sm text-neutral-600">
+      <CardDescription>
         When enough people have submitted, start agreeing the answers. Answering closes for
         everyone, and anyone who has not submitted is left out.
-      </p>
+      </CardDescription>
       {participants.length === 0 ? (
         <p className="mt-3 text-sm text-neutral-600">Nobody has started answering yet.</p>
       ) : (
-        <ul className="mt-3 divide-y divide-neutral-200">
+        <ul className="mt-3 divide-y divide-neutral-100">
           {participants.map((p) => (
             <li key={p.user_id} className="flex items-center justify-between gap-3 py-2 text-sm">
               <span className="text-neutral-900">{p.name}</span>
               {p.submitted_at ? (
                 <Badge tone="green">Submitted</Badge>
               ) : (
-                <span className="text-neutral-500">
+                <span className="text-neutral-500 tabular-nums">
                   {p.answered} of {assessment.question_count} answered
                 </span>
               )}

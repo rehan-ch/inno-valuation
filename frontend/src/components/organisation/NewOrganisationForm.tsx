@@ -51,7 +51,7 @@ export function NewOrganisationForm() {
   }
 
   return (
-    <div className="mx-auto max-w-xl space-y-6">
+    <div className="max-w-2xl space-y-6">
       <PageHeader
         title="Create an organisation"
         description="You become its owner and can invite your team."
@@ -111,9 +111,11 @@ export function NewOrganisationForm() {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />
-          <Button type="submit" busy={busy}>
-            Create organisation
-          </Button>
+          <div className="flex justify-end border-t border-neutral-200 pt-4">
+            <Button type="submit" busy={busy}>
+              Create organisation
+            </Button>
+          </div>
         </form>
       </Card>
     </div>

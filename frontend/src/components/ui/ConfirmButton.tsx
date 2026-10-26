@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { Button } from "./Button";
+import type { ButtonSize } from "./Button";
 
 /** A destructive action that asks once, inline, before it runs. The question closes
  * again once the action has finished, whether it worked or not. */
@@ -12,6 +13,7 @@ export function ConfirmButton({
   onConfirm,
   busy = false,
   disabled = false,
+  size = "md",
 }: {
   label: string;
   confirmLabel: string;
@@ -20,6 +22,7 @@ export function ConfirmButton({
   busy?: boolean;
   /** Another action is running, so this one must wait. */
   disabled?: boolean;
+  size?: ButtonSize;
 }) {
   const [confirming, setConfirming] = useState(false);
   const [wasBusy, setWasBusy] = useState(busy);
@@ -30,17 +33,22 @@ export function ConfirmButton({
 
   if (!confirming) {
     return (
-      <Button variant="danger" disabled={disabled} onClick={() => setConfirming(true)}>
+      <Button variant="danger" size={size} disabled={disabled} onClick={() => setConfirming(true)}>
         {label}
       </Button>
     );
   }
   return (
     <span className="inline-flex items-center gap-2">
-      <Button variant="danger" busy={busy} disabled={disabled} onClick={onConfirm}>
+      <Button variant="danger" size={size} busy={busy} disabled={disabled} onClick={onConfirm}>
         {confirmLabel}
       </Button>
-      <Button variant="secondary" disabled={busy || disabled} onClick={() => setConfirming(false)}>
+      <Button
+        variant="secondary"
+        size={size}
+        disabled={busy || disabled}
+        onClick={() => setConfirming(false)}
+      >
         Cancel
       </Button>
     </span>

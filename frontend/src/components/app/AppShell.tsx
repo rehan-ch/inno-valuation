@@ -9,7 +9,7 @@ import type { ReactNode } from "react";
 import { MeProvider } from "@/components/app/me-context";
 import { OrgSwitcher } from "@/components/app/OrgSwitcher";
 import { Alert } from "@/components/ui/Alert";
-import { Button } from "@/components/ui/Button";
+import { Button, buttonClass } from "@/components/ui/Button";
 import { Loading } from "@/components/ui/Loading";
 import { signOut } from "@/lib/api/auth";
 import { ApiError, setUnauthorizedHandler } from "@/lib/api/client";
@@ -23,7 +23,7 @@ type State =
   | { kind: "ready"; me: MeOut }
   | { kind: "error"; message: string };
 
-/** A main-navigation link that marks the page it is on for styling and screen readers. */
+/** A main-navigation tab that marks the page it is on for styling and screen readers. */
 function NavLink({ href, children }: { href: string; children: ReactNode }) {
   const pathname = usePathname();
   const current = pathname === href || pathname.startsWith(`${href}/`);
@@ -31,9 +31,11 @@ function NavLink({ href, children }: { href: string; children: ReactNode }) {
     <Link
       href={href}
       aria-current={current ? "page" : undefined}
-      className={
-        current ? "font-medium text-neutral-900" : "hover:text-neutral-900 hover:underline"
-      }
+      className={`-mb-px inline-flex h-10 shrink-0 items-center border-b-2 px-1 text-sm whitespace-nowrap transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
+        current
+          ? "border-primary font-medium text-neutral-900"
+          : "border-transparent text-neutral-600 hover:border-neutral-300 hover:text-neutral-900"
+      }`}
     >
       {children}
     </Link>
@@ -106,7 +108,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   if (state.kind === "loading") {
     return (
-      <main id="main" className="mx-auto w-full max-w-5xl flex-1 px-4 py-10">
+      <main id="main" className="mx-auto w-full max-w-6xl flex-1 px-4 py-10">
         <Loading>Loading your account...</Loading>
       </main>
     );
@@ -114,7 +116,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   if (state.kind === "error") {
     return (
-      <main id="main" className="mx-auto w-full max-w-5xl flex-1 px-4 py-10">
+      <main id="main" className="mx-auto w-full max-w-6xl flex-1 px-4 py-10">
         <Alert tone="error">{state.message}</Alert>
       </main>
     );
@@ -131,49 +133,58 @@ export function AppShell({ children }: { children: ReactNode }) {
         refresh: load,
       }}
     >
-      <header
-        ref={header}
-        className="sticky top-0 z-30 border-b border-neutral-200/70 bg-white/80 backdrop-blur-xl"
-      >
-        <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center gap-x-6 gap-y-3 px-4 py-3">
-          <Link href="/dashboard" className="flex items-center gap-2">
-            <Image src="/innovaluation-mark.png" alt="" width={28} height={27} />
-            <span className="bg-linear-to-r from-primary to-accent bg-clip-text font-serif text-lg font-semibold tracking-tight text-transparent">
+      <header ref={header} className="sticky top-0 z-30 border-b border-neutral-200 bg-white">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 pt-3">
+          <Link
+            href="/dashboard"
+            className="flex shrink-0 items-center gap-2 rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          >
+            <Image src="/innovaluation-mark.png" alt="" width={24} height={23} />
+            <span className="text-[15px] font-semibold tracking-tight text-neutral-900">
               InnoValuation
             </span>
           </Link>
-          <nav aria-label="Main" className="flex items-center gap-4 text-sm text-neutral-700">
-            <NavLink href="/dashboard">Dashboard</NavLink>
-            {(membership || me.consultant_organisations.length > 0) && (
-              <NavLink href="/readiness">Readiness</NavLink>
-            )}
-            {membership && <NavLink href="/team">Team</NavLink>}
-            {membership && canManage(membership.role) && (
-              <>
-                <NavLink href="/organisation">Organisation</NavLink>
-                <NavLink href="/consultants">Consultants</NavLink>
-              </>
-            )}
-            {me.consultant_organisations.length > 0 && (
-              <NavLink href="/consultant-access">My access</NavLink>
-            )}
-            <NavLink href="/account">Account</NavLink>
-          </nav>
-          <div className="ml-auto flex items-center gap-3">
+          <div className="flex min-w-0 items-center gap-2">
             <OrgSwitcher />
             <Link
               href="/organisations/new"
-              className="text-sm text-neutral-700 hover:text-neutral-900 hover:underline"
+              className={buttonClass("ghost", "sm", "hidden sm:inline-flex")}
             >
               New organisation
             </Link>
-            <Button variant="secondary" onClick={() => void handleSignOut()}>
+            <Button variant="secondary" size="sm" onClick={() => void handleSignOut()}>
               Sign out
             </Button>
           </div>
         </div>
+        <nav
+          aria-label="Main"
+          className="mx-auto flex w-full max-w-6xl flex-wrap gap-x-5 px-4 pt-1"
+        >
+          <NavLink href="/dashboard">Dashboard</NavLink>
+          {(membership || me.consultant_organisations.length > 0) && (
+            <NavLink href="/readiness">Readiness</NavLink>
+          )}
+          {membership && <NavLink href="/team">Team</NavLink>}
+          {membership && canManage(membership.role) && (
+            <>
+              <NavLink href="/organisation">Organisation</NavLink>
+              <NavLink href="/consultants">Consultants</NavLink>
+            </>
+          )}
+          {me.consultant_organisations.length > 0 && (
+            <NavLink href="/consultant-access">My access</NavLink>
+          )}
+          <NavLink href="/account">Account</NavLink>
+          <Link
+            href="/organisations/new"
+            className="-mb-px inline-flex h-10 shrink-0 items-center border-b-2 border-transparent px-1 text-sm whitespace-nowrap text-neutral-600 hover:text-neutral-900 sm:hidden"
+          >
+            New organisation
+          </Link>
+        </nav>
       </header>
-      <main id="main" className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
+      <main id="main" className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
         {children}
       </main>
     </MeProvider>

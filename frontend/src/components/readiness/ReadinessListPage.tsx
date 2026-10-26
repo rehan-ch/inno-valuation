@@ -8,7 +8,7 @@ import { useMe } from "@/components/app/me-context";
 import { Alert } from "@/components/ui/Alert";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Card, CardTitle, PageHeader } from "@/components/ui/Card";
+import { Card, CardDescription, CardTitle, PageHeader } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Loading } from "@/components/ui/Loading";
 import { ApiError } from "@/lib/api/client";
@@ -96,10 +96,10 @@ export function ReadinessListPage() {
       {manage && !open && (
         <Card>
           <CardTitle>Start an assessment</CardTitle>
-          <p className="mt-1 text-sm text-neutral-600">
+          <CardDescription>
             Everyone on the team answers on their own. When enough answers are in, you agree the
             team&apos;s answer to each question and finalise the result.
-          </p>
+          </CardDescription>
           <div className="mt-4">
             <Button busy={busy} onClick={() => void handleStart()}>
               Start a readiness assessment
@@ -118,15 +118,18 @@ export function ReadinessListPage() {
             </EmptyState>
           </div>
         ) : (
-          <ul className="mt-2 divide-y divide-neutral-200">
+          <ul className="mt-3 divide-y divide-neutral-100">
             {assessments.map((a) => (
-              <li key={a.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3 text-sm">
-                <span className="min-w-0">
+              <li
+                key={a.id}
+                className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3 text-sm first:pt-0 last:pb-0"
+              >
+                <span className="min-w-0 flex-1">
                   <span className="block font-medium text-neutral-900">
                     Started {formatDate(a.started_at ?? a.created_at)}
                     {a.created_by_name ? ` by ${a.created_by_name}` : ""}
                   </span>
-                  <span className="block text-neutral-600">
+                  <span className="block text-neutral-600 tabular-nums">
                     {a.status === "final" && a.total !== null
                       ? `${a.total} out of 300 · ${a.band_name ?? ""}`
                       : a.my_status
@@ -137,7 +140,7 @@ export function ReadinessListPage() {
                 <Badge tone={STATUS_TONES[a.status]}>{STATUS_LABELS[a.status]}</Badge>
                 <Link
                   href={assessmentHref(a, manage)}
-                  className="ml-auto text-sm font-medium text-primary hover:underline"
+                  className="font-medium text-primary hover:underline"
                 >
                   {a.status === "final"
                     ? "See the result"

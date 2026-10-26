@@ -3,13 +3,21 @@
 import { useId } from "react";
 import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes } from "react";
 
-const INPUT =
-  "block w-full rounded-lg border bg-white px-3 py-2 text-sm text-neutral-900 " +
-  "focus:outline-2 focus:-outline-offset-1 disabled:bg-neutral-100 disabled:text-neutral-500";
+type Size = "sm" | "md";
 
-function inputClass(error: boolean): string {
-  return `${INPUT} ${
-    error ? "border-red-400 focus:outline-red-700" : "border-neutral-300 focus:outline-accent"
+const INPUT =
+  "block w-full rounded-md border bg-white text-neutral-900 shadow-xs " +
+  "placeholder:text-neutral-400 focus:outline-2 focus:-outline-offset-1 " +
+  "disabled:bg-neutral-50 disabled:text-neutral-500 disabled:shadow-none";
+
+const SIZES: Record<Size, string> = {
+  sm: "h-8 px-2.5 text-[13px]",
+  md: "h-9 px-3 text-sm",
+};
+
+function inputClass(error: boolean, size: Size): string {
+  return `${INPUT} ${SIZES[size]} ${
+    error ? "border-red-400 focus:outline-red-700" : "border-neutral-300 focus:outline-primary"
   }`;
 }
 
@@ -19,6 +27,8 @@ interface FieldChrome {
   labelHidden?: boolean;
   hint?: string;
   error?: string;
+  /** Compact controls for table rows and toolbars. */
+  compact?: boolean;
 }
 
 function Chrome({
@@ -28,23 +38,23 @@ function Chrome({
   hint,
   error,
   children,
-}: FieldChrome & { id: string; children: ReactNode }) {
+}: Omit<FieldChrome, "compact"> & { id: string; children: ReactNode }) {
   return (
     <div>
       <label
         htmlFor={id}
-        className={labelHidden ? "sr-only" : "block text-sm font-medium text-neutral-900"}
+        className={labelHidden ? "sr-only" : "block text-[13px] font-medium text-neutral-800"}
       >
         {label}
       </label>
-      <div className="mt-1">{children}</div>
+      <div className={labelHidden ? undefined : "mt-1.5"}>{children}</div>
       {hint && !error && (
-        <p id={`${id}-hint`} className="mt-1 text-xs text-neutral-500">
+        <p id={`${id}-hint`} className="mt-1.5 text-xs text-neutral-500">
           {hint}
         </p>
       )}
       {error && (
-        <p id={`${id}-error`} className="mt-1 text-xs text-red-700">
+        <p id={`${id}-error`} className="mt-1.5 text-xs text-red-700">
           {error}
         </p>
       )}
@@ -63,6 +73,7 @@ export function TextField({
   labelHidden,
   hint,
   error,
+  compact = false,
   id,
   ...rest
 }: FieldChrome & InputHTMLAttributes<HTMLInputElement>) {
@@ -74,7 +85,7 @@ export function TextField({
         id={fieldId}
         aria-invalid={error ? true : undefined}
         aria-describedby={describedBy(fieldId, hint, error)}
-        className={inputClass(Boolean(error))}
+        className={inputClass(Boolean(error), compact ? "sm" : "md")}
         {...rest}
       />
     </Chrome>
@@ -86,6 +97,7 @@ export function SelectField({
   labelHidden,
   hint,
   error,
+  compact = false,
   id,
   children,
   ...rest
@@ -98,7 +110,7 @@ export function SelectField({
         id={fieldId}
         aria-invalid={error ? true : undefined}
         aria-describedby={describedBy(fieldId, hint, error)}
-        className={`${inputClass(Boolean(error))} bg-white`}
+        className={`${inputClass(Boolean(error), compact ? "sm" : "md")} pr-8`}
         {...rest}
       >
         {children}
@@ -115,11 +127,11 @@ export function CheckboxField({
   const generated = useId();
   const fieldId = id ?? generated;
   return (
-    <div className="flex items-start gap-2">
+    <div className="flex items-start gap-2.5">
       <input
         id={fieldId}
         type="checkbox"
-        className="mt-0.5 h-4 w-4 rounded border-neutral-300 accent-neutral-900"
+        className="mt-0.5 h-4 w-4 rounded border-neutral-300 accent-primary"
         {...rest}
       />
       <label htmlFor={fieldId} className="text-sm text-neutral-700">

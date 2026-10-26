@@ -1,59 +1,67 @@
 @import "tailwindcss";
 
-/* Design tokens. PROVISIONAL Q17: the ice-blue and emerald palette proposed from
-   the compass mark (and the prototype's final stylesheet), pending Amy's approval.
-   Red, green and amber stay reserved for error, success and warning states.
+/* Design tokens. PROVISIONAL Q17: the brand hues come from the compass mark (blue and
+   emerald), pending Amy's approval. The rest of the system is deliberately plain: white
+   surfaces, 1px borders, one accent colour for actions, and no decoration that carries
+   no meaning. Red, green and amber stay reserved for error, success and warning states.
 
-   The neutral scale is cooled towards the brand navy, so every text and border
-   utility picks up the palette without per-component changes.
-
-   Type scale: text-2xl page title, text-base card and dialog title (headings use
-   the serif display face), text-sm body and controls, text-xs hints and badges.
-   Spacing: pages are max-w-5xl (max-w-md on auth pages) with a px-4 gutter;
-   page sections stack with space-y-6; inside a card, mt-1 under the title and
-   mt-3 or mt-4 between blocks. */
+   Type: one sans face for everything, headings included. Page title text-xl semibold,
+   card and dialog title text-sm semibold, body and controls text-sm, hints text-xs.
+   Numbers are tabular wherever they line up.
+   Spacing: pages are max-w-6xl (max-w-sm on auth pages) with a px-4 gutter; page sections
+   stack with space-y-6; inside a card, mt-1 under the title and mt-4 between blocks.
+   Radius: rounded-md (6px) for controls and badges, rounded-lg (8px) for cards and dialogs.
+   Shadows only on things that float: dialogs, drawers and menus. */
 
 :root {
-  --background: hsl(196 60% 97%);
-  --foreground: hsl(212 45% 12%);
+  --background: hsl(210 20% 98%);
+  --foreground: hsl(215 25% 13%);
   /* The signed-in header's height; AppShell keeps it current as the header wraps. */
-  --app-header-h: 4rem;
+  --app-header-h: 6rem;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
-  --font-serif: var(--font-display), Georgia, serif;
 
   /* Brand */
-  --color-primary: hsl(207 85% 44%);
-  --color-primary-strong: hsl(207 85% 36%);
-  --color-accent: hsl(159 80% 38%);
+  --color-primary: hsl(207 78% 40%);
+  --color-primary-strong: hsl(207 78% 32%);
+  --color-primary-soft: hsl(207 70% 95%);
+  --color-accent: hsl(159 65% 32%);
+  --color-accent-soft: hsl(159 55% 94%);
 
-  /* Ink: Tailwind's neutral scale, tinted to the compass navy */
-  --color-neutral-50: hsl(196 50% 96%);
-  --color-neutral-100: hsl(196 45% 93%);
-  --color-neutral-200: hsl(200 42% 88%);
-  --color-neutral-300: hsl(202 32% 80%);
-  --color-neutral-400: hsl(206 20% 60%);
-  --color-neutral-500: hsl(208 16% 48%);
-  --color-neutral-600: hsl(209 20% 38%);
-  --color-neutral-700: hsl(210 26% 28%);
-  --color-neutral-800: hsl(211 35% 19%);
-  --color-neutral-900: hsl(212 45% 12%);
-  --color-neutral-950: hsl(213 50% 8%);
+  /* Ink: a cool grey scale with just enough of the brand navy to sit with the mark */
+  --color-neutral-50: hsl(210 20% 98%);
+  --color-neutral-100: hsl(210 18% 95%);
+  --color-neutral-200: hsl(212 16% 89%);
+  --color-neutral-300: hsl(212 14% 80%);
+  --color-neutral-400: hsl(213 10% 60%);
+  --color-neutral-500: hsl(214 10% 46%);
+  --color-neutral-600: hsl(215 14% 36%);
+  --color-neutral-700: hsl(215 18% 27%);
+  --color-neutral-800: hsl(215 22% 18%);
+  --color-neutral-900: hsl(215 25% 13%);
+  --color-neutral-950: hsl(216 30% 8%);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+  font-size: 0.875rem;
+  line-height: 1.5;
 }
 
-/* The display face for headings, as in the approved mark's styling. */
 h1,
 h2,
 h3 {
-  font-family: var(--font-serif);
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+/* Native date inputs render their own icon; keep it the ink colour, not the accent. */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  opacity: 0.6;
 }

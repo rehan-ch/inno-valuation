@@ -20,6 +20,7 @@ import {
 import type { ConsensusOut, QuestionConsensusOut, QuestionSetOut } from "@/lib/api/types";
 import { useSubmit } from "@/lib/forms";
 
+import { Bar, ScaleChoice, StickyBar } from "./ScaleChoice";
 import { saveFailureMessage } from "./status";
 
 type State =
@@ -150,9 +151,9 @@ export function ConsensusPage({ assessmentId }: { assessmentId: string }) {
         Questions where answers are far apart are marked for discussion.
       </Alert>
 
-      <div className="sticky top-(--app-header-h) z-10 rounded-2xl border border-neutral-200 bg-white/90 p-4 shadow-sm backdrop-blur">
+      <StickyBar>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-          <span className="text-sm font-medium text-neutral-900">
+          <span className="text-sm font-medium text-neutral-900 tabular-nums">
             {agreedCount} of {consensus.question_count} agreed
           </span>
           <span
@@ -175,24 +176,22 @@ export function ConsensusPage({ assessmentId }: { assessmentId: string }) {
             onFinalised={() => router.push(`/readiness/${assessmentId}/result`)}
           />
         </div>
-        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-neutral-100" aria-hidden="true">
-          <div
-            className="h-full rounded-full bg-accent transition-all"
-            style={{ width: `${(agreedCount / consensus.question_count) * 100}%` }}
-          />
-        </div>
-      </div>
+        <Bar value={agreedCount} maximum={consensus.question_count} tone="accent" />
+      </StickyBar>
 
       {questions.dimensions.map((dimension) => (
         <section
           key={dimension.key}
           aria-labelledby={`${dimension.key}-title`}
-          className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm"
+          className="rounded-lg border border-neutral-200 bg-white"
         >
-          <h2 id={`${dimension.key}-title`} className="text-base font-semibold text-neutral-900">
-            {dimension.order}. {dimension.name}
-          </h2>
-          <ol className="mt-4 space-y-6">
+          <div className="border-b border-neutral-200 px-5 py-4">
+            <h2 id={`${dimension.key}-title`} className="text-sm font-semibold text-neutral-900">
+              <span className="mr-2 text-neutral-400 tabular-nums">{dimension.order}.</span>
+              {dimension.name}
+            </h2>
+          </div>
+          <ol className="divide-y divide-neutral-100">
             {dimension.questions.map((question) => {
               const row = byQuestion.get(question.id);
               if (!row) return null;
@@ -214,7 +213,7 @@ export function ConsensusPage({ assessmentId }: { assessmentId: string }) {
         </section>
       ))}
       <p className="text-sm">
-        <Link href="/readiness" className="underline">
+        <Link href="/readiness" className="font-medium text-primary hover:underline">
           Back to assessments
         </Link>
       </p>
@@ -244,7 +243,7 @@ function ConsensusRow({
   const [note, setNote] = useState(row.note ?? "");
 
   return (
-    <li className={row.wide_spread ? "rounded-xl border-l-4 border-amber-400 pl-4" : undefined}>
+    <li className={`px-5 py-4 ${row.wide_spread ? "border-l-2 border-l-amber-400 bg-amber-50/30" : ""}`}>
       <fieldset>
         <legend className="text-sm text-neutral-900">{text}</legend>
         {failed && (
@@ -253,51 +252,34 @@ function ConsensusRow({
           </p>
         )}
         <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-neutral-600">
-          <span>
+          <span className="tabular-nums">
             {row.answers.map((a) => (
               <span key={a.user_id} className="mr-3 whitespace-nowrap">
-                {a.name}: <strong className="text-neutral-900">{a.answer}</strong>
+                {a.name}: <strong className="font-semibold text-neutral-900">{a.answer}</strong>
               </span>
             ))}
           </span>
           {row.mean !== null && (
-            <span>
-              Average <strong className="text-neutral-900">{row.mean}</strong>
+            <span className="tabular-nums">
+              Average <strong className="font-semibold text-neutral-900">{row.mean}</strong>
             </span>
           )}
           {row.spread !== null && (
-            <span>
-              Spread <strong className="text-neutral-900">{row.spread}</strong>
+            <span className="tabular-nums">
+              Spread <strong className="font-semibold text-neutral-900">{row.spread}</strong>
             </span>
           )}
           {row.wide_spread && <Badge tone="amber">Discuss: answers differ</Badge>}
         </div>
-        <div className="mt-3 flex flex-wrap items-center gap-2">
+        <div className="mt-3 flex flex-wrap items-center gap-3">
           <span className="text-xs font-medium text-neutral-700">Agreed answer</span>
-          {scale.map((value) => {
-            const chosen = row.agreed === value;
-            return (
-              <label
-                key={value}
-                className={`flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border text-sm font-medium transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-primary ${
-                  chosen
-                    ? "border-primary bg-primary text-white"
-                    : "border-neutral-300 bg-white text-neutral-700 hover:border-primary"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name={`agreed-${row.question_id}`}
-                  value={value}
-                  checked={chosen}
-                  onChange={() => onAgree(value)}
-                  aria-label={`Agreed answer ${value}`}
-                  className="sr-only"
-                />
-                {value}
-              </label>
-            );
-          })}
+          <ScaleChoice
+            name={`agreed-${row.question_id}`}
+            scale={scale}
+            value={row.agreed}
+            onChange={onAgree}
+            ariaLabel={(value) => `Agreed answer ${value}`}
+          />
         </div>
       </fieldset>
       <label className="mt-3 block">
@@ -311,7 +293,7 @@ function ConsensusRow({
           onBlur={() => {
             if (note.trim() !== (row.note ?? "")) onNote(note.trim());
           }}
-          className="block w-full rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-xs text-neutral-900 placeholder:text-neutral-400 focus:outline-2 focus:-outline-offset-1 focus:outline-accent"
+          className="block h-8 w-full max-w-xl rounded-md border border-neutral-300 bg-white px-2.5 text-[13px] text-neutral-900 shadow-xs placeholder:text-neutral-400 focus:outline-2 focus:-outline-offset-1 focus:outline-primary"
         />
       </label>
     </li>

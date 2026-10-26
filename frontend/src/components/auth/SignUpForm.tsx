@@ -44,11 +44,11 @@ export function SignUpForm() {
   if (sentMessage) {
     return (
       <div className="space-y-4">
-        <h1 className="text-xl font-semibold text-neutral-900">Check your inbox</h1>
+        <h1 className="text-lg font-semibold text-neutral-900">Check your inbox</h1>
         <Alert tone="success">{sentMessage}</Alert>
         <p className="text-sm text-neutral-600">
           Open the link in the email to confirm your address, then{" "}
-          <Link href="/sign-in" className="underline">
+          <Link href="/sign-in" className="font-medium text-primary hover:underline">
             sign in
           </Link>
           .
@@ -59,7 +59,7 @@ export function SignUpForm() {
 
   return (
     <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4" noValidate>
-      <h1 className="text-xl font-semibold text-neutral-900">Create an account</h1>
+      <h1 className="text-lg font-semibold text-neutral-900">Create an account</h1>
       {error && <Alert tone="error">{error.message}</Alert>}
       <TextField
         label="Name"
@@ -116,7 +116,7 @@ export function SignUpForm() {
       </Button>
       <p className="text-sm">
         Already have an account?{" "}
-        <Link href="/sign-in" className="underline">
+        <Link href="/sign-in" className="font-medium text-primary hover:underline">
           Sign in
         </Link>
       </p>

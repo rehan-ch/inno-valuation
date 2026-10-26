@@ -1,17 +1,27 @@
 # Progress
 
 ## Phase and branch
-- Phases 0 to 3 are merged to `main` (Phase 2 through PRs 1 and 2, the readiness flow through PR 3, the AI foundation through PR 4, the repository cleanup through PR 5).
+- Phases 0 to 3 are merged to `main` (Phase 2 through PRs 1 and 2, the readiness flow through PR 3, the AI foundation through PR 4, the repository cleanup through PR 5, the whole-codebase review fixes through PR 6).
 - Work happens on short-lived branches merged through pull requests; the pre-push hook refuses a direct push to `main`. The code is mirrored into Haroon's repository, which starts from one fresh commit; this repository keeps the full history. Personal files (`.claude/`, `CLAUDE.md`, agent notes) are excluded per clone by `bin/setup`; working material (`planning/`, `ask-amy/`, `reference/`, `files3/`, client documents) is in `.gitignore`.
 
 ## In progress
-Whole-codebase review fixes (branch `review-fixes`)
+Design refresh (branch `design-refresh`)
+- Done: every screen and shared component moved to a plain, professional system (one sans face, bordered white panels, one action colour, tab navigation, segmented answer control). Nothing about numbers, wording or behaviour changed; 131 frontend tests, lint, typecheck and the production build pass. Details in `docs/decisions.md` (2026-10-27).
+- Next: merge, then mirror `main` to Haroon's repository (see below).
+
+Phase 3 close-out (P3.08)
+- Done: code review passed and merged (PR 6). The Trello card's review and merge items are ticked; "Checked against Amy's scoring rules" and "First real demo for Amy" are still open.
+- Next: Amy's first demo (a company answers the questions and sees its result). Until the AI key arrives, explanations show marked sample text. Then Phase 4 starts with P4.01 (ideas and IQ tables).
+- Haroon's mirror holds one commit cut from the PR 5 merge (25 October) without the internal docs (`PROGRESS.md`, `decisions.md`, `data-model.md`, the book PDF, `ai-touchpoints.md`, `open-questions.md`, `prototype-review.md`). Still to do by a human: push a fresh mirror commit from `main` once the design refresh is merged (the pre-push hook refuses pushes to any `main`, so the mirror is built on a local `mirror` branch and pushed by hand), and delete the merged `review-fixes` branch on the remote.
+- Deploying `main` signs everyone out once (older session tokens carry no session id).
+
+Whole-codebase review fixes (merged, PR 6)
 - Done: every finding from the review of Phases 0 to 3 is fixed with a test. Highest first: the secret scan in `bin/check` could miss a key near the top of a large diff (now collected first and covered by `bin/check selftest`, which CI also runs); the sign-in `?next=` guard let control characters through to an off-site redirect; the organisation settings form kept the previous organisation's values after a switch; a readiness assessment could never be finalised once every submitter was deleted. Then the mediums: sign-out revokes the session on the server (`0008_revoked_sessions`), a new reset link no longer voids the old one and sign-in, forgot and resend are limited per client address, the forgot-password email is sent as its own retried task, the AI stale window follows the config and run states are compare-and-set, the end-date error shows inside its modal, and a 401 anywhere sends the person back to sign in. Details per decision in `docs/decisions.md` (2026-10-26).
-- Deploying this signs everyone out once (older session tokens carry no session id).
-- Next: review, merge, then Amy's first demo (P3.08). Until the AI key arrives, explanations show marked sample text.
 
 Phase 3 AI (merged)
-- Done (P3.05, AI foundation)Phase 3 readiness flow (merged)
+- Done: the AI foundation (P3.05) and "What does this mean?" on readiness questions (P3.06). Details per decision in `docs/decisions.md` (2026-10-24).
+
+Phase 3 readiness flow (merged)
 - Done: readiness tables and reversible migration `0006_readiness` (P3.01): assessments, per-person responses, consensus with per-question notes, results; answers checked 1 to 5 in the database (strict jsonpath); assessment permissions added to the matrix (`assessments.view` for every role including consultants, `assessments.answer` for owner/admin/member/committee, `assessments.manage` for owner/admin).
 - Done: the readiness flow, backend and screens (P3.02 to P3.04). API `/api/v1/readiness`: the question set verbatim from the book; start an assessment (one open per organisation); each person saves their own answers as they go and submits all 60; the facilitator starts consensus, sees every submitted answer with the mean (2 decimals) and spread, sets agreed answers and notes, and finalises; the engine scores the agreed answers only and the result is written once. Screens: `/readiness` (list and start), `/readiness/[id]` (questionnaire with autosave, per-dimension progress, submit; the facilitator's team progress and start consensus), `/readiness/[id]/consensus`, `/readiness/[id]/result` (total out of 300 with the band in the book's words, categories with maximums, the 12 dimensions, priorities with the book's next steps, strengths). The dashboard's readiness card and checklist use the real status.
 - Done (P3.07): request tests for the golden flow (three people, agreed total 190, Building Blocks), immutability, missing participants, rounding, permissions and cross-organisation isolation; exercised end to end against the running stack.
@@ -49,7 +59,7 @@ Phase 1
 ## PROVISIONAL markers in code
 - Q8: `backend/app/scoring/targets.py` (per dimension, both scales).
 - Q10: `backend/app/ai/touchpoints/explain_question.py` `COMPANY_FIELDS` (only industry, size and country go to the AI provider).
-- Q17: `frontend/src/app/globals.css` (ice-blue and emerald palette from the compass mark, pending Amy's approval).
+- Q17: `frontend/src/app/globals.css` (the compass blue and emerald as the brand hues, pending Amy's approval; the rest of the design system is settled, see decisions 2026-10-27).
 - Q11: `backend/config/ai.yml` (consultation nudge off until touchpoint 8 is built; Q11 itself is decided).
 - Q18: `backend/app/scoring/_rounding.py` (half up), `vfm.py` (uses the rounded IQ), `categories.py` (category IQ 1 decimal).
 - Q19: `backend/app/scoring/priorities.py` (ties in book order).

@@ -29,7 +29,7 @@ export function ForgotPasswordForm() {
 
   return (
     <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4" noValidate>
-      <h1 className="text-xl font-semibold text-neutral-900">Forgot your password?</h1>
+      <h1 className="text-lg font-semibold text-neutral-900">Forgot your password?</h1>
       <p className="text-sm text-neutral-600">
         Enter your email address and we will send you a link to choose a new password.
       </p>
@@ -52,7 +52,7 @@ export function ForgotPasswordForm() {
         Send reset link
       </Button>
       <p className="text-sm">
-        <Link href="/sign-in" className="underline">
+        <Link href="/sign-in" className="font-medium text-primary hover:underline">
           Back to sign in
         </Link>
       </p>

@@ -50,7 +50,7 @@ export function SignInForm() {
 
   return (
     <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4" noValidate>
-      <h1 className="text-xl font-semibold text-neutral-900">Sign in</h1>
+      <h1 className="text-lg font-semibold text-neutral-900">Sign in</h1>
       {error && (
         <Alert tone="error">
           {error.message}
@@ -93,11 +93,11 @@ export function SignInForm() {
       <Button type="submit" busy={busy} className="w-full">
         Sign in
       </Button>
-      <div className="flex justify-between text-sm">
-        <Link href="/forgot-password" className="underline">
+      <div className="flex justify-between gap-4 text-sm">
+        <Link href="/forgot-password" className="font-medium text-primary hover:underline">
           Forgot your password?
         </Link>
-        <Link href="/sign-up" className="underline">
+        <Link href="/sign-up" className="font-medium text-primary hover:underline">
           Create an account
         </Link>
       </div>

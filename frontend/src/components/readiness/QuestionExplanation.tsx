@@ -89,14 +89,14 @@ export function QuestionExplanation({
         onClick={toggle}
         aria-expanded={open}
         aria-controls={panelId}
-        className="text-xs font-medium text-primary hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        className="rounded-sm text-xs font-medium text-primary hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
       >
         {open ? "Hide the explanation" : "What does this mean?"}
       </button>
       {open && (
         <div
           id={panelId}
-          className="mt-2 rounded-xl border border-neutral-200 bg-neutral-50 p-3 text-sm"
+          className="mt-2 rounded-md border border-neutral-200 bg-neutral-50 px-3.5 py-3 text-sm"
         >
           {state.kind === "loading" && <Loading>Writing a plain explanation...</Loading>}
           {state.kind === "failed" && (

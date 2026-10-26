@@ -8,7 +8,7 @@ import { useMe } from "@/components/app/me-context";
 import { Alert } from "@/components/ui/Alert";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Card, CardTitle, PageHeader } from "@/components/ui/Card";
+import { Card, CardDescription, CardTitle, PageHeader } from "@/components/ui/Card";
 import { ConfirmButton } from "@/components/ui/ConfirmButton";
 import { SelectField, TextField } from "@/components/ui/fields";
 import { Loading } from "@/components/ui/Loading";
@@ -79,7 +79,7 @@ export function TeamPage() {
         <PageHeader title="Team" />
         <Alert tone="info">
           Choose an organisation in the switcher above, or{" "}
-          <Link href="/organisations/new" className="underline">
+          <Link href="/organisations/new" className="font-medium text-primary hover:underline">
             create one
           </Link>
           .
@@ -195,10 +195,10 @@ function InviteCard({
   return (
     <Card>
       <CardTitle>Invite a team member</CardTitle>
-      <p className="mt-1 text-sm text-neutral-600">
+      <CardDescription>
         We email them a link to join {org.name}. Inviting the same email again replaces the old
         link.
-      </p>
+      </CardDescription>
       <form
         onSubmit={(e) => void handleSubmit(e)}
         className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end"
@@ -275,24 +275,31 @@ function InvitationsCard({
           <Alert tone="error">{error.message}</Alert>
         </div>
       )}
-      <ul className="mt-2 divide-y divide-neutral-200">
+      <ul className="mt-3 divide-y divide-neutral-100">
         {invitations.map((invitation) => (
           <li
             key={invitation.id}
-            className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3 text-sm"
+            className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3 text-sm first:pt-0 last:pb-0"
           >
-            <span className="font-medium text-neutral-900">{invitation.email}</span>
-            <Badge>{roleLabel(invitation.role)}</Badge>
+            <span className="min-w-0 flex-1">
+              <span className="block font-medium text-neutral-900">{invitation.email}</span>
+              {invitation.invited_by_name && (
+                <span className="block text-xs text-neutral-500">
+                  invited by {invitation.invited_by_name}
+                </span>
+              )}
+            </span>
+            <Badge dot={false}>{roleLabel(invitation.role)}</Badge>
             {invitation.expired ? (
               <Badge tone="red">Expired</Badge>
             ) : (
-              <span className="text-neutral-600">valid until {formatDate(invitation.expires_at)}</span>
+              <span className="text-xs text-neutral-500">
+                valid until {formatDate(invitation.expires_at)}
+              </span>
             )}
-            {invitation.invited_by_name && (
-              <span className="text-neutral-500">invited by {invitation.invited_by_name}</span>
-            )}
-            <span className="ml-auto">
+            <span className="sm:ml-4">
               <ConfirmButton
+                size="sm"
                 label="Cancel"
                 confirmLabel="Cancel invitation?"
                 busy={busy && busyId === invitation.id}
@@ -351,22 +358,23 @@ function MembersCard({
           <Alert tone="error">{error.message}</Alert>
         </div>
       )}
-      <ul className="mt-2 divide-y divide-neutral-200">
+      <ul className="mt-3 divide-y divide-neutral-100">
         {members.map((member) => (
           <li
             key={member.id}
-            className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3 text-sm"
+            className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3 text-sm first:pt-0 last:pb-0"
           >
-            <span className="min-w-0">
+            <span className="min-w-0 flex-1">
               <span className="block font-medium text-neutral-900">{member.name}</span>
-              <span className="block text-neutral-600">{member.email}</span>
+              <span className="block text-xs text-neutral-500">{member.email}</span>
             </span>
-            <span className="text-neutral-500">joined {formatDate(member.joined_at)}</span>
-            <span className="ml-auto flex items-center gap-3">
+            <span className="text-xs text-neutral-500">joined {formatDate(member.joined_at)}</span>
+            <span className="flex items-center gap-2 sm:ml-4">
               {mayEdit(member) ? (
                 // One action at a time: every row waits while one is running.
                 <>
                   <SelectField
+                    compact
                     label={`Role of ${member.name}`}
                     labelHidden
                     value={member.role}
@@ -382,6 +390,7 @@ function MembersCard({
                     ))}
                   </SelectField>
                   <ConfirmButton
+                    size="sm"
                     label="Remove"
                     confirmLabel={`Remove ${roleLabel(member.role).toLowerCase()}?`}
                     busy={busy && busyId === member.id}
@@ -390,7 +399,7 @@ function MembersCard({
                   />
                 </>
               ) : (
-                <Badge>{roleLabel(member.role)}</Badge>
+                <Badge dot={false}>{roleLabel(member.role)}</Badge>
               )}
             </span>
           </li>
