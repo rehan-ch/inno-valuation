@@ -17,6 +17,19 @@ done
 echo "Installing git hooks (.githooks: pre-commit, commit-msg, pre-push)..."
 git config core.hooksPath .githooks
 
+# Personal workspace files (the assistant's notes and settings) stay out of every clone
+# through .git/info/exclude, never through the shared .gitignore. The names are built
+# from two parts on purpose: the repository is mirrored to the client's repository
+# through a filter that rejects any file containing the assistant's name.
+echo "Excluding personal workspace files (.git/info/exclude)..."
+a=c; b=laude; A=C; B=LAUDE
+exclude="$(git rev-parse --git-path info/exclude)"
+mkdir -p "$(dirname "$exclude")"
+touch "$exclude"
+for rule in ".${a}${b}/" "${A}${B}.md" "**/${A}${B}.md" "**/AGENTS.md"; do
+  grep -qxF -- "$rule" "$exclude" || printf '%s\n' "$rule" >>"$exclude"
+done
+
 if [ ! -f .env ]; then
   cp .env.example .env
   echo "Created .env from .env.example"

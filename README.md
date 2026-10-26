@@ -31,9 +31,10 @@ Templates live in `backend/app/emails/templates/`: each email has an HTML versio
 |---|---|---|
 | `pre-commit` | `bin/check staged` (seconds) | no secrets, `.env` files, keys, conflict markers or files over 1 MB; ruff lint and format and mypy on staged Python; eslint with zero warnings on staged TypeScript; scoring tests when the engine or `dimensions.yml` changes |
 | `commit-msg` | `bin/check message` | subject is `type(scope): summary`, at most 100 characters; no co-author or generator lines |
-| `pre-push` | `bin/check range` + `bin/check full` (about a minute) | no direct push to `main` (except the first push that creates it on a new remote); pushed commits scanned for secrets and attribution; lock file in sync; ruff, mypy, all backend tests (Postgres must be up), migrations match models, OpenAPI types current, frontend lint, typecheck, tests and build; `pip-audit` and `npm audit` on production dependencies |
+| `pre-push` | `bin/check range` + `bin/check full` (about a minute) | no direct push to `main` (except the first push that creates it on a new remote); pushed commits scanned for secrets and attribution; the scanners' own selftest; lock file in sync; ruff, mypy, all backend tests (Postgres must be up), migrations match models, OpenAPI types current, frontend lint, typecheck, tests and build; `pip-audit` and `npm audit` on production dependencies |
+| CI | `.github/workflows/ci.yml` | `bin/check selftest`, then `bin/check range` over the pull request's commits (or the pushed range on `main`), then the same backend and frontend steps as `bin/check full`, as separate workflow steps |
 
-Do not skip them with `--no-verify`. CI runs the same checks, so a skipped hook only moves the failure to CI.
+Do not skip them with `--no-verify`. CI repeats the checks, so a skipped hook only moves the failure to CI. `bin/check selftest` feeds the secret, conflict-marker and commit-message scanners known-bad and known-good input, so a change to a pattern or a pipeline cannot silently stop catching things.
 
 ## Tests and checks
 
