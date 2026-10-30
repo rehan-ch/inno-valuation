@@ -39,22 +39,20 @@ function BaseDialog({ open, onClose, title, children, panelClass }: DialogProps 
       onClick={handleBackdropClick}
       className={panelClass}
     >
-      <div className="p-6">
-        <div className="flex items-start justify-between gap-4">
-          <h2 className="text-base font-semibold text-neutral-900">{title}</h2>
-          <button
-            type="button"
-            aria-label="Close"
-            onClick={onClose}
-            className="-mt-1 -mr-1 rounded-md p-1 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
-          >
-            <span aria-hidden="true" className="block text-lg leading-none">
-              &times;
-            </span>
-          </button>
-        </div>
-        <div className="mt-4">{children}</div>
+      <div className="flex items-center justify-between gap-4 border-b border-neutral-200 px-5 py-3.5">
+        <h2 className="text-sm font-semibold text-neutral-900">{title}</h2>
+        <button
+          type="button"
+          aria-label="Close"
+          onClick={onClose}
+          className="-mr-1.5 rounded-md p-1 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        >
+          <span aria-hidden="true" className="block text-lg leading-none">
+            &times;
+          </span>
+        </button>
       </div>
+      <div className="px-5 py-4">{children}</div>
     </dialog>
   );
 }
@@ -65,7 +63,7 @@ export function Modal(props: DialogProps) {
   return (
     <BaseDialog
       {...props}
-      panelClass="m-auto w-full max-w-md rounded-2xl border border-neutral-200 bg-white shadow-lg backdrop:bg-neutral-900/50"
+      panelClass="m-auto w-full max-w-md rounded-lg border border-neutral-200 bg-white text-foreground shadow-xl backdrop:bg-neutral-900/40"
     />
   );
 }
@@ -76,7 +74,7 @@ export function Drawer(props: DialogProps) {
   return (
     <BaseDialog
       {...props}
-      panelClass="m-0 ml-auto h-dvh max-h-none w-full max-w-sm overflow-y-auto border-l border-neutral-200 bg-white shadow-lg backdrop:bg-neutral-900/50"
+      panelClass="m-0 ml-auto h-dvh max-h-none w-full max-w-sm overflow-y-auto border-l border-neutral-200 bg-white text-foreground shadow-xl backdrop:bg-neutral-900/40"
     />
   );
 }

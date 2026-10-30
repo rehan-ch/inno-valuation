@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { Alert } from "@/components/ui/Alert";
-import { Card, CardTitle, PageHeader } from "@/components/ui/Card";
+import { Bar } from "@/components/ui/Bar";
+import { Card, CardDescription, CardTitle, Eyebrow, PageHeader } from "@/components/ui/Card";
 import { Loading } from "@/components/ui/Loading";
 import { ApiError } from "@/lib/api/client";
 import { getResult } from "@/lib/api/readiness";
@@ -52,33 +53,41 @@ export function ResultPage({ assessmentId }: { assessmentId: string }) {
         description={`Final on ${formatDate(result.finalised_at)} · answers from ${result.submitted_count} ${
           result.submitted_count === 1 ? "person" : "people"
         } · question set version ${result.question_set_version}`}
+        actions={
+          <Link href="/readiness" className="text-sm font-medium text-primary hover:underline">
+            All assessments
+          </Link>
+        }
       />
 
       <section
         aria-label="Total"
-        className="rounded-2xl border border-neutral-200 border-t-4 border-t-accent bg-white p-6 shadow-sm"
+        className="grid grid-cols-1 gap-6 rounded-lg border border-neutral-200 bg-white p-6 md:grid-cols-[auto_1fr] md:gap-10"
       >
-        <p className="text-xs font-medium tracking-wide text-neutral-500 uppercase">
-          Readiness score
-        </p>
-        <p className="mt-1 font-serif text-5xl font-semibold text-neutral-900">
-          {result.total}
-          <span className="ml-1 text-2xl text-neutral-500">/ {result.total_maximum}</span>
-        </p>
-        <p className="mt-4 text-lg font-semibold text-primary">{result.band.name}</p>
-        <p className="mt-1 text-sm text-neutral-700">{result.band.text}</p>
+        <div>
+          <Eyebrow>Readiness score</Eyebrow>
+          <p className="mt-2 text-5xl font-semibold tracking-tight text-neutral-900 tabular-nums">
+            {result.total}
+            <span className="ml-1.5 text-2xl font-normal text-neutral-500">/ {result.total_maximum}</span>
+          </p>
+        </div>
+        <div className="border-neutral-200 md:border-l md:pl-10">
+          <Eyebrow>Band</Eyebrow>
+          <p className="mt-2 text-lg font-semibold text-neutral-900">{result.band.name}</p>
+          <p className="mt-1 max-w-prose text-sm text-neutral-600">{result.band.text}</p>
+        </div>
       </section>
 
-      <section aria-label="Categories" className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <section
+        aria-label="Categories"
+        className="grid grid-cols-1 gap-px overflow-hidden rounded-lg border border-neutral-200 bg-neutral-200 md:grid-cols-3"
+      >
         {result.categories.map((category) => (
-          <div
-            key={category.key}
-            className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm"
-          >
+          <div key={category.key} className="bg-white p-5">
             <p className="text-sm font-medium text-neutral-900">{category.name}</p>
-            <p className="mt-1 font-serif text-2xl font-semibold text-neutral-900">
+            <p className="mt-1 text-2xl font-semibold text-neutral-900 tabular-nums">
               {category.score}
-              <span className="ml-1 text-base text-neutral-500">/ {category.maximum}</span>
+              <span className="ml-1 text-sm font-normal text-neutral-500">/ {category.maximum}</span>
             </p>
             <Bar value={category.score} maximum={category.maximum} />
           </div>
@@ -88,25 +97,23 @@ export function ResultPage({ assessmentId }: { assessmentId: string }) {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card>
           <CardTitle>Focus first</CardTitle>
-          <p className="mt-1 text-sm text-neutral-600">
+          <CardDescription>
             The lowest-scoring dimensions, with the next steps from the method.
-          </p>
-          <ol className="mt-4 space-y-4">
+          </CardDescription>
+          <ol className="mt-4 divide-y divide-neutral-100">
             {result.priorities.map((priority) => (
-              <li key={priority.key} className="flex gap-3">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-white">
+              <li key={priority.key} className="flex gap-3 py-3 first:pt-0 last:pb-0">
+                <span className="w-5 shrink-0 text-sm font-semibold text-neutral-400 tabular-nums">
                   {priority.rank}
                 </span>
-                <span>
-                  <span className="block text-sm font-medium text-neutral-900">
-                    {priority.name}{" "}
-                    <span className="font-normal text-neutral-500">
+                <span className="min-w-0">
+                  <span className="flex items-baseline justify-between gap-3 text-sm">
+                    <span className="font-medium text-neutral-900">{priority.name}</span>
+                    <span className="shrink-0 text-neutral-500 tabular-nums">
                       {priority.score} / {priority.maximum}
                     </span>
                   </span>
-                  <span className="mt-0.5 block text-sm text-neutral-600">
-                    {priority.next_steps}
-                  </span>
+                  <span className="mt-0.5 block text-sm text-neutral-600">{priority.next_steps}</span>
                 </span>
               </li>
             ))}
@@ -115,21 +122,21 @@ export function ResultPage({ assessmentId }: { assessmentId: string }) {
 
         <Card>
           <CardTitle>Strengths</CardTitle>
-          <p className="mt-1 text-sm text-neutral-600">
+          <CardDescription>
             {result.strengths.length > 0
               ? "The dimensions that score above every priority."
               : "No dimension scores above the priorities yet, so none stands out as a strength."}
-          </p>
-          <ul className="mt-4 space-y-3">
+          </CardDescription>
+          <ul className="mt-4 space-y-4">
             {result.strengths.map((strength) => (
               <li key={strength.key}>
                 <span className="flex items-baseline justify-between gap-3 text-sm">
                   <span className="font-medium text-neutral-900">{strength.name}</span>
-                  <span className="text-neutral-500">
+                  <span className="text-neutral-500 tabular-nums">
                     {strength.score} / {strength.maximum}
                   </span>
                 </span>
-                <Bar value={strength.score} maximum={strength.maximum} />
+                <Bar value={strength.score} maximum={strength.maximum} tone="accent" />
               </li>
             ))}
           </ul>
@@ -138,14 +145,15 @@ export function ResultPage({ assessmentId }: { assessmentId: string }) {
 
       <Card>
         <CardTitle>The 12 dimensions</CardTitle>
-        <ul className="mt-4 grid grid-cols-1 gap-x-8 gap-y-4 md:grid-cols-2">
+        <ul className="mt-4 grid grid-cols-1 gap-x-10 gap-y-4 md:grid-cols-2">
           {result.dimensions.map((dimension) => (
             <li key={dimension.key}>
               <span className="flex items-baseline justify-between gap-3 text-sm">
                 <span className="text-neutral-900">
-                  {dimension.order}. {dimension.name}
+                  <span className="mr-2 text-neutral-400 tabular-nums">{dimension.order}.</span>
+                  {dimension.name}
                 </span>
-                <span className="font-medium text-neutral-900">
+                <span className="font-medium text-neutral-900 tabular-nums">
                   {dimension.score}
                   <span className="font-normal text-neutral-500"> / {dimension.maximum}</span>
                 </span>
@@ -155,23 +163,6 @@ export function ResultPage({ assessmentId }: { assessmentId: string }) {
           ))}
         </ul>
       </Card>
-
-      <p className="text-sm">
-        <Link href="/readiness" className="underline">
-          Back to assessments
-        </Link>
-      </p>
-    </div>
-  );
-}
-
-function Bar({ value, maximum }: { value: number; maximum: number }) {
-  return (
-    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-neutral-100" aria-hidden="true">
-      <div
-        className="h-full rounded-full bg-primary"
-        style={{ width: `${Math.round((value / maximum) * 100)}%` }}
-      />
     </div>
   );
 }

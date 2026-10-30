@@ -12,10 +12,10 @@ type State =
 
 function StatusRow({ label, value, good }: { label: string; value: string; good: boolean }) {
   return (
-    <div className="flex items-center justify-between gap-4 py-3">
+    <div className="flex items-center justify-between gap-4 px-4 py-3">
       <dt className="text-sm text-neutral-600">{label}</dt>
       <dd
-        className={`text-sm font-medium ${good ? "text-green-700" : "text-red-700"}`}
+        className={`text-sm font-medium tabular-nums ${good ? "text-emerald-700" : "text-red-700"}`}
         data-testid={`health-${label.toLowerCase().replace(/\s+/g, "-")}`}
       >
         {value}
@@ -72,7 +72,7 @@ export function HealthStatus() {
 
   const { health } = state;
   return (
-    <dl className="divide-y divide-neutral-200 rounded-md border border-neutral-200 px-4">
+    <dl className="divide-y divide-neutral-200 rounded-md border border-neutral-200 bg-white">
       <StatusRow label="API" value="OK" good />
       <StatusRow
         label="Database"

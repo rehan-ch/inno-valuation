@@ -6,15 +6,15 @@ import type { FormEvent } from "react";
 import { useMe } from "@/components/app/me-context";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
-import { Card, CardTitle, PageHeader } from "@/components/ui/Card";
+import { Card, CardDescription, CardTitle, PageHeader } from "@/components/ui/Card";
 import { TextField } from "@/components/ui/fields";
 import { changePassword, updateName } from "@/lib/api/me";
 import { newPasswordError, useSubmit } from "@/lib/forms";
 
 export function AccountPage() {
   return (
-    <div className="space-y-6">
-      <PageHeader title="Account" />
+    <div className="max-w-2xl space-y-6">
+      <PageHeader title="Account" description="Your name, email and password." />
       <ProfileCard />
       <PasswordCard />
     </div>
@@ -86,9 +86,7 @@ function PasswordCard() {
   return (
     <Card>
       <CardTitle>Change password</CardTitle>
-      <p className="mt-1 text-sm text-neutral-600">
-        Changing your password signs you out everywhere else.
-      </p>
+      <CardDescription>Changing your password signs you out everywhere else.</CardDescription>
       <form onSubmit={(e) => void handleSubmit(e)} className="mt-4 max-w-md space-y-4" noValidate>
         {error && <Alert tone="error">{error.message}</Alert>}
         {doneMessage && <Alert tone="success">{doneMessage}</Alert>}

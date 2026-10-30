@@ -8,9 +8,9 @@ export const STATUS_LABELS: Record<ReadinessStatus, string> = {
   final: "Final",
 };
 
-export const STATUS_TONES: Record<ReadinessStatus, "neutral" | "amber" | "green"> = {
+export const STATUS_TONES: Record<ReadinessStatus, "neutral" | "amber" | "green" | "blue"> = {
   draft: "neutral",
-  collecting: "amber",
+  collecting: "blue",
   consensus: "amber",
   final: "green",
 };

@@ -84,20 +84,23 @@ export function MyAccessPage() {
             </EmptyState>
           </div>
         ) : (
-          <ul className="mt-2 divide-y divide-neutral-200">
+          <ul className="mt-3 divide-y divide-neutral-100">
             {grants.map((grant) => (
               <li
                 key={grant.id}
-                className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3 text-sm"
+                className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3 text-sm first:pt-0 last:pb-0"
               >
-                <span className="font-medium text-neutral-900">{grant.organisation_name}</span>
+                <span className="min-w-0 flex-1 font-medium text-neutral-900">
+                  {grant.organisation_name}
+                </span>
                 <Badge tone={grant.status === "active" ? "green" : "amber"}>
                   {grant.status === "active" ? "Active" : "Waiting for you"}
                 </Badge>
-                <span className="text-neutral-600">ends {formatDate(grant.expires_at)}</span>
-                <span className="ml-auto">
+                <span className="text-xs text-neutral-500">ends {formatDate(grant.expires_at)}</span>
+                <span className="sm:ml-4">
                   {grant.status === "waiting" ? (
                     <Button
+                      size="sm"
                       busy={busy && busyId === grant.id}
                       onClick={() => void handleAccept(grant.id)}
                     >

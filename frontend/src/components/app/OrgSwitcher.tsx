@@ -30,7 +30,7 @@ export function OrgSwitcher() {
   }
 
   return (
-    <div>
+    <div className="min-w-0">
       <label htmlFor={id} className="sr-only">
         Organisation
       </label>
@@ -39,7 +39,7 @@ export function OrgSwitcher() {
         value={me.active_organisation_id ?? ""}
         onChange={(event) => void choose(event.target.value)}
         disabled={busy}
-        className="block w-full max-w-56 rounded-md border border-neutral-300 bg-white px-2 py-1.5 text-sm text-neutral-900 focus:outline-2 focus:-outline-offset-1 focus:outline-neutral-900"
+        className="block h-8 w-full min-w-0 max-w-56 truncate rounded-md border border-neutral-300 bg-white pr-7 pl-2.5 text-[13px] font-medium text-neutral-900 shadow-xs focus:outline-2 focus:-outline-offset-1 focus:outline-primary disabled:text-neutral-500"
       >
         {me.active_organisation_id === null && <option value="">Choose organisation</option>}
         <optgroup label="Your organisations">

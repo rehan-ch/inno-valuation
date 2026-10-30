@@ -7,7 +7,8 @@ import type { ReactNode } from "react";
 import { useMe } from "@/components/app/me-context";
 import { Alert } from "@/components/ui/Alert";
 import { Badge } from "@/components/ui/Badge";
-import { Card, CardTitle, PageHeader } from "@/components/ui/Card";
+import { buttonClass } from "@/components/ui/Button";
+import { Card, CardDescription, CardHeader, CardTitle, Eyebrow, PageHeader } from "@/components/ui/Card";
 import { Loading } from "@/components/ui/Loading";
 import { ApiError } from "@/lib/api/client";
 import { listGrants } from "@/lib/api/consultants";
@@ -23,6 +24,8 @@ import type {
 } from "@/lib/api/types";
 import { formatDate } from "@/lib/format";
 import { canManage, roleLabel, roleWithArticle } from "@/lib/roles";
+
+import { STATUS_LABELS, STATUS_TONES } from "@/components/readiness/status";
 
 type State =
   | { kind: "loading" }
@@ -89,10 +92,10 @@ export function DashboardPage() {
         />
         <Card>
           <CardTitle>Get started</CardTitle>
-          <p className="mt-1 text-sm text-neutral-600">
+          <CardDescription>
             Create your organisation; you become its owner and can invite your team.
-          </p>
-          <div className="mt-4 flex flex-wrap gap-3">
+          </CardDescription>
+          <div className="mt-4 flex flex-wrap gap-2">
             <ActionLink href="/organisations/new" primary>
               Create an organisation
             </ActionLink>
@@ -122,9 +125,9 @@ export function DashboardPage() {
         <ReadinessCard latest={state.assessments[0]} manage={false} consultant />
         <Card>
           <CardTitle>Your consulting access</CardTitle>
-          <p className="mt-1 text-sm text-neutral-600">
+          <CardDescription>
             See every organisation that has given you access, and accept new invitations.
-          </p>
+          </CardDescription>
           <div className="mt-4">
             <ActionLink href="/consultant-access">My access</ActionLink>
           </div>
@@ -149,7 +152,10 @@ export function DashboardPage() {
         <Alert tone="info">This organisation is archived, so it is view-only.</Alert>
       )}
 
-      <section aria-label="At a glance" className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <section
+        aria-label="At a glance"
+        className="grid grid-cols-2 divide-neutral-200 overflow-hidden rounded-lg border border-neutral-200 bg-white max-lg:gap-px max-lg:bg-neutral-200 lg:auto-cols-fr lg:grid-flow-col lg:divide-x"
+      >
         <Stat label="Team members" value={state.members.length} />
         {manage && <Stat label="Invitations waiting" value={waitingInvitations.length} />}
         {manage && (
@@ -166,93 +172,94 @@ export function DashboardPage() {
         <Stat label="Currency" value={org.currency} />
       </section>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {manage ? (
-          <Card>
-            <CardTitle>Getting started</CardTitle>
-            <ol className="mt-3 space-y-3">
-              <Step done label="Create your organisation" />
-              <Step
-                done={profileComplete}
-                label="Complete the organisation profile"
-                hint="Industry, country and company size."
-                href="/organisation"
-              />
-              <Step
-                done={state.members.length > 1}
-                label="Invite your team"
-                hint="Each person answers the readiness questions on their own."
-                href="/team"
-              />
-              <Step
-                done={openGrants.length > 0}
-                label="Give your consultant access"
-                hint="Optional. Read-only, until an end date you choose."
-                href="/consultants"
-              />
-              <Step
-                done={state.assessments.some((a) => a.status === "final")}
-                label="Run the readiness assessment"
-                hint="Your team answers 60 questions and agrees a score out of 300."
-                href="/readiness"
-              />
-            </ol>
-          </Card>
-        ) : (
-          <ReadinessCard latest={state.assessments[0]} manage={false} />
-        )}
-
-        <Card>
-          <div className="flex items-baseline justify-between gap-4">
-            <CardTitle>Your team</CardTitle>
-            <Link href="/team" className="text-sm text-primary hover:underline">
-              View all
-            </Link>
-          </div>
-          <ul className="mt-2 divide-y divide-neutral-200">
-            {state.members.slice(0, TEAM_PREVIEW).map((member) => (
-              <li key={member.id} className="flex items-center justify-between gap-3 py-2.5">
-                <span className="min-w-0 truncate text-sm text-neutral-900">
-                  {member.name}
-                  {member.user_id === me.id && <span className="text-neutral-500"> (you)</span>}
-                </span>
-                <Badge>{roleLabel(member.role)}</Badge>
-              </li>
-            ))}
-          </ul>
-          {state.members.length > TEAM_PREVIEW && (
-            <p className="mt-2 text-xs text-neutral-500">
-              and {state.members.length - TEAM_PREVIEW} more
-            </p>
-          )}
-        </Card>
-      </div>
-
-      {manage && <ReadinessCard latest={state.assessments[0]} manage />}
-
-      <Card>
-        <CardTitle>Quick actions</CardTitle>
-        <div className="mt-4 flex flex-wrap gap-3">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="space-y-6 lg:col-span-2">
+          <ReadinessCard latest={state.assessments[0]} manage={manage} />
           {manage && (
-            <ActionLink href="/team" primary>
-              Invite a team member
-            </ActionLink>
+            <Card>
+              <CardTitle>Getting started</CardTitle>
+              <ol className="mt-4 divide-y divide-neutral-100">
+                <Step done label="Create your organisation" />
+                <Step
+                  done={profileComplete}
+                  label="Complete the organisation profile"
+                  hint="Industry, country and company size."
+                  href="/organisation"
+                />
+                <Step
+                  done={state.members.length > 1}
+                  label="Invite your team"
+                  hint="Each person answers the readiness questions on their own."
+                  href="/team"
+                />
+                <Step
+                  done={openGrants.length > 0}
+                  label="Give your consultant access"
+                  hint="Optional. Read-only, until an end date you choose."
+                  href="/consultants"
+                />
+                <Step
+                  done={state.assessments.some((a) => a.status === "final")}
+                  label="Run the readiness assessment"
+                  hint="Your team answers 60 questions and agrees a score out of 300."
+                  href="/readiness"
+                />
+              </ol>
+            </Card>
           )}
-          {manage && <ActionLink href="/organisation">Organisation settings</ActionLink>}
-          {manage && <ActionLink href="/consultants">Consultant access</ActionLink>}
-          {!manage && <ActionLink href="/team">See the team</ActionLink>}
-          <ActionLink href="/account">Your account</ActionLink>
         </div>
-      </Card>
+
+        <div className="space-y-6">
+          <Card>
+            <CardHeader
+              title="Your team"
+              actions={
+                <Link href="/team" className="text-sm font-medium text-primary hover:underline">
+                  View all
+                </Link>
+              }
+            />
+            <ul className="mt-3 divide-y divide-neutral-100">
+              {state.members.slice(0, TEAM_PREVIEW).map((member) => (
+                <li key={member.id} className="flex items-center justify-between gap-3 py-2">
+                  <span className="min-w-0 truncate text-sm text-neutral-900">
+                    {member.name}
+                    {member.user_id === me.id && (
+                      <span className="text-neutral-500"> (you)</span>
+                    )}
+                  </span>
+                  <Badge dot={false}>{roleLabel(member.role)}</Badge>
+                </li>
+              ))}
+            </ul>
+            {state.members.length > TEAM_PREVIEW && (
+              <p className="mt-2 text-xs text-neutral-500">
+                and {state.members.length - TEAM_PREVIEW} more
+              </p>
+            )}
+          </Card>
+
+          <Card>
+            <CardTitle>Shortcuts</CardTitle>
+            <ul className="mt-3 space-y-2 text-sm">
+              {manage && <Shortcut href="/team">Invite a team member</Shortcut>}
+              {manage && <Shortcut href="/organisation">Organisation settings</Shortcut>}
+              {manage && <Shortcut href="/consultants">Consultant access</Shortcut>}
+              {!manage && <Shortcut href="/team">See the team</Shortcut>}
+              <Shortcut href="/account">Your account</Shortcut>
+            </ul>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }
 
 function Stat({ label, value, hint }: { label: string; value: ReactNode; hint?: string }) {
   return (
-    <div className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm">
-      <p className="text-xs font-medium tracking-wide text-neutral-500 uppercase">{label}</p>
-      <p className="mt-1 font-serif text-2xl font-semibold text-neutral-900">{value}</p>
+    <div className="bg-white px-5 py-4">
+      <Eyebrow>{label}</Eyebrow>
+      <p className="mt-1.5 text-2xl font-semibold text-neutral-900 tabular-nums">{value}</p>
       {hint && <p className="mt-0.5 text-xs text-neutral-500">{hint}</p>}
     </div>
   );
@@ -270,11 +277,11 @@ function Step({
   href?: string;
 }) {
   return (
-    <li className="flex items-start gap-3">
+    <li className="flex items-start gap-3 py-2.5 first:pt-0 last:pb-0">
       <span
         aria-hidden="true"
-        className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs ${
-          done ? "bg-accent text-white" : "border border-neutral-300 bg-white"
+        className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border text-[10px] ${
+          done ? "border-accent bg-accent text-white" : "border-neutral-300 bg-white"
         }`}
       >
         {done ? "✓" : ""}
@@ -292,6 +299,16 @@ function Step({
         </span>
         {hint && !done && <span className="mt-0.5 block text-xs text-neutral-500">{hint}</span>}
       </span>
+    </li>
+  );
+}
+
+function Shortcut({ href, children }: { href: string; children: ReactNode }) {
+  return (
+    <li>
+      <Link href={href} className="text-primary hover:underline">
+        {children}
+      </Link>
     </li>
   );
 }
@@ -323,16 +340,21 @@ function ReadinessCard({
     }
   } else if (latest.status === "final") {
     body = (
-      <>
-        <span className="block font-serif text-3xl font-semibold text-neutral-900">
-          {latest.total}
-          <span className="ml-1 text-lg text-neutral-500">/ 300</span>
-        </span>
-        <span className="mt-1 block font-medium text-primary">{latest.band_name}</span>
-        <span className="mt-1 block">
-          Final on {formatDate(latest.finalised_at ?? latest.created_at)}.
-        </span>
-      </>
+      <div className="flex flex-wrap items-end gap-x-6 gap-y-2">
+        <div>
+          <Eyebrow>Readiness score</Eyebrow>
+          <p className="mt-1 text-3xl font-semibold text-neutral-900 tabular-nums">
+            {latest.total}
+            <span className="ml-1 text-base font-normal text-neutral-500">/ 300</span>
+          </p>
+        </div>
+        <div className="pb-1">
+          <p className="font-medium text-neutral-900">{latest.band_name}</p>
+          <p className="text-neutral-600">
+            Final on {formatDate(latest.finalised_at ?? latest.created_at)}.
+          </p>
+        </div>
+      </div>
     );
     action = (
       <ActionLink href={assessmentHref(latest, manage)} primary>
@@ -373,8 +395,13 @@ function ReadinessCard({
 
   return (
     <Card>
-      <CardTitle>Readiness assessment</CardTitle>
-      <div className="mt-2 text-sm text-neutral-600">{body}</div>
+      <CardHeader
+        title="Readiness assessment"
+        actions={
+          latest ? <Badge tone={STATUS_TONES[latest.status]}>{STATUS_LABELS[latest.status]}</Badge> : null
+        }
+      />
+      <div className="mt-3 text-sm text-neutral-600">{body}</div>
       {action && <div className="mt-4">{action}</div>}
     </Card>
   );
@@ -390,14 +417,7 @@ function ActionLink({
   children: ReactNode;
 }) {
   return (
-    <Link
-      href={href}
-      className={`inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-        primary
-          ? "bg-primary text-white hover:bg-primary-strong"
-          : "border border-neutral-300 bg-white text-neutral-900 hover:bg-neutral-50"
-      }`}
-    >
+    <Link href={href} className={buttonClass(primary ? "primary" : "secondary")}>
       {children}
     </Link>
   );

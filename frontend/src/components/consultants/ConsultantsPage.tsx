@@ -7,7 +7,7 @@ import { useMe } from "@/components/app/me-context";
 import { Alert } from "@/components/ui/Alert";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Card, CardTitle, PageHeader } from "@/components/ui/Card";
+import { Card, CardDescription, CardTitle, PageHeader } from "@/components/ui/Card";
 import { ConfirmButton } from "@/components/ui/ConfirmButton";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { TextField } from "@/components/ui/fields";
@@ -154,9 +154,9 @@ function GrantCard({ onGranted }: { onGranted: (grant: ConsultantGrantOut) => vo
   return (
     <Card>
       <CardTitle>Give access</CardTitle>
-      <p className="mt-1 text-sm text-neutral-600">
+      <CardDescription>
         We email the consultant a link to accept. Access ends at the end of the chosen day (UTC).
-      </p>
+      </CardDescription>
       <form
         onSubmit={(e) => void handleSubmit(e)}
         className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end"
@@ -241,28 +241,29 @@ function GrantsCard({
           </EmptyState>
         </div>
       ) : (
-        <ul className="mt-2 divide-y divide-neutral-200">
+        <ul className="mt-3 divide-y divide-neutral-100">
           {grants.map((grant) => {
             const open = grant.status === "waiting" || grant.status === "active";
             return (
               <li
                 key={grant.id}
-                className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3 text-sm"
+                className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3 text-sm first:pt-0 last:pb-0"
               >
-                <span className="font-medium text-neutral-900">{grant.email}</span>
+                <span className="min-w-0 flex-1 font-medium text-neutral-900">{grant.email}</span>
                 <Badge tone={STATUS_TONES[grant.status]}>{STATUS_LABELS[grant.status]}</Badge>
-                <span className="text-neutral-600">
+                <span className="text-xs text-neutral-500">
                   {grant.status === "revoked" && grant.revoked_at
                     ? `revoked ${formatDate(grant.revoked_at)}`
                     : `ends ${formatDate(grant.expires_at)}`}
                 </span>
                 {open && (
                   // One action at a time: every row waits while one is running.
-                  <span className="ml-auto flex flex-wrap items-center gap-3">
-                    <Button variant="secondary" disabled={busy} onClick={() => setEditing(grant)}>
+                  <span className="flex flex-wrap items-center gap-2 sm:ml-4">
+                    <Button variant="secondary" size="sm" disabled={busy} onClick={() => setEditing(grant)}>
                       Change end date
                     </Button>
                     <ConfirmButton
+                      size="sm"
                       label="Revoke"
                       confirmLabel="End access now?"
                       busy={busy && busyId === grant.id}
@@ -332,7 +333,7 @@ function EndDateModal({
             setDateError(null);
           }}
         />
-        <div className="flex justify-end gap-3">
+        <div className="flex justify-end gap-2">
           <Button variant="secondary" disabled={busy} onClick={onClose}>
             Cancel
           </Button>

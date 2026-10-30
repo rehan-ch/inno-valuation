@@ -59,7 +59,7 @@ export function OrganisationSettings() {
         <PageHeader title="Organisation settings" />
         <Alert tone="info">
           Choose an organisation in the switcher above, or{" "}
-          <Link href="/organisations/new" className="underline">
+          <Link href="/organisations/new" className="font-medium text-primary hover:underline">
             create one
           </Link>
           .
@@ -92,7 +92,7 @@ export function OrganisationSettings() {
   }
 
   return (
-    <div className="mx-auto max-w-xl space-y-6">
+    <div className="max-w-2xl space-y-6">
       <PageHeader
         title="Organisation settings"
         description="The profile and currency of the active organisation."
@@ -248,9 +248,11 @@ function SettingsForm({
           onChange={setCurrency}
           hint="Investments and Value for Money are shown in this currency."
         />
-        <Button type="submit" busy={busy}>
-          Save changes
-        </Button>
+        <div className="flex justify-end border-t border-neutral-200 pt-4">
+          <Button type="submit" busy={busy}>
+            Save changes
+          </Button>
+        </div>
       </form>
     </Card>
   );

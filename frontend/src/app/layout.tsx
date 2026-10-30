@@ -1,9 +1,12 @@
 import type { Metadata, Viewport } from "next";
-import { Playfair_Display, Plus_Jakarta_Sans } from "next/font/google";
+import { IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
 
-const display = Playfair_Display({ subsets: ["latin"], variable: "--font-display" });
-const body = Plus_Jakarta_Sans({ subsets: ["latin"], variable: "--font-body" });
+const body = IBM_Plex_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-body",
+});
 
 export const metadata: Metadata = {
   title: "InnoValuation",
@@ -17,7 +20,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${display.variable} ${body.variable} h-full antialiased`}>
+    <html lang="en" className={`${body.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
         <a
           href="#main"

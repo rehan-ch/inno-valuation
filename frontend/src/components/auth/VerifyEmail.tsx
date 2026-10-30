@@ -77,10 +77,10 @@ export function VerifyEmail() {
   if (state.kind === "done") {
     return (
       <div className="space-y-4">
-        <h1 className="text-xl font-semibold text-neutral-900">Email confirmed</h1>
+        <h1 className="text-lg font-semibold text-neutral-900">Email confirmed</h1>
         <Alert tone="success">{state.message}</Alert>
         <p className="text-sm">
-          <Link href="/sign-in" className="underline">
+          <Link href="/sign-in" className="font-medium text-primary hover:underline">
             Go to sign in
           </Link>
         </p>
@@ -91,7 +91,7 @@ export function VerifyEmail() {
   if (state.kind === "needs_password") {
     return (
       <form onSubmit={(e) => void submitPassword(e, state.token)} className="space-y-4" noValidate>
-        <h1 className="text-xl font-semibold text-neutral-900">Choose a password</h1>
+        <h1 className="text-lg font-semibold text-neutral-900">Choose a password</h1>
         <p className="text-sm text-neutral-600">
           Choose a password to finish setting up your account.
         </p>
@@ -122,7 +122,7 @@ export function VerifyEmail() {
   // no_token or failed: offer to send a fresh link.
   return (
     <form onSubmit={(e) => void submitResend(e)} className="space-y-4" noValidate>
-      <h1 className="text-xl font-semibold text-neutral-900">Confirm your email</h1>
+      <h1 className="text-lg font-semibold text-neutral-900">Confirm your email</h1>
       {state.kind === "failed" && <Alert tone="error">{state.message}</Alert>}
       {state.kind === "no_token" && (
         <p className="text-sm text-neutral-600">

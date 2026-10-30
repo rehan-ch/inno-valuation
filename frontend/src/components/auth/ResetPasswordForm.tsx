@@ -46,10 +46,10 @@ export function ResetPasswordForm() {
   if (doneMessage) {
     return (
       <div className="space-y-4">
-        <h1 className="text-xl font-semibold text-neutral-900">Password changed</h1>
+        <h1 className="text-lg font-semibold text-neutral-900">Password changed</h1>
         <Alert tone="success">{doneMessage}</Alert>
         <p className="text-sm">
-          <Link href="/sign-in" className="underline">
+          <Link href="/sign-in" className="font-medium text-primary hover:underline">
             Go to sign in
           </Link>
         </p>
@@ -60,10 +60,10 @@ export function ResetPasswordForm() {
   if (!token) {
     return (
       <div className="space-y-4">
-        <h1 className="text-xl font-semibold text-neutral-900">Reset your password</h1>
+        <h1 className="text-lg font-semibold text-neutral-900">Reset your password</h1>
         <Alert tone="error">
           This page needs the link from the password reset email.{" "}
-          <Link href="/forgot-password" className="underline">
+          <Link href="/forgot-password" className="font-medium text-primary hover:underline">
             Request a new link
           </Link>
           .
@@ -74,7 +74,7 @@ export function ResetPasswordForm() {
 
   return (
     <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4" noValidate>
-      <h1 className="text-xl font-semibold text-neutral-900">Choose a new password</h1>
+      <h1 className="text-lg font-semibold text-neutral-900">Choose a new password</h1>
       {error && <Alert tone="error">{error.message}</Alert>}
       <TextField
         label="New password"

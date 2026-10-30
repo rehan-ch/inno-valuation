@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { Alert } from "@/components/ui/Alert";
-import { Button } from "@/components/ui/Button";
+import { Button, buttonClass } from "@/components/ui/Button";
 import { Loading } from "@/components/ui/Loading";
 import { signOut } from "@/lib/api/auth";
 import { ApiError } from "@/lib/api/client";
@@ -75,7 +75,7 @@ export function AcceptInvitation() {
   if (state.kind === "no_token" || state.kind === "failed") {
     return (
       <div className="space-y-4">
-        <h1 className="text-xl font-semibold text-neutral-900">Join an organisation</h1>
+        <h1 className="text-lg font-semibold text-neutral-900">Join an organisation</h1>
         <Alert tone="error">
           {state.kind === "failed"
             ? state.message
@@ -91,7 +91,7 @@ export function AcceptInvitation() {
   const { token, preview, me } = state;
   const header = (
     <>
-      <h1 className="text-xl font-semibold text-neutral-900">Join {preview.organisation_name}</h1>
+      <h1 className="text-lg font-semibold text-neutral-900">Join {preview.organisation_name}</h1>
       <p className="text-sm text-neutral-600">
         {preview.email} is invited to join <strong>{preview.organisation_name}</strong> as{" "}
         <strong>{roleWithArticle(preview.role)}</strong>. The invitation is valid until{" "}
@@ -108,16 +108,16 @@ export function AcceptInvitation() {
           Sign in as {preview.email} to accept. New here? Create an account with that email first,
           confirm it, then open this link again.
         </p>
-        <div className="flex gap-3">
+        <div className="flex gap-2">
           <Link
             href={`/sign-in?next=%2Finvitations%2Faccept#token=${encodeURIComponent(token)}`}
-            className="inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-strong"
+            className={buttonClass("primary")}
           >
             Sign in
           </Link>
           <Link
             href="/sign-up"
-            className="inline-flex items-center justify-center rounded-full border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-900 transition-colors hover:bg-neutral-50"
+            className={buttonClass("secondary")}
           >
             Create an account
           </Link>
