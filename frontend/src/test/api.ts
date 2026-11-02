@@ -6,7 +6,11 @@ import type {
   AssessmentSummaryOut,
   ConsultantAccessOut,
   ConsultantGrantOut,
+  DimensionReviewOut,
+  IdeaOut,
+  IdeaSummaryOut,
   InvitationOut,
+  IqAssessmentOut,
   MemberOut,
   MeOut,
   OrganisationOut,
@@ -211,5 +215,130 @@ export function fakeQuestionSet(): QuestionSetOut {
         ],
       },
     ],
+  };
+}
+
+export const IDEA_ID = "88888888-8888-8888-8888-888888888888";
+export const IQ_ASSESSMENT_ID = "99999999-9999-9999-9999-999999999999";
+
+export function fakeIdeaSummary(overrides: Partial<IdeaSummaryOut> = {}): IdeaSummaryOut {
+  return {
+    id: IDEA_ID,
+    title: "Same-day delivery",
+    stage: "prototype",
+    status: "draft",
+    archived: false,
+    currency: "USD",
+    investment: "50000.00",
+    expected_value: null,
+    created_by_name: "Mia Member",
+    created_at: "2026-10-28T09:00:00Z",
+    updated_at: "2026-10-28T09:00:00Z",
+    latest_assessment: null,
+    ...overrides,
+  };
+}
+
+export function fakeIdea(overrides: Partial<IdeaOut> = {}): IdeaOut {
+  return {
+    ...fakeIdeaSummary(),
+    summary: "Local shops deliver within two hours.",
+    problem: null,
+    target_market: null,
+    uniqueness: null,
+    team: null,
+    risks: null,
+    can_change: true,
+    can_archive: true,
+    assessments: [],
+    ...overrides,
+  };
+}
+
+const DIMENSIONS: [string, string, number, string][] = [
+  ["customer_journey", "Customer Journey", 1, "customer_facing"],
+  ["brand_magnetism", "Brand Magnetism", 2, "customer_facing"],
+  ["organizational_agility", "Organizational Agility", 7, "process"],
+];
+
+/** A small assessment (3 dimensions) shaped like the real one. */
+export function fakeIqAssessment(overrides: Partial<IqAssessmentOut> = {}): IqAssessmentOut {
+  const dimensions: DimensionReviewOut[] = DIMENSIONS.map(([key, name, order, category]) => ({
+    key,
+    name,
+    order,
+    category,
+    description: `About ${name}.`,
+    proposed_score: 4,
+    proposed_rationale: ["The idea says a little about this.", "So a middle score fits."],
+    proposed_confidence: "0.70",
+    final_score: null,
+    level: null,
+    note: null,
+    changed: false,
+  }));
+  return {
+    id: IQ_ASSESSMENT_ID,
+    idea_id: IDEA_ID,
+    idea_title: "Same-day delivery",
+    status: "proposed",
+    proposal_status: "ready",
+    sample: false,
+    question_set_version: 1,
+    scale: { min: 1, max: 10 },
+    levels: [
+      { key: "continuous_improvement", name: "Continuous Improvement", min: 1, max: 3, text: "Incremental." },
+      { key: "innovation", name: "Innovation", min: 4, max: 6, text: "Novel." },
+      { key: "invention", name: "Invention", min: 7, max: 10, text: "Breakthrough." },
+    ],
+    dimensions,
+    missing_information: [],
+    iq: null,
+    iq_maximum: "100.0",
+    categories: [
+      { key: "customer_facing", name: "Customer-Facing Innovation", score: null, maximum: "100.0" },
+    ],
+    priorities: [],
+    vfm: null,
+    can_review: true,
+    requested_at: "2026-10-28T09:05:00Z",
+    requested_by_name: "Mia Member",
+    confirmed_at: null,
+    confirmed_by_name: null,
+    ...overrides,
+  };
+}
+
+export function fakeConfirmedAssessment(overrides: Partial<IqAssessmentOut> = {}): IqAssessmentOut {
+  const base = fakeIqAssessment();
+  return {
+    ...base,
+    status: "confirmed",
+    dimensions: base.dimensions.map((d, i) => ({
+      ...d,
+      final_score: i === 2 ? 5 : 4,
+      changed: i === 2,
+      note: i === 2 ? "The team has reorganised twice this year." : null,
+      level: { key: "innovation", name: "Innovation", min: 4, max: 6, text: "Novel." },
+    })),
+    iq: "70.0",
+    categories: [
+      { key: "customer_facing", name: "Customer-Facing Innovation", score: "74.0", maximum: "100.0" },
+    ],
+    priorities: [
+      {
+        rank: 1,
+        key: "organizational_agility",
+        name: "Organizational Agility",
+        score: 5,
+        level_name: "Innovation",
+        next_steps: "Build adaptable structures.",
+      },
+    ],
+    vfm: { investment: "50000.00", currency: "USD", per_point: "714.29", not_calculable_reason: null },
+    can_review: false,
+    confirmed_at: "2026-10-28T10:00:00Z",
+    confirmed_by_name: "Mia Member",
+    ...overrides,
   };
 }

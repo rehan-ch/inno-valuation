@@ -33,6 +33,23 @@ export type QuestionConsensusOut = Schemas["QuestionConsensusOut"];
 export type ResultOut = Schemas["ResultOut"];
 export type ExplanationOut = Schemas["ExplanationOut"];
 
+export type IdeaStage = Schemas["IdeaStage"];
+export type IdeaStatus = Schemas["IdeaStatus"];
+export type IqAssessmentStatus = Schemas["IqAssessmentStatus"];
+export type IdeaCreateIn = Schemas["IdeaCreateIn"];
+export type IdeaUpdateIn = Schemas["IdeaUpdateIn"];
+export type IdeaSummaryOut = Schemas["IdeaSummaryOut"];
+export type IdeaOut = Schemas["IdeaOut"];
+export type AssessmentBriefOut = Schemas["AssessmentBriefOut"];
+export type IqAssessmentOut = Schemas["IqAssessmentOut"];
+export type DimensionReviewOut = Schemas["DimensionReviewOut"];
+export type IqCategoryOut = Schemas["IqCategoryOut"];
+export type IqPriorityOut = Schemas["IqPriorityOut"];
+export type LevelOut = Schemas["LevelOut"];
+export type VfmOut = Schemas["VfmOut"];
+export type ReviewIn = Schemas["ReviewIn"];
+export type ProposalStatus = AssessmentBriefOut["proposal_status"];
+
 export type ConsultantGrantOut = Schemas["ConsultantGrantOut"];
 export type ConsultantAccessOut = Schemas["ConsultantAccessOut"];
 export type GrantStatus = Schemas["GrantStatus"];

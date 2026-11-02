@@ -171,7 +171,10 @@ export function AppShell({ children }: { children: ReactNode }) {
         >
           <NavLink href="/dashboard">Dashboard</NavLink>
           {(membership || me.consultant_organisations.length > 0) && (
-            <NavLink href="/readiness">Readiness</NavLink>
+            <>
+              <NavLink href="/readiness">Readiness</NavLink>
+              <NavLink href="/ideas">Ideas</NavLink>
+            </>
           )}
           {membership && <NavLink href="/team">Team</NavLink>}
           {membership && canManage(membership.role) && (
