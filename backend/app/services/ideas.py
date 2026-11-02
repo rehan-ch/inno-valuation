@@ -458,6 +458,9 @@ def request_assessment(db: Session, ctx: OrgContext, idea_id: uuid.UUID) -> IqAs
         question_set_version=QUESTION_SET.version,
         status=IqAssessmentStatus.PROPOSED,
         requested_by_user_id=ctx.user.id,
+        # Set here, not by the database: inside one transaction now() is the same for every
+        # row, and "the latest assessment" must be the one asked for last.
+        created_at=datetime.now(UTC),
     )
     db.add(assessment)
     db.flush()
