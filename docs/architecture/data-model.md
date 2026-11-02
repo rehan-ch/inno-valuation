@@ -36,10 +36,11 @@ Built in migration `0006_readiness` (`app/models/readiness.py`). Every table car
 - `ReadinessResult`: assessment, per_dimension (jsonb `{key: score}`), category_scores, total (0..300 checked), band_key, priorities (jsonb), computed_at. One per assessment. Immutable once the assessment is final (enforced in the service layer and by a test).
 
 ## IQ (idea)
-- `Idea`: organisation, title, summary, problem, target_market, uniqueness, team, risks, investment_minor, currency, expected_value_minor, stage, created_by.
-- `IqAssessment`: idea, question_set_version, status (`proposed`, `confirmed`), weights_snapshot, iq, category_scores, priorities, confirmed_by, confirmed_at. Immutable once confirmed. Re-assessment creates a new record.
-- `DimensionScore`: iq_assessment, dimension_key, proposed_score, proposed_rationale, proposed_confidence, ai_run_id, final_score, level_key, edited_by.
-- `VfmSnapshot`: iq_assessment, investment_minor, currency, vfm_per_point. Nil when IQ is 0.
+Built in migration `0010_ideas` (`app/models/ideas.py`). Every table carries its own `organisation_id` (indexed). Money is whole minor units plus an ISO 4217 code; the exponent table is `app/core/currencies.py`.
+
+- `Idea` (`ideas`): organisation, title, summary, problem, target_market, uniqueness, team, risks, stage (`idea`, `concept`, `prototype`, `pilot`, `launched`), investment_minor, currency, expected_value_minor, status (`draft`, `submitted`, `assessed`), created_by, archived_at. Its creator owns it (edits, scores, confirms); owners and admins may do the same for any idea and archive it.
+- `IqAssessment` (`iq_assessments`): organisation, idea, question_set_version, status (`proposed`, `confirmed`, `superseded`), ai_run (the touchpoint 3 run that proposed the scores; its status says whether the proposal is pending, ready or failed), weights_snapshot (empty until P4.08), and, written once at confirmation: iq (1 decimal), category_scores (`{key: "70.0"}`), priorities (`[{rank, key, score}]`), investment_minor and currency as they were, vfm_per_point (2 decimals, NULL when not calculable), confirmed_by, confirmed_at. Immutable once confirmed (service layer, proven by a test). Re-assessment creates a new record and supersedes an unconfirmed one.
+- `IqDimensionScore` (`iq_dimension_scores`): organisation, assessment, dimension_key, proposed_score, proposed_rationale (JSON list of sentences), proposed_confidence (0 to 1), final_score, level_key (set by the engine at confirmation), note, reviewed_by. One per (assessment, dimension), written from the run's answer the first time the assessment is read after the run succeeds. Scores 1 to 10 checked in the database.
 
 ## AI
 - `ContextAnswers`: organisation, questions (jsonb), answers (jsonb), ai_run_id, answered_at. Used by touchpoints 3 to 6.
@@ -55,5 +56,5 @@ Built in migration `0006_readiness` (`app/models/readiness.py`). Every table car
 ## Indexes and constraints
 - `organisation_id` on every client table, indexed. A full (not partial) composite index or unique constraint that starts with `organisation_id` counts (for example `(organisation_id, user_id)` on memberships). The same applies to every foreign key; `tests/models/test_schema.py` enforces it.
 - Every timestamp is `timestamptz` (UTC).
-- Unique: `(readiness_assessment_id, user_id)` on responses; `(iq_assessment_id, dimension_key)` on scores.
+- Unique: `(assessment_id, user_id)` on readiness responses; `(assessment_id, dimension_key)` on IQ dimension scores.
 - Check constraints: answers 1..5, scores 1..10, investment >= 0.
