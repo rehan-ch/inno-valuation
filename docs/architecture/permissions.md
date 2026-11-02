@@ -9,9 +9,9 @@ One table decides who may do what inside an organisation: `ROLE_PERMISSIONS` in 
 
 `current_org` re-checks the membership or grant on every request, so a removed member or an ended grant loses access at once (404 `not_found`).
 
-An archived organisation is view-only until the archive feature exists (Phase 8): it cannot be chosen as the active organisation, and only `organisation.view`, `team.view` and `assessments.view` still work, so results stay readable. `require_permission(...)` enforces this; `require_role(...)` checks the role only, so routes that change data use `require_permission(...)`.
+An archived organisation is view-only until the archive feature exists (Phase 8): it cannot be chosen as the active organisation, and only `organisation.view`, `team.view`, `assessments.view` and `ideas.view` still work, so results stay readable. `require_permission(...)` enforces this; `require_role(...)` checks the role only, so routes that change data use `require_permission(...)`.
 
-## Matrix (Phases 2 and 3)
+## Matrix (Phases 2 to 4)
 
 | Permission | Code | owner | admin | member | committee | investor | consultant |
 |---|---|---|---|---|---|---|---|
@@ -24,8 +24,13 @@ An archived organisation is view-only until the archive feature exists (Phase 8)
 | View assessments and results | `assessments.view` | yes | yes | yes | yes | yes | yes |
 | Answer a readiness assessment | `assessments.answer` | yes | yes | yes | yes | no | no |
 | Manage assessments (start, consensus, finalise) | `assessments.manage` | yes | yes | no | no | no | no |
+| View ideas and their IQ assessments | `ideas.view` | yes | yes | yes | yes | yes | yes |
+| Add an idea (and edit, submit and confirm one's own) | `ideas.create` | yes | yes | yes | yes | no | no |
+| Edit, submit, confirm or archive anyone's idea | `ideas.manage` | yes | yes | no | no | no | no |
 
-An investor watches: they see assessments and results but do not answer. A consultant (Amy) reads assessments and results only while their grant is live; the service layer additionally limits consultants to assessments that are `final`.
+An investor watches: they see assessments, ideas and results but neither answers nor adds ideas. A consultant (Amy) reads assessments, ideas and results only while their grant is live; the service layer additionally limits consultants to assessments that are `final` and to ideas whose latest IQ assessment is confirmed.
+
+The person who added an idea is its owner: they may edit it, send it for scoring and confirm or change the AI's proposed scores (Amy Q1) without `ideas.manage`. Owners and admins may do the same for every idea, and archive ideas.
 
 ## Owner rules (service layer, `app/services/members.py`)
 - Only an owner may give the owner role (by role change or invitation), change an owner's role, or remove an owner. An admin gets 403 `owner_only`.

@@ -42,13 +42,21 @@ class Permission(StrEnum):
     VIEW_ASSESSMENTS = "assessments.view"  # assessments and their results
     ANSWER_ASSESSMENT = "assessments.answer"  # one's own readiness answers
     MANAGE_ASSESSMENTS = "assessments.manage"  # start, consensus, finalise (facilitator, Q5)
+    VIEW_IDEAS = "ideas.view"  # ideas and their IQ assessments
+    CREATE_IDEAS = "ideas.create"  # add an idea; its creator edits, submits and confirms it
+    MANAGE_IDEAS = "ideas.manage"  # edit, submit, confirm or archive anyone's idea
 
 
 _MANAGE: Final = frozenset(Permission)
 _VIEW: Final = frozenset(
-    {Permission.VIEW_ORGANISATION, Permission.VIEW_TEAM, Permission.VIEW_ASSESSMENTS}
+    {
+        Permission.VIEW_ORGANISATION,
+        Permission.VIEW_TEAM,
+        Permission.VIEW_ASSESSMENTS,
+        Permission.VIEW_IDEAS,
+    }
 )
-_PARTICIPATE: Final = _VIEW | {Permission.ANSWER_ASSESSMENT}
+_PARTICIPATE: Final = _VIEW | {Permission.ANSWER_ASSESSMENT, Permission.CREATE_IDEAS}
 
 # What anyone may still do in an archived organisation (view-only until the archive
 # feature exists; see docs/decisions.md 2026-10-13).
@@ -60,7 +68,9 @@ ROLE_PERMISSIONS: Final[dict[OrgRole, frozenset[Permission]]] = {
     OrgRole.MEMBER: _PARTICIPATE,
     OrgRole.COMMITTEE: _PARTICIPATE,
     OrgRole.INVESTOR: _VIEW,
-    OrgRole.CONSULTANT: frozenset({Permission.VIEW_ORGANISATION, Permission.VIEW_ASSESSMENTS}),
+    OrgRole.CONSULTANT: frozenset(
+        {Permission.VIEW_ORGANISATION, Permission.VIEW_ASSESSMENTS, Permission.VIEW_IDEAS}
+    ),
 }
 
 

@@ -15,6 +15,9 @@ CLIENT_TABLES = {
     "readiness_consensus",
     "readiness_results",
     "ai_runs",
+    "ideas",
+    "iq_assessments",
+    "iq_dimension_scores",
 }
 
 

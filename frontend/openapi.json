@@ -41,6 +41,95 @@
         "title": "AnswersIn",
         "type": "object"
       },
+      "AssessmentBriefOut": {
+        "description": "One assessment in a list: where it stands and, once confirmed, its headline numbers.",
+        "properties": {
+          "confirmed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmed At"
+          },
+          "currency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Currency"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "iq": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Iq"
+          },
+          "proposal_status": {
+            "enum": [
+              "pending",
+              "ready",
+              "failed"
+            ],
+            "title": "Proposal Status",
+            "type": "string"
+          },
+          "requested_at": {
+            "format": "date-time",
+            "title": "Requested At",
+            "type": "string"
+          },
+          "sample": {
+            "title": "Sample",
+            "type": "boolean"
+          },
+          "status": {
+            "$ref": "#/components/schemas/IqAssessmentStatus"
+          },
+          "vfm_per_point": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vfm Per Point"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "proposal_status",
+          "sample",
+          "iq",
+          "vfm_per_point",
+          "currency",
+          "requested_at",
+          "confirmed_at"
+        ],
+        "title": "AssessmentBriefOut",
+        "type": "object"
+      },
       "AssessmentOut": {
         "properties": {
           "band_name": {
@@ -713,6 +802,119 @@
         "title": "DimensionOut",
         "type": "object"
       },
+      "DimensionReviewOut": {
+        "description": "One dimension of an assessment: the AI's proposal beside the owner's final score.",
+        "properties": {
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "changed": {
+            "title": "Changed",
+            "type": "boolean"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "final_score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Final Score"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "level": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LevelOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "order": {
+            "title": "Order",
+            "type": "integer"
+          },
+          "proposed_confidence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proposed Confidence"
+          },
+          "proposed_rationale": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proposed Rationale"
+          },
+          "proposed_score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proposed Score"
+          }
+        },
+        "required": [
+          "key",
+          "name",
+          "order",
+          "category",
+          "description",
+          "proposed_score",
+          "proposed_rationale",
+          "proposed_confidence",
+          "final_score",
+          "level",
+          "note",
+          "changed"
+        ],
+        "title": "DimensionReviewOut",
+        "type": "object"
+      },
       "DimensionScoreOut": {
         "properties": {
           "category": {
@@ -895,6 +1097,583 @@
         "title": "HealthOut",
         "type": "object"
       },
+      "IdeaCreateIn": {
+        "additionalProperties": false,
+        "description": "A new idea: a title and summary are required; the currency defaults to the\norganisation's.",
+        "properties": {
+          "currency": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Z]{3}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Currency"
+          },
+          "expected_value": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,15}|(?=[\\d.]{1,20}0*$)\\d{0,15}\\.\\d{0,4}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Value"
+          },
+          "investment": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,15}|(?=[\\d.]{1,20}0*$)\\d{0,15}\\.\\d{0,4}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Investment"
+          },
+          "problem": {
+            "anyOf": [
+              {
+                "maxLength": 5000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Problem"
+          },
+          "risks": {
+            "anyOf": [
+              {
+                "maxLength": 5000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risks"
+          },
+          "stage": {
+            "$ref": "#/components/schemas/IdeaStage",
+            "default": "idea"
+          },
+          "summary": {
+            "maxLength": 5000,
+            "minLength": 1,
+            "title": "Summary",
+            "type": "string"
+          },
+          "target_market": {
+            "anyOf": [
+              {
+                "maxLength": 5000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Market"
+          },
+          "team": {
+            "anyOf": [
+              {
+                "maxLength": 5000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Team"
+          },
+          "title": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          },
+          "uniqueness": {
+            "anyOf": [
+              {
+                "maxLength": 5000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uniqueness"
+          }
+        },
+        "required": [
+          "title",
+          "summary"
+        ],
+        "title": "IdeaCreateIn",
+        "type": "object"
+      },
+      "IdeaOut": {
+        "properties": {
+          "archived": {
+            "title": "Archived",
+            "type": "boolean"
+          },
+          "assessments": {
+            "items": {
+              "$ref": "#/components/schemas/AssessmentBriefOut"
+            },
+            "title": "Assessments",
+            "type": "array"
+          },
+          "can_archive": {
+            "title": "Can Archive",
+            "type": "boolean"
+          },
+          "can_change": {
+            "title": "Can Change",
+            "type": "boolean"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By Name"
+          },
+          "currency": {
+            "title": "Currency",
+            "type": "string"
+          },
+          "expected_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Value"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "investment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Investment"
+          },
+          "latest_assessment": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AssessmentBriefOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "problem": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Problem"
+          },
+          "risks": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risks"
+          },
+          "stage": {
+            "$ref": "#/components/schemas/IdeaStage"
+          },
+          "status": {
+            "$ref": "#/components/schemas/IdeaStatus"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          },
+          "target_market": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Market"
+          },
+          "team": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Team"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "uniqueness": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uniqueness"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "stage",
+          "status",
+          "archived",
+          "currency",
+          "investment",
+          "expected_value",
+          "created_by_name",
+          "created_at",
+          "updated_at",
+          "latest_assessment",
+          "summary",
+          "problem",
+          "target_market",
+          "uniqueness",
+          "team",
+          "risks",
+          "can_change",
+          "can_archive",
+          "assessments"
+        ],
+        "title": "IdeaOut",
+        "type": "object"
+      },
+      "IdeaStage": {
+        "description": "How far an idea has come, in the idea owner's words. Context for the reader and the\nAI; it changes no score.",
+        "enum": [
+          "idea",
+          "concept",
+          "prototype",
+          "pilot",
+          "launched"
+        ],
+        "title": "IdeaStage",
+        "type": "string"
+      },
+      "IdeaStatus": {
+        "description": "Where an idea is on its way to an IQ. Archiving is a separate flag (``archived_at``).\n\n``draft`` is being written; ``submitted`` means the latest IQ assessment is proposed\nbut not confirmed; ``assessed`` means the latest assessment is confirmed. A re-assessment\nmoves an assessed idea back to ``submitted``; the confirmed assessment stays for history.",
+        "enum": [
+          "draft",
+          "submitted",
+          "assessed"
+        ],
+        "title": "IdeaStatus",
+        "type": "string"
+      },
+      "IdeaSummaryOut": {
+        "properties": {
+          "archived": {
+            "title": "Archived",
+            "type": "boolean"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By Name"
+          },
+          "currency": {
+            "title": "Currency",
+            "type": "string"
+          },
+          "expected_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Value"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "investment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Investment"
+          },
+          "latest_assessment": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AssessmentBriefOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "stage": {
+            "$ref": "#/components/schemas/IdeaStage"
+          },
+          "status": {
+            "$ref": "#/components/schemas/IdeaStatus"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "stage",
+          "status",
+          "archived",
+          "currency",
+          "investment",
+          "expected_value",
+          "created_by_name",
+          "created_at",
+          "updated_at",
+          "latest_assessment"
+        ],
+        "title": "IdeaSummaryOut",
+        "type": "object"
+      },
+      "IdeaUpdateIn": {
+        "additionalProperties": false,
+        "description": "Partial update: only the fields sent are changed. Send null to clear an optional one.",
+        "properties": {
+          "currency": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Z]{3}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Currency"
+          },
+          "expected_value": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,15}|(?=[\\d.]{1,20}0*$)\\d{0,15}\\.\\d{0,4}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Value"
+          },
+          "investment": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,15}|(?=[\\d.]{1,20}0*$)\\d{0,15}\\.\\d{0,4}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Investment"
+          },
+          "problem": {
+            "anyOf": [
+              {
+                "maxLength": 5000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Problem"
+          },
+          "risks": {
+            "anyOf": [
+              {
+                "maxLength": 5000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risks"
+          },
+          "stage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IdeaStage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "maxLength": 5000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary"
+          },
+          "target_market": {
+            "anyOf": [
+              {
+                "maxLength": 5000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Market"
+          },
+          "team": {
+            "anyOf": [
+              {
+                "maxLength": 5000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Team"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "uniqueness": {
+            "anyOf": [
+              {
+                "maxLength": 5000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uniqueness"
+          }
+        },
+        "title": "IdeaUpdateIn",
+        "type": "object"
+      },
       "InvitationIn": {
         "additionalProperties": false,
         "properties": {
@@ -1009,6 +1788,309 @@
           "token"
         ],
         "title": "InvitationTokenIn",
+        "type": "object"
+      },
+      "IqAssessmentOut": {
+        "properties": {
+          "can_review": {
+            "title": "Can Review",
+            "type": "boolean"
+          },
+          "categories": {
+            "items": {
+              "$ref": "#/components/schemas/IqCategoryOut"
+            },
+            "title": "Categories",
+            "type": "array"
+          },
+          "confirmed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmed At"
+          },
+          "confirmed_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmed By Name"
+          },
+          "dimensions": {
+            "items": {
+              "$ref": "#/components/schemas/DimensionReviewOut"
+            },
+            "title": "Dimensions",
+            "type": "array"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "idea_id": {
+            "format": "uuid",
+            "title": "Idea Id",
+            "type": "string"
+          },
+          "idea_title": {
+            "title": "Idea Title",
+            "type": "string"
+          },
+          "iq": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Iq"
+          },
+          "iq_maximum": {
+            "title": "Iq Maximum",
+            "type": "string"
+          },
+          "levels": {
+            "items": {
+              "$ref": "#/components/schemas/LevelOut"
+            },
+            "title": "Levels",
+            "type": "array"
+          },
+          "missing_information": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Missing Information",
+            "type": "array"
+          },
+          "priorities": {
+            "items": {
+              "$ref": "#/components/schemas/IqPriorityOut"
+            },
+            "title": "Priorities",
+            "type": "array"
+          },
+          "proposal_status": {
+            "enum": [
+              "pending",
+              "ready",
+              "failed"
+            ],
+            "title": "Proposal Status",
+            "type": "string"
+          },
+          "question_set_version": {
+            "title": "Question Set Version",
+            "type": "integer"
+          },
+          "requested_at": {
+            "format": "date-time",
+            "title": "Requested At",
+            "type": "string"
+          },
+          "requested_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requested By Name"
+          },
+          "sample": {
+            "title": "Sample",
+            "type": "boolean"
+          },
+          "scale": {
+            "$ref": "#/components/schemas/IqScaleOut"
+          },
+          "status": {
+            "$ref": "#/components/schemas/IqAssessmentStatus"
+          },
+          "vfm": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VfmOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "idea_id",
+          "idea_title",
+          "status",
+          "proposal_status",
+          "sample",
+          "question_set_version",
+          "scale",
+          "levels",
+          "dimensions",
+          "missing_information",
+          "iq",
+          "iq_maximum",
+          "categories",
+          "priorities",
+          "vfm",
+          "can_review",
+          "requested_at",
+          "requested_by_name",
+          "confirmed_at",
+          "confirmed_by_name"
+        ],
+        "title": "IqAssessmentOut",
+        "type": "object"
+      },
+      "IqAssessmentStatus": {
+        "description": "One IQ assessment of an idea, left to right.\n\n``proposed``: the AI proposal is on its way or waiting for the owner's review (Amy Q1).\n``confirmed``: the owner confirmed the 12 scores; scored by the engine and immutable.\n``superseded``: replaced by a newer proposal before it was confirmed.",
+        "enum": [
+          "proposed",
+          "confirmed",
+          "superseded"
+        ],
+        "title": "IqAssessmentStatus",
+        "type": "string"
+      },
+      "IqCategoryOut": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "maximum": {
+            "title": "Maximum",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          }
+        },
+        "required": [
+          "key",
+          "name",
+          "score",
+          "maximum"
+        ],
+        "title": "IqCategoryOut",
+        "type": "object"
+      },
+      "IqPriorityOut": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "level_name": {
+            "title": "Level Name",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "next_steps": {
+            "title": "Next Steps",
+            "type": "string"
+          },
+          "rank": {
+            "title": "Rank",
+            "type": "integer"
+          },
+          "score": {
+            "title": "Score",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "rank",
+          "key",
+          "name",
+          "score",
+          "level_name",
+          "next_steps"
+        ],
+        "title": "IqPriorityOut",
+        "type": "object"
+      },
+      "IqScaleOut": {
+        "properties": {
+          "max": {
+            "title": "Max",
+            "type": "integer"
+          },
+          "min": {
+            "title": "Min",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "min",
+          "max"
+        ],
+        "title": "IqScaleOut",
+        "type": "object"
+      },
+      "LevelOut": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "max": {
+            "title": "Max",
+            "type": "integer"
+          },
+          "min": {
+            "title": "Min",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "name",
+          "min",
+          "max",
+          "text"
+        ],
+        "title": "LevelOut",
         "type": "object"
       },
       "MeOut": {
@@ -1968,6 +3050,44 @@
         "title": "ResultOut",
         "type": "object"
       },
+      "ReviewIn": {
+        "additionalProperties": false,
+        "description": "The owner's review: changed scores (null puts the proposal back) and notes.",
+        "properties": {
+          "notes": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "maxProperties": 20,
+            "title": "Notes",
+            "type": "object"
+          },
+          "scores": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "maxProperties": 20,
+            "title": "Scores",
+            "type": "object"
+          }
+        },
+        "title": "ReviewIn",
+        "type": "object"
+      },
       "ScaleOut": {
         "properties": {
           "labels": {
@@ -2120,6 +3240,56 @@
           "token"
         ],
         "title": "VerifyEmailIn",
+        "type": "object"
+      },
+      "VfmOut": {
+        "description": "Value for Money (spec 5.1): the investment the assessment was confirmed with and the\ncost per innovation point, or why there is none.",
+        "properties": {
+          "currency": {
+            "title": "Currency",
+            "type": "string"
+          },
+          "investment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Investment"
+          },
+          "not_calculable_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Not Calculable Reason"
+          },
+          "per_point": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Per Point"
+          }
+        },
+        "required": [
+          "investment",
+          "currency",
+          "per_point",
+          "not_calculable_reason"
+        ],
+        "title": "VfmOut",
         "type": "object"
       }
     }
@@ -2416,6 +3586,490 @@
         "summary": "Health",
         "tags": [
           "health"
+        ]
+      }
+    },
+    "/api/v1/ideas": {
+      "get": {
+        "description": "The organisation's ideas, newest first, each with its latest assessment's IQ and\nValue for Money. Compare and sort on the client: every number is already here.",
+        "operationId": "list_ideas_api_v1_ideas_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "include_archived",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Include Archived",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/IdeaSummaryOut"
+                  },
+                  "title": "Response List Ideas Api V1 Ideas Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Ideas",
+        "tags": [
+          "ideas"
+        ]
+      },
+      "post": {
+        "operationId": "create_idea_api_v1_ideas_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IdeaCreateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IdeaOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Idea",
+        "tags": [
+          "ideas"
+        ]
+      }
+    },
+    "/api/v1/ideas/{idea_id}": {
+      "get": {
+        "operationId": "get_idea_api_v1_ideas__idea_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "idea_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Idea Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IdeaOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Idea",
+        "tags": [
+          "ideas"
+        ]
+      },
+      "patch": {
+        "description": "Change an idea. Its creator may; so may an owner or admin.",
+        "operationId": "update_idea_api_v1_ideas__idea_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "idea_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Idea Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IdeaUpdateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IdeaOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Idea",
+        "tags": [
+          "ideas"
+        ]
+      }
+    },
+    "/api/v1/ideas/{idea_id}/archive": {
+      "post": {
+        "operationId": "archive_idea_api_v1_ideas__idea_id__archive_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "idea_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Idea Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IdeaOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Archive Idea",
+        "tags": [
+          "ideas"
+        ]
+      }
+    },
+    "/api/v1/ideas/{idea_id}/assessments": {
+      "post": {
+        "description": "Send the idea for scoring. The AI proposes a 1 to 10 score per dimension in the\nbackground (poll the GET until ``proposal_status`` is \"ready\" or \"failed\"); the owner\nthen confirms or changes each one (Amy Q1). Scoring again keeps the earlier confirmed\nassessments for history.",
+        "operationId": "request_assessment_api_v1_ideas__idea_id__assessments_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "idea_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Idea Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IqAssessmentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Request Assessment",
+        "tags": [
+          "ideas"
+        ]
+      }
+    },
+    "/api/v1/ideas/{idea_id}/assessments/{assessment_id}": {
+      "get": {
+        "description": "The proposal beside the owner's review and, once confirmed, the result: IQ out of 100,\nlevels, category scores, priorities with the book's next steps, Value for Money.",
+        "operationId": "get_assessment_api_v1_ideas__idea_id__assessments__assessment_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "idea_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Idea Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "assessment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Assessment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IqAssessmentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Assessment",
+        "tags": [
+          "ideas"
+        ]
+      }
+    },
+    "/api/v1/ideas/{idea_id}/assessments/{assessment_id}/confirm": {
+      "post": {
+        "description": "Make the scores final. The engine computes the IQ, levels, category scores,\npriorities and Value for Money once; nothing about the assessment changes afterwards.",
+        "operationId": "confirm_assessment_api_v1_ideas__idea_id__assessments__assessment_id__confirm_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "idea_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Idea Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "assessment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Assessment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IqAssessmentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Confirm Assessment",
+        "tags": [
+          "ideas"
+        ]
+      }
+    },
+    "/api/v1/ideas/{idea_id}/assessments/{assessment_id}/review": {
+      "patch": {
+        "description": "Autosave of the owner's review: changed scores (null puts the proposal back) and notes.",
+        "operationId": "save_review_api_v1_ideas__idea_id__assessments__assessment_id__review_patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "idea_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Idea Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "assessment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Assessment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IqAssessmentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Save Review",
+        "tags": [
+          "ideas"
+        ]
+      }
+    },
+    "/api/v1/ideas/{idea_id}/restore": {
+      "post": {
+        "operationId": "restore_idea_api_v1_ideas__idea_id__restore_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "idea_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Idea Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IdeaOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Restore Idea",
+        "tags": [
+          "ideas"
         ]
       }
     },

@@ -11,6 +11,8 @@ from pydantic import BaseModel, ValidationError
 import app.ai.schemas
 from app.ai.schemas.common import AiOutput
 from app.ai.schemas.explain_question import ExplainQuestionOutput
+from app.ai.schemas.propose_iq_scores import ProposeIqScoresOutput
+from app.scoring.question_set import QUESTION_SET
 
 # Field names that would mean the AI produced a number the engine owns.
 ENGINE_OWNED = ("total", "band", "rank", "ranking", "vfm", "value_for_money", "iq", "priority")
@@ -30,13 +32,34 @@ def _field_names(schema: dict[str, Any]) -> set[str]:
 
 
 def test_every_touchpoint_schema_is_found() -> None:
-    assert ExplainQuestionOutput in _output_models()
+    assert {ExplainQuestionOutput, ProposeIqScoresOutput} <= set(_output_models())
+
+
+def _item_definitions(schema: dict[str, Any]) -> list[dict[str, Any]]:
+    """The object schemas of every array-of-objects property at the top level."""
+    found = []
+    for prop in schema.get("properties", {}).values():
+        items = prop.get("items")
+        if not isinstance(items, dict):
+            continue
+        if "$ref" in items:
+            items = schema["$defs"][items["$ref"].rsplit("/", 1)[-1]]
+        if items.get("type") == "object":
+            found.append(items)
+    return found
 
 
 @pytest.mark.parametrize("model", _output_models(), ids=lambda m: m.__name__)
 def test_dimension_key_is_required(model: type[BaseModel]) -> None:
+    """Every output item names its dimension: either the output is the item, or every
+    object it lists is one."""
     schema = model.model_json_schema()
-    assert "dimension_key" in schema.get("required", [])
+    if "dimension_key" in schema.get("required", []):
+        return
+    items = _item_definitions(schema)
+    assert items, f"{model.__name__} has no dimension_key and lists no items that do"
+    for item in items:
+        assert "dimension_key" in item.get("required", [])
 
 
 @pytest.mark.parametrize("model", _output_models(), ids=lambda m: m.__name__)
@@ -83,3 +106,44 @@ def test_bad_explanations_are_refused(change: dict[str, Any], message: str) -> N
     # The messages land in run.error (see runner.parse_output), so they never echo what
     # the model wrote.
     assert not [e for e in raised.value.errors() if "made_up" in e["msg"]]
+
+
+def _proposal(**changes: Any) -> dict[str, Any]:
+    scores = [
+        {
+            "dimension_key": key,
+            "score": 5,
+            "rationale": ["The idea says little about this.", "So the score stays in the middle."],
+            "confidence": 0.4,
+        }
+        for key in QUESTION_SET.dimension_keys
+    ]
+    return {"scores": scores, "missing_information": [], **changes}
+
+
+def test_a_valid_proposal_passes() -> None:
+    output = ProposeIqScoresOutput.model_validate(_proposal())
+    assert [s.dimension_key for s in output.scores] == list(QUESTION_SET.dimension_keys)
+
+
+@pytest.mark.parametrize(
+    ("change", "message"),
+    [
+        (lambda p: p["scores"].pop(), "at least 12"),
+        (lambda p: p["scores"].append(dict(p["scores"][0])), "at most 12"),
+        (lambda p: p["scores"][1].update(dimension_key="customer_journey"), "exactly once"),
+        (lambda p: p["scores"][0].update(score=11), "less than or equal to 10"),
+        (lambda p: p["scores"][0].update(score=0), "greater than or equal to 1"),
+        (lambda p: p["scores"][0].update(score=7.5), "integer"),
+        (lambda p: p["scores"][0].update(confidence=1.5), "less than or equal to 1"),
+        (lambda p: p["scores"][0].update(rationale=["Only one sentence is here."]), "at least 2"),
+        (lambda p: p["scores"][0].update(iq=70), "Extra inputs"),
+        (lambda p: p.update(iq=70), "Extra inputs"),
+        (lambda p: p.update(total=84), "Extra inputs"),
+    ],
+)
+def test_bad_proposals_are_refused(change: Any, message: str) -> None:
+    data = _proposal()
+    change(data)
+    with pytest.raises(ValidationError, match=message):
+        ProposeIqScoresOutput.model_validate(data)

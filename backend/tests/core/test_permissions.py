@@ -19,6 +19,7 @@ MANAGE = {
     Permission.CHANGE_ROLES,
     Permission.MANAGE_CONSULTANT_ACCESS,
     Permission.MANAGE_ASSESSMENTS,
+    Permission.MANAGE_IDEAS,
 }
 
 
@@ -42,12 +43,18 @@ def test_consultant_is_read_only() -> None:
     assert ROLE_PERMISSIONS[OrgRole.CONSULTANT] == {
         Permission.VIEW_ORGANISATION,
         Permission.VIEW_ASSESSMENTS,
+        Permission.VIEW_IDEAS,
     }
 
 
 def test_archived_organisation_keeps_viewing_only() -> None:
     # Results stay readable in an archived organisation; nothing else does.
-    expected = {Permission.VIEW_ORGANISATION, Permission.VIEW_TEAM, Permission.VIEW_ASSESSMENTS}
+    expected = {
+        Permission.VIEW_ORGANISATION,
+        Permission.VIEW_TEAM,
+        Permission.VIEW_ASSESSMENTS,
+        Permission.VIEW_IDEAS,
+    }
     assert expected == READ_ONLY_PERMISSIONS
 
 

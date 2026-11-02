@@ -144,6 +144,168 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/ideas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Ideas
+         * @description The organisation's ideas, newest first, each with its latest assessment's IQ and
+         *     Value for Money. Compare and sort on the client: every number is already here.
+         */
+        get: operations["list_ideas_api_v1_ideas_get"];
+        put?: never;
+        /** Create Idea */
+        post: operations["create_idea_api_v1_ideas_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ideas/{idea_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Idea */
+        get: operations["get_idea_api_v1_ideas__idea_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Idea
+         * @description Change an idea. Its creator may; so may an owner or admin.
+         */
+        patch: operations["update_idea_api_v1_ideas__idea_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/ideas/{idea_id}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Archive Idea */
+        post: operations["archive_idea_api_v1_ideas__idea_id__archive_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ideas/{idea_id}/assessments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Request Assessment
+         * @description Send the idea for scoring. The AI proposes a 1 to 10 score per dimension in the
+         *     background (poll the GET until ``proposal_status`` is "ready" or "failed"); the owner
+         *     then confirms or changes each one (Amy Q1). Scoring again keeps the earlier confirmed
+         *     assessments for history.
+         */
+        post: operations["request_assessment_api_v1_ideas__idea_id__assessments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ideas/{idea_id}/assessments/{assessment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Assessment
+         * @description The proposal beside the owner's review and, once confirmed, the result: IQ out of 100,
+         *     levels, category scores, priorities with the book's next steps, Value for Money.
+         */
+        get: operations["get_assessment_api_v1_ideas__idea_id__assessments__assessment_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ideas/{idea_id}/assessments/{assessment_id}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm Assessment
+         * @description Make the scores final. The engine computes the IQ, levels, category scores,
+         *     priorities and Value for Money once; nothing about the assessment changes afterwards.
+         */
+        post: operations["confirm_assessment_api_v1_ideas__idea_id__assessments__assessment_id__confirm_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ideas/{idea_id}/assessments/{assessment_id}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Save Review
+         * @description Autosave of the owner's review: changed scores (null puts the proposal back) and notes.
+         */
+        patch: operations["save_review_api_v1_ideas__idea_id__assessments__assessment_id__review_patch"];
+        trace?: never;
+    };
+    "/api/v1/ideas/{idea_id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Restore Idea */
+        post: operations["restore_idea_api_v1_ideas__idea_id__restore_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/invitations/accept": {
         parameters: {
             query?: never;
@@ -647,6 +809,38 @@ export interface components {
                 [key: string]: number | null;
             };
         };
+        /**
+         * AssessmentBriefOut
+         * @description One assessment in a list: where it stands and, once confirmed, its headline numbers.
+         */
+        AssessmentBriefOut: {
+            /** Confirmed At */
+            confirmed_at: string | null;
+            /** Currency */
+            currency: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Iq */
+            iq: string | null;
+            /**
+             * Proposal Status
+             * @enum {string}
+             */
+            proposal_status: "pending" | "ready" | "failed";
+            /**
+             * Requested At
+             * Format: date-time
+             */
+            requested_at: string;
+            /** Sample */
+            sample: boolean;
+            status: components["schemas"]["IqAssessmentStatus"];
+            /** Vfm Per Point */
+            vfm_per_point: string | null;
+        };
         /** AssessmentOut */
         AssessmentOut: {
             /** Band Name */
@@ -893,6 +1087,35 @@ export interface components {
             /** Questions */
             questions: components["schemas"]["QuestionOut"][];
         };
+        /**
+         * DimensionReviewOut
+         * @description One dimension of an assessment: the AI's proposal beside the owner's final score.
+         */
+        DimensionReviewOut: {
+            /** Category */
+            category: string;
+            /** Changed */
+            changed: boolean;
+            /** Description */
+            description: string;
+            /** Final Score */
+            final_score: number | null;
+            /** Key */
+            key: string;
+            level: components["schemas"]["LevelOut"] | null;
+            /** Name */
+            name: string;
+            /** Note */
+            note: string | null;
+            /** Order */
+            order: number;
+            /** Proposed Confidence */
+            proposed_confidence: string | null;
+            /** Proposed Rationale */
+            proposed_rationale: string[] | null;
+            /** Proposed Score */
+            proposed_score: number | null;
+        };
         /** DimensionScoreOut */
         DimensionScoreOut: {
             /** Category */
@@ -971,6 +1194,163 @@ export interface components {
             /** Version */
             version: string;
         };
+        /**
+         * IdeaCreateIn
+         * @description A new idea: a title and summary are required; the currency defaults to the
+         *     organisation's.
+         */
+        IdeaCreateIn: {
+            /** Currency */
+            currency?: string | null;
+            /** Expected Value */
+            expected_value?: number | string | null;
+            /** Investment */
+            investment?: number | string | null;
+            /** Problem */
+            problem?: string | null;
+            /** Risks */
+            risks?: string | null;
+            /** @default idea */
+            stage: components["schemas"]["IdeaStage"];
+            /** Summary */
+            summary: string;
+            /** Target Market */
+            target_market?: string | null;
+            /** Team */
+            team?: string | null;
+            /** Title */
+            title: string;
+            /** Uniqueness */
+            uniqueness?: string | null;
+        };
+        /** IdeaOut */
+        IdeaOut: {
+            /** Archived */
+            archived: boolean;
+            /** Assessments */
+            assessments: components["schemas"]["AssessmentBriefOut"][];
+            /** Can Archive */
+            can_archive: boolean;
+            /** Can Change */
+            can_change: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Created By Name */
+            created_by_name: string | null;
+            /** Currency */
+            currency: string;
+            /** Expected Value */
+            expected_value: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Investment */
+            investment: string | null;
+            latest_assessment: components["schemas"]["AssessmentBriefOut"] | null;
+            /** Problem */
+            problem: string | null;
+            /** Risks */
+            risks: string | null;
+            stage: components["schemas"]["IdeaStage"];
+            status: components["schemas"]["IdeaStatus"];
+            /** Summary */
+            summary: string;
+            /** Target Market */
+            target_market: string | null;
+            /** Team */
+            team: string | null;
+            /** Title */
+            title: string;
+            /** Uniqueness */
+            uniqueness: string | null;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /**
+         * IdeaStage
+         * @description How far an idea has come, in the idea owner's words. Context for the reader and the
+         *     AI; it changes no score.
+         * @enum {string}
+         */
+        IdeaStage: "idea" | "concept" | "prototype" | "pilot" | "launched";
+        /**
+         * IdeaStatus
+         * @description Where an idea is on its way to an IQ. Archiving is a separate flag (``archived_at``).
+         *
+         *     ``draft`` is being written; ``submitted`` means the latest IQ assessment is proposed
+         *     but not confirmed; ``assessed`` means the latest assessment is confirmed. A re-assessment
+         *     moves an assessed idea back to ``submitted``; the confirmed assessment stays for history.
+         * @enum {string}
+         */
+        IdeaStatus: "draft" | "submitted" | "assessed";
+        /** IdeaSummaryOut */
+        IdeaSummaryOut: {
+            /** Archived */
+            archived: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Created By Name */
+            created_by_name: string | null;
+            /** Currency */
+            currency: string;
+            /** Expected Value */
+            expected_value: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Investment */
+            investment: string | null;
+            latest_assessment: components["schemas"]["AssessmentBriefOut"] | null;
+            stage: components["schemas"]["IdeaStage"];
+            status: components["schemas"]["IdeaStatus"];
+            /** Title */
+            title: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /**
+         * IdeaUpdateIn
+         * @description Partial update: only the fields sent are changed. Send null to clear an optional one.
+         */
+        IdeaUpdateIn: {
+            /** Currency */
+            currency?: string | null;
+            /** Expected Value */
+            expected_value?: number | string | null;
+            /** Investment */
+            investment?: number | string | null;
+            /** Problem */
+            problem?: string | null;
+            /** Risks */
+            risks?: string | null;
+            stage?: components["schemas"]["IdeaStage"] | null;
+            /** Summary */
+            summary?: string | null;
+            /** Target Market */
+            target_market?: string | null;
+            /** Team */
+            team?: string | null;
+            /** Title */
+            title?: string | null;
+            /** Uniqueness */
+            uniqueness?: string | null;
+        };
         /** InvitationIn */
         InvitationIn: {
             /**
@@ -1022,6 +1402,116 @@ export interface components {
         InvitationTokenIn: {
             /** Token */
             token: string;
+        };
+        /** IqAssessmentOut */
+        IqAssessmentOut: {
+            /** Can Review */
+            can_review: boolean;
+            /** Categories */
+            categories: components["schemas"]["IqCategoryOut"][];
+            /** Confirmed At */
+            confirmed_at: string | null;
+            /** Confirmed By Name */
+            confirmed_by_name: string | null;
+            /** Dimensions */
+            dimensions: components["schemas"]["DimensionReviewOut"][];
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Idea Id
+             * Format: uuid
+             */
+            idea_id: string;
+            /** Idea Title */
+            idea_title: string;
+            /** Iq */
+            iq: string | null;
+            /** Iq Maximum */
+            iq_maximum: string;
+            /** Levels */
+            levels: components["schemas"]["LevelOut"][];
+            /** Missing Information */
+            missing_information: string[];
+            /** Priorities */
+            priorities: components["schemas"]["IqPriorityOut"][];
+            /**
+             * Proposal Status
+             * @enum {string}
+             */
+            proposal_status: "pending" | "ready" | "failed";
+            /** Question Set Version */
+            question_set_version: number;
+            /**
+             * Requested At
+             * Format: date-time
+             */
+            requested_at: string;
+            /** Requested By Name */
+            requested_by_name: string | null;
+            /** Sample */
+            sample: boolean;
+            scale: components["schemas"]["IqScaleOut"];
+            status: components["schemas"]["IqAssessmentStatus"];
+            vfm: components["schemas"]["VfmOut"] | null;
+        };
+        /**
+         * IqAssessmentStatus
+         * @description One IQ assessment of an idea, left to right.
+         *
+         *     ``proposed``: the AI proposal is on its way or waiting for the owner's review (Amy Q1).
+         *     ``confirmed``: the owner confirmed the 12 scores; scored by the engine and immutable.
+         *     ``superseded``: replaced by a newer proposal before it was confirmed.
+         * @enum {string}
+         */
+        IqAssessmentStatus: "proposed" | "confirmed" | "superseded";
+        /** IqCategoryOut */
+        IqCategoryOut: {
+            /** Key */
+            key: string;
+            /** Maximum */
+            maximum: string;
+            /** Name */
+            name: string;
+            /** Score */
+            score: string | null;
+        };
+        /** IqPriorityOut */
+        IqPriorityOut: {
+            /** Key */
+            key: string;
+            /** Level Name */
+            level_name: string;
+            /** Name */
+            name: string;
+            /** Next Steps */
+            next_steps: string;
+            /** Rank */
+            rank: number;
+            /** Score */
+            score: number;
+        };
+        /** IqScaleOut */
+        IqScaleOut: {
+            /** Max */
+            max: number;
+            /** Min */
+            min: number;
+        };
+        /** LevelOut */
+        LevelOut: {
+            /** Key */
+            key: string;
+            /** Max */
+            max: number;
+            /** Min */
+            min: number;
+            /** Name */
+            name: string;
+            /** Text */
+            text: string;
         };
         /** MeOut */
         MeOut: {
@@ -1327,6 +1817,20 @@ export interface components {
             /** Total Maximum */
             total_maximum: number;
         };
+        /**
+         * ReviewIn
+         * @description The owner's review: changed scores (null puts the proposal back) and notes.
+         */
+        ReviewIn: {
+            /** Notes */
+            notes?: {
+                [key: string]: string | null;
+            };
+            /** Scores */
+            scores?: {
+                [key: string]: number | null;
+            };
+        };
         /** ScaleOut */
         ScaleOut: {
             /** Labels */
@@ -1384,6 +1888,21 @@ export interface components {
             password?: string | null;
             /** Token */
             token: string;
+        };
+        /**
+         * VfmOut
+         * @description Value for Money (spec 5.1): the investment the assessment was confirmed with and the
+         *     cost per innovation point, or why there is none.
+         */
+        VfmOut: {
+            /** Currency */
+            currency: string;
+            /** Investment */
+            investment: string | null;
+            /** Not Calculable Reason */
+            not_calculable_reason: string | null;
+            /** Per Point */
+            per_point: string | null;
         };
     };
     responses: never;
@@ -1628,6 +2147,329 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HealthOut"];
+                };
+            };
+        };
+    };
+    list_ideas_api_v1_ideas_get: {
+        parameters: {
+            query?: {
+                include_archived?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdeaSummaryOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_idea_api_v1_ideas_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IdeaCreateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdeaOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_idea_api_v1_ideas__idea_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                idea_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdeaOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_idea_api_v1_ideas__idea_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                idea_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IdeaUpdateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdeaOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    archive_idea_api_v1_ideas__idea_id__archive_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                idea_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdeaOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    request_assessment_api_v1_ideas__idea_id__assessments_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                idea_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IqAssessmentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_assessment_api_v1_ideas__idea_id__assessments__assessment_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                idea_id: string;
+                assessment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IqAssessmentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_assessment_api_v1_ideas__idea_id__assessments__assessment_id__confirm_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                idea_id: string;
+                assessment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IqAssessmentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_review_api_v1_ideas__idea_id__assessments__assessment_id__review_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                idea_id: string;
+                assessment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IqAssessmentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    restore_idea_api_v1_ideas__idea_id__restore_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                idea_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdeaOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

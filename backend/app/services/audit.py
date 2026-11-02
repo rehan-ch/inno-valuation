@@ -36,6 +36,12 @@ class AuditAction(StrEnum):
     READINESS_RESPONSE_SUBMITTED = "readiness.response_submitted"
     READINESS_CONSENSUS_STARTED = "readiness.consensus_started"
     READINESS_FINALISED = "readiness.finalised"
+    IDEA_CREATED = "idea.created"
+    IDEA_UPDATED = "idea.updated"
+    IDEA_ARCHIVED = "idea.archived"
+    IDEA_RESTORED = "idea.restored"
+    IQ_REQUESTED = "iq.requested"
+    IQ_CONFIRMED = "iq.confirmed"
 
 
 def record(
