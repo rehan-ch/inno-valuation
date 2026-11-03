@@ -10,12 +10,23 @@ import { Alert } from "@/components/ui/Alert";
 import { Badge } from "@/components/ui/Badge";
 import { Bar } from "@/components/ui/Bar";
 import { Button, buttonClass } from "@/components/ui/Button";
-import { Card, CardDescription, CardTitle, Eyebrow, PageHeader } from "@/components/ui/Card";
+import {
+  Card,
+  CardDescription,
+  CardTitle,
+  Eyebrow,
+  PageHeader,
+} from "@/components/ui/Card";
 import { TextAreaField } from "@/components/ui/fields";
 import { Loading } from "@/components/ui/Loading";
 import { StickyBar, stickyScrollMargin } from "@/components/ui/StickyBar";
 import { ApiError } from "@/lib/api/client";
-import { confirmAssessment, getAssessment, requestAssessment, saveReview } from "@/lib/api/ideas";
+import {
+  confirmAssessment,
+  getAssessment,
+  requestAssessment,
+  saveReview,
+} from "@/lib/api/ideas";
 import type { DimensionReviewOut, IqAssessmentOut } from "@/lib/api/types";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { useSubmit } from "@/lib/forms";
@@ -34,7 +45,13 @@ type State =
 
 /** One IQ assessment of an idea: the AI's proposal while it is made, the owner's review,
  * and the confirmed result. Every number on the result comes from the engine. */
-export function AssessmentPage({ ideaId, assessmentId }: { ideaId: string; assessmentId: string }) {
+export function AssessmentPage({
+  ideaId,
+  assessmentId,
+}: {
+  ideaId: string;
+  assessmentId: string;
+}) {
   const router = useRouter();
   const [state, setState] = useState<State>({ kind: "loading" });
   const again = useSubmit();
@@ -47,14 +64,21 @@ export function AssessmentPage({ ideaId, assessmentId }: { ideaId: string; asses
       try {
         const assessment = await getAssessment(ideaId, assessmentId);
         if (cancelled) return;
-        const pending = assessment.status === "proposed" && assessment.proposal_status === "pending";
-        setState({ kind: "ready", assessment, slow: pending && Date.now() - startedAt > MAX_WAIT_MS });
+        const pending =
+          assessment.status === "proposed" &&
+          assessment.proposal_status === "pending";
+        setState({
+          kind: "ready",
+          assessment,
+          slow: pending && Date.now() - startedAt > MAX_WAIT_MS,
+        });
         if (pending) timer = setTimeout(() => void load(), POLL_MS);
       } catch (err) {
         if (!cancelled) {
           setState({
             kind: "error",
-            message: err instanceof ApiError ? err.message : "Something went wrong.",
+            message:
+              err instanceof ApiError ? err.message : "Something went wrong.",
           });
         }
       }
@@ -66,8 +90,10 @@ export function AssessmentPage({ ideaId, assessmentId }: { ideaId: string; asses
     };
   }, [ideaId, assessmentId]);
 
-  if (state.kind === "loading") return <Loading>Loading the assessment...</Loading>;
-  if (state.kind === "error") return <Alert tone="error">{state.message}</Alert>;
+  if (state.kind === "loading")
+    return <Loading>Loading the assessment...</Loading>;
+  if (state.kind === "error")
+    return <Alert tone="error">{state.message}</Alert>;
 
   const { assessment } = state;
 
@@ -78,19 +104,30 @@ export function AssessmentPage({ ideaId, assessmentId }: { ideaId: string; asses
 
   const header = (
     <PageHeader
-      title={assessment.status === "confirmed" ? "Innovation Quotient" : "Proposed scores"}
+      title={
+        assessment.status === "confirmed"
+          ? "Innovation Quotient"
+          : "Proposed scores"
+      }
       description={
         <>
-          <Link href={`/ideas/${ideaId}`} className="font-medium text-primary hover:underline">
+          <Link
+            href={`/ideas/${ideaId}`}
+            className="font-medium text-primary hover:underline"
+          >
             {assessment.idea_title}
           </Link>
           {" · "}
           {assessment.status === "confirmed" && assessment.confirmed_at
             ? `confirmed ${formatDate(assessment.confirmed_at)}${
-                assessment.confirmed_by_name ? ` by ${assessment.confirmed_by_name}` : ""
+                assessment.confirmed_by_name
+                  ? ` by ${assessment.confirmed_by_name}`
+                  : ""
               }`
             : `requested ${formatDateTime(assessment.requested_at)}${
-                assessment.requested_by_name ? ` by ${assessment.requested_by_name}` : ""
+                assessment.requested_by_name
+                  ? ` by ${assessment.requested_by_name}`
+                  : ""
               }`}
           {" · "}question set version {assessment.question_set_version}
         </>
@@ -126,7 +163,10 @@ export function AssessmentPage({ ideaId, assessmentId }: { ideaId: string; asses
         {header}
         <Alert tone="info">
           A newer proposal replaced this one before it was confirmed.{" "}
-          <Link href={`/ideas/${ideaId}`} className="font-medium text-primary hover:underline">
+          <Link
+            href={`/ideas/${ideaId}`}
+            className="font-medium text-primary hover:underline"
+          >
             Back to the idea
           </Link>
         </Alert>
@@ -139,7 +179,10 @@ export function AssessmentPage({ ideaId, assessmentId }: { ideaId: string; asses
       <div className="space-y-6">
         {header}
         <Card>
-          <Loading>The AI is reading the idea and proposing a score for each dimension...</Loading>
+          <Loading>
+            The AI is reading the idea and proposing a score for each
+            dimension...
+          </Loading>
           <p className="mt-3 text-sm text-neutral-600">
             {state.slow
               ? "This is taking longer than usual. You can leave this page; the proposal will be here when it is ready."
@@ -154,7 +197,9 @@ export function AssessmentPage({ ideaId, assessmentId }: { ideaId: string; asses
     return (
       <div className="space-y-6">
         {header}
-        <Alert tone="error">The proposal could not be made this time. Nothing was scored.</Alert>
+        <Alert tone="error">
+          The proposal could not be made this time. Nothing was scored.
+        </Alert>
         {again.error && <Alert tone="error">{again.error.message}</Alert>}
         {assessment.can_review && (
           <Button busy={again.busy} onClick={() => void scoreAgain()}>
@@ -173,12 +218,15 @@ export function AssessmentPage({ ideaId, assessmentId }: { ideaId: string; asses
         <ReviewView
           ideaId={ideaId}
           assessment={assessment}
-          onChange={(next) => setState({ kind: "ready", assessment: next, slow: false })}
+          onChange={(next) =>
+            setState({ kind: "ready", assessment: next, slow: false })
+          }
         />
       ) : (
         <>
           <Alert tone="info">
-            The idea&apos;s owner, or an owner or admin, reviews and confirms these scores.
+            The idea&apos;s owner, or an owner or admin, reviews and confirms
+            these scores.
           </Alert>
           <ProposalList assessment={assessment} />
         </>
@@ -190,9 +238,9 @@ export function AssessmentPage({ ideaId, assessmentId }: { ideaId: string; asses
 function SampleNotice() {
   return (
     <Alert tone="info">
-      Sample scores: the AI is not connected yet, so every dimension shows the middle of the
-      scale with placeholder reasons. The review and the arithmetic work as they will with the
-      real proposal.
+      Sample scores: the AI is not connected yet, so every dimension shows the
+      middle of the scale with placeholder reasons. The review and the
+      arithmetic work as they will with the real proposal.
     </Alert>
   );
 }
@@ -211,11 +259,15 @@ function Rationale({ dimension }: { dimension: DimensionReviewOut }) {
           Proposed by AI: {dimension.proposed_score ?? "–"}
         </span>
         {dimension.proposed_confidence !== null && (
-          <span className="text-xs text-neutral-500">{confidenceLabel(dimension.proposed_confidence)}</span>
+          <span className="text-xs text-neutral-500">
+            {confidenceLabel(dimension.proposed_confidence)}
+          </span>
         )}
       </p>
       {dimension.proposed_rationale && (
-        <p className="mt-1.5 text-neutral-700">{dimension.proposed_rationale.join(" ")}</p>
+        <p className="mt-1.5 text-neutral-700">
+          {dimension.proposed_rationale.join(" ")}
+        </p>
       )}
     </div>
   );
@@ -229,7 +281,9 @@ function ProposalList({ assessment }: { assessment: IqAssessmentOut }) {
         {assessment.dimensions.map((d) => (
           <li key={d.key} className="py-4 first:pt-0 last:pb-0">
             <p className="text-sm font-semibold text-neutral-900">
-              <span className="mr-2 text-neutral-400 tabular-nums">{d.order}.</span>
+              <span className="mr-2 text-neutral-400 tabular-nums">
+                {d.order}.
+              </span>
               {d.name}
             </p>
             <div className="mt-2">
@@ -256,7 +310,9 @@ function ReviewView({
   onChange: (next: IqAssessmentOut) => void;
 }) {
   const [finals, setFinals] = useState<Record<string, number | null>>(() =>
-    Object.fromEntries(assessment.dimensions.map((d) => [d.key, d.final_score])),
+    Object.fromEntries(
+      assessment.dimensions.map((d) => [d.key, d.final_score]),
+    ),
   );
   const [notes, setNotes] = useState<Record<string, string>>(() =>
     Object.fromEntries(assessment.dimensions.map((d) => [d.key, d.note ?? ""])),
@@ -273,16 +329,26 @@ function ReviewView({
     { length: assessment.scale.max - assessment.scale.min + 1 },
     (_, i) => assessment.scale.min + i,
   );
-  const proposed = Object.fromEntries(assessment.dimensions.map((d) => [d.key, d.proposed_score]));
+  const proposed = Object.fromEntries(
+    assessment.dimensions.map((d) => [d.key, d.proposed_score]),
+  );
   const changed = assessment.dimensions.filter(
     (d) => finals[d.key] !== null && finals[d.key] !== d.proposed_score,
   ).length;
 
-  function enqueue(review: { scores?: Record<string, number | null>; notes?: Record<string, string | null> }) {
+  function enqueue(review: {
+    scores?: Record<string, number | null>;
+    notes?: Record<string, string | null>;
+  }) {
     setSave("saving");
     pending.current += 1;
     queue.current = queue.current
-      .then(() => saveReview(ideaId, assessment.id, { scores: review.scores ?? {}, notes: review.notes ?? {} }))
+      .then(() =>
+        saveReview(ideaId, assessment.id, {
+          scores: review.scores ?? {},
+          notes: review.notes ?? {},
+        }),
+      )
       .then(
         (updated) => {
           pending.current -= 1;
@@ -326,7 +392,9 @@ function ReviewView({
       <StickyBar>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           <span className="text-sm font-medium text-neutral-900 tabular-nums">
-            {changed === 0 ? "No scores changed" : `${changed} of 12 scores changed`}
+            {changed === 0
+              ? "No scores changed"
+              : `${changed} of 12 scores changed`}
           </span>
           <span
             role="status"
@@ -339,20 +407,35 @@ function ReviewView({
             {save === "error" && saveError}
           </span>
           <span className="ml-auto flex flex-wrap items-center gap-2">
-            {confirm.error && <span className="text-xs text-red-700">{confirm.error.message}</span>}
+            {confirm.error && (
+              <span className="text-xs text-red-700">
+                {confirm.error.message}
+              </span>
+            )}
             {!confirming ? (
-              <Button disabled={confirm.busy} onClick={() => setConfirming(true)}>
+              <Button
+                disabled={confirm.busy}
+                onClick={() => setConfirming(true)}
+              >
                 Confirm the scores
               </Button>
             ) : (
               <>
                 <span className="text-xs text-neutral-600">
-                  The IQ is worked out from these scores and cannot change afterwards.
+                  The IQ is worked out from these scores and cannot change
+                  afterwards.
                 </span>
-                <Button busy={confirm.busy} onClick={() => void handleConfirm()}>
+                <Button
+                  busy={confirm.busy}
+                  onClick={() => void handleConfirm()}
+                >
                   Confirm now
                 </Button>
-                <Button variant="secondary" disabled={confirm.busy} onClick={() => setConfirming(false)}>
+                <Button
+                  variant="secondary"
+                  disabled={confirm.busy}
+                  onClick={() => setConfirming(false)}
+                >
                   Not yet
                 </Button>
               </>
@@ -365,8 +448,8 @@ function ReviewView({
         <Card>
           <CardTitle>What the AI could not tell from the idea</CardTitle>
           <CardDescription>
-            Answering these in the idea&apos;s description and scoring again would make the
-            proposal more certain.
+            Answering these in the idea&apos;s description and scoring again
+            would make the proposal more certain.
           </CardDescription>
           <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-neutral-700">
             {assessment.missing_information.map((q) => (
@@ -377,14 +460,16 @@ function ReviewView({
       )}
 
       <p className="text-sm text-neutral-600">
-        For each dimension, read the AI&apos;s reasons and choose the score you stand behind. The
-        proposed score is selected until you change it. Levels: 1 to 3 Continuous Improvement, 4
-        to 6 Innovation, 7 to 10 Invention.
+        For each dimension, read the AI&apos;s reasons and choose the score you
+        stand behind. The proposed score is selected until you change it.
+        Levels: 1 to 3 Continuous Improvement, 4 to 6 Innovation, 7 to 10
+        Invention.
       </p>
 
       {assessment.dimensions.map((d) => {
         const current = finals[d.key] ?? d.proposed_score;
-        const isChanged = finals[d.key] !== null && finals[d.key] !== d.proposed_score;
+        const isChanged =
+          finals[d.key] !== null && finals[d.key] !== d.proposed_score;
         return (
           <section
             key={d.key}
@@ -392,8 +477,13 @@ function ReviewView({
             aria-labelledby={`${d.key}-title`}
             className={`${stickyScrollMargin} rounded-lg border border-neutral-200 bg-white p-5`}
           >
-            <h2 id={`${d.key}-title`} className="text-sm font-semibold text-neutral-900">
-              <span className="mr-2 text-neutral-400 tabular-nums">{d.order}.</span>
+            <h2
+              id={`${d.key}-title`}
+              className="text-sm font-semibold text-neutral-900"
+            >
+              <span className="mr-2 text-neutral-400 tabular-nums">
+                {d.order}.
+              </span>
               {d.name}
             </h2>
             <p className="mt-1 text-sm text-neutral-600">{d.description}</p>
@@ -417,7 +507,11 @@ function ReviewView({
                   onChange={(value) => choose(d.key, value)}
                   ariaLabel={(value) => `${d.name}: ${value}`}
                 />
-                {current !== null && <span className="text-xs text-neutral-500">{levelOf(assessment, current)}</span>}
+                {current !== null && (
+                  <span className="text-xs text-neutral-500">
+                    {levelOf(assessment, current)}
+                  </span>
+                )}
               </div>
             </fieldset>
             <div className="mt-3">
@@ -426,7 +520,9 @@ function ReviewView({
                 hint="Optional. Why you kept or changed the score."
                 rows={2}
                 value={notes[d.key] ?? ""}
-                onChange={(e) => setNotes((prev) => ({ ...prev, [d.key]: e.target.value }))}
+                onChange={(e) =>
+                  setNotes((prev) => ({ ...prev, [d.key]: e.target.value }))
+                }
                 onBlur={() => saveNote(d.key)}
                 disabled={confirm.busy}
               />
@@ -439,7 +535,9 @@ function ReviewView({
 }
 
 function levelOf(assessment: IqAssessmentOut, score: number): string {
-  return assessment.levels.find((l) => l.min <= score && score <= l.max)?.name ?? "";
+  return (
+    assessment.levels.find((l) => l.min <= score && score <= l.max)?.name ?? ""
+  );
 }
 
 /** The confirmed assessment, every number straight from the engine (spec 3, 5, 7). */
@@ -458,7 +556,9 @@ function ResultView({ assessment }: { assessment: IqAssessmentOut }) {
           <Eyebrow>Innovation Quotient</Eyebrow>
           <p className="mt-2 text-5xl font-semibold tracking-tight text-neutral-900 tabular-nums">
             {assessment.iq}
-            <span className="ml-1.5 text-2xl font-normal text-neutral-500">/ {assessment.iq_maximum}</span>
+            <span className="ml-1.5 text-2xl font-normal text-neutral-500">
+              / {assessment.iq_maximum}
+            </span>
           </p>
           <Bar value={iq} maximum={maximum} />
         </div>
@@ -468,17 +568,25 @@ function ResultView({ assessment }: { assessment: IqAssessmentOut }) {
             <>
               <p className="mt-2 text-lg font-semibold text-neutral-900 tabular-nums">
                 {formatMoney(vfm.per_point, vfm.currency)}
-                <span className="ml-1 text-sm font-normal text-neutral-500">per innovation point</span>
+                <span className="ml-1 text-sm font-normal text-neutral-500">
+                  per innovation point
+                </span>
               </p>
               <p className="mt-1 text-sm text-neutral-600">
-                {vfm.investment ? `${formatMoney(vfm.investment, vfm.currency)} planned investment` : ""}
+                {vfm.investment
+                  ? `${formatMoney(vfm.investment, vfm.currency)} planned investment`
+                  : ""}
                 {" divided by the IQ. Lower is better."}
               </p>
             </>
           ) : (
             <>
-              <p className="mt-2 text-lg font-semibold text-neutral-900">Not calculable</p>
-              <p className="mt-1 text-sm text-neutral-600">{vfm?.not_calculable_reason}</p>
+              <p className="mt-2 text-lg font-semibold text-neutral-900">
+                Not calculable
+              </p>
+              <p className="mt-1 text-sm text-neutral-600">
+                {vfm?.not_calculable_reason}
+              </p>
             </>
           )}
         </div>
@@ -490,12 +598,21 @@ function ResultView({ assessment }: { assessment: IqAssessmentOut }) {
       >
         {assessment.categories.map((category) => (
           <div key={category.key} className="bg-white p-5">
-            <p className="text-sm font-medium text-neutral-900">{category.name}</p>
+            <p className="text-sm font-medium text-neutral-900">
+              {category.name}
+            </p>
             <p className="mt-1 text-2xl font-semibold text-neutral-900 tabular-nums">
               {category.score ?? "–"}
-              <span className="ml-1 text-sm font-normal text-neutral-500">/ {category.maximum}</span>
+              <span className="ml-1 text-sm font-normal text-neutral-500">
+                / {category.maximum}
+              </span>
             </p>
-            {category.score !== null && <Bar value={Number(category.score)} maximum={Number(category.maximum)} />}
+            {category.score !== null && (
+              <Bar
+                value={Number(category.score)}
+                maximum={Number(category.maximum)}
+              />
+            )}
           </div>
         ))}
       </section>
@@ -503,19 +620,41 @@ function ResultView({ assessment }: { assessment: IqAssessmentOut }) {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card>
           <CardTitle>Focus first</CardTitle>
-          <CardDescription>The lowest-scoring dimensions, with the next steps from the method.</CardDescription>
+          <CardDescription>
+            The lowest-scoring dimensions, with the next steps from the method.
+            {assessment.custom_weights && (
+              <>
+                {" "}
+                Where scores tie, the more important dimension comes first, as
+                set in your{" "}
+                <Link
+                  href="/organisation/importance"
+                  className="font-medium text-primary hover:underline"
+                >
+                  dimension importance
+                </Link>
+                . Importance never changes a score or the IQ.
+              </>
+            )}
+          </CardDescription>
           <ol className="mt-4 divide-y divide-neutral-100">
             {assessment.priorities.map((p) => (
               <li key={p.key} className="flex gap-3 py-3 first:pt-0 last:pb-0">
-                <span className="w-5 shrink-0 text-sm font-semibold text-neutral-400 tabular-nums">{p.rank}</span>
+                <span className="w-5 shrink-0 text-sm font-semibold text-neutral-400 tabular-nums">
+                  {p.rank}
+                </span>
                 <span className="min-w-0">
                   <span className="flex items-baseline justify-between gap-3 text-sm">
-                    <span className="font-medium text-neutral-900">{p.name}</span>
+                    <span className="font-medium text-neutral-900">
+                      {p.name}
+                    </span>
                     <span className="shrink-0 text-neutral-500 tabular-nums">
                       {p.score} / {assessment.scale.max} · {p.level_name}
                     </span>
                   </span>
-                  <span className="mt-0.5 block text-sm text-neutral-600">{p.next_steps}</span>
+                  <span className="mt-0.5 block text-sm text-neutral-600">
+                    {p.next_steps}
+                  </span>
                 </span>
               </li>
             ))}
@@ -524,14 +663,28 @@ function ResultView({ assessment }: { assessment: IqAssessmentOut }) {
         <Card>
           <CardTitle>How the scores were set</CardTitle>
           <CardDescription>
-            The AI proposed each score; the idea&apos;s owner confirmed or changed it (both are
-            kept). The IQ is the sum of the 12 final scores out of 120, as a percentage.
+            The AI proposed each score; the idea&apos;s owner confirmed or
+            changed it (both are kept). The IQ is the sum of the 12 final scores
+            out of 120, as a percentage.
           </CardDescription>
           <dl className="mt-4 grid grid-cols-2 gap-4 text-sm">
-            <Stat label="Scores changed" value={assessment.dimensions.filter((d) => d.changed).length} />
-            <Stat label="Scores kept" value={assessment.dimensions.filter((d) => !d.changed).length} />
-            {assessment.confirmed_by_name && <Stat label="Confirmed by" value={assessment.confirmed_by_name} />}
-            {assessment.confirmed_at && <Stat label="Confirmed on" value={formatDate(assessment.confirmed_at)} />}
+            <Stat
+              label="Scores changed"
+              value={assessment.dimensions.filter((d) => d.changed).length}
+            />
+            <Stat
+              label="Scores kept"
+              value={assessment.dimensions.filter((d) => !d.changed).length}
+            />
+            {assessment.confirmed_by_name && (
+              <Stat label="Confirmed by" value={assessment.confirmed_by_name} />
+            )}
+            {assessment.confirmed_at && (
+              <Stat
+                label="Confirmed on"
+                value={formatDate(assessment.confirmed_at)}
+              />
+            )}
           </dl>
         </Card>
       </div>
@@ -543,25 +696,45 @@ function ResultView({ assessment }: { assessment: IqAssessmentOut }) {
             <li key={d.key} className="py-4 first:pt-0 last:pb-0">
               <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
                 <p className="text-sm font-semibold text-neutral-900">
-                  <span className="mr-2 text-neutral-400 tabular-nums">{d.order}.</span>
+                  <span className="mr-2 text-neutral-400 tabular-nums">
+                    {d.order}.
+                  </span>
                   {d.name}
                 </p>
                 <p className="text-sm tabular-nums">
-                  <span className="font-semibold text-neutral-900">{d.final_score ?? d.proposed_score}</span>
-                  <span className="text-neutral-500"> / {assessment.scale.max}</span>
-                  {d.level && <span className="ml-2 text-neutral-600">{d.level.name}</span>}
+                  <span className="font-semibold text-neutral-900">
+                    {d.final_score ?? d.proposed_score}
+                  </span>
+                  <span className="text-neutral-500">
+                    {" "}
+                    / {assessment.scale.max}
+                  </span>
+                  {d.level && (
+                    <span className="ml-2 text-neutral-600">
+                      {d.level.name}
+                    </span>
+                  )}
                   {d.changed && (
-                    <span className="ml-2 text-xs text-amber-800">changed from {d.proposed_score}</span>
+                    <span className="ml-2 text-xs text-amber-800">
+                      changed from {d.proposed_score}
+                    </span>
                   )}
                 </p>
               </div>
-              <Bar value={d.final_score ?? d.proposed_score ?? 0} maximum={assessment.scale.max} />
+              <Bar
+                value={d.final_score ?? d.proposed_score ?? 0}
+                maximum={assessment.scale.max}
+              />
               <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
                 <Rationale dimension={d} />
                 {d.note && (
                   <div className="rounded-md border border-neutral-200 px-3.5 py-3 text-sm">
-                    <p className="font-medium text-neutral-900">Owner&apos;s note</p>
-                    <p className="mt-1 whitespace-pre-line text-neutral-700">{d.note}</p>
+                    <p className="font-medium text-neutral-900">
+                      Owner&apos;s note
+                    </p>
+                    <p className="mt-1 whitespace-pre-line text-neutral-700">
+                      {d.note}
+                    </p>
                   </div>
                 )}
               </div>
@@ -571,7 +744,10 @@ function ResultView({ assessment }: { assessment: IqAssessmentOut }) {
       </Card>
 
       <p className="text-xs text-neutral-500">
-        <Link href={`/ideas/${assessment.idea_id}`} className={buttonClass("ghost", "sm")}>
+        <Link
+          href={`/ideas/${assessment.idea_id}`}
+          className={buttonClass("ghost", "sm")}
+        >
           Back to the idea
         </Link>
       </p>
@@ -583,7 +759,9 @@ function Stat({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div>
       <dt className="text-xs text-neutral-500">{label}</dt>
-      <dd className="mt-0.5 font-medium text-neutral-900 tabular-nums">{value}</dd>
+      <dd className="mt-0.5 font-medium text-neutral-900 tabular-nums">
+        {value}
+      </dd>
     </div>
   );
 }

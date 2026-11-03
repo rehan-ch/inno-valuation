@@ -28,7 +28,7 @@ from app.schemas.ideas import (
 )
 from app.scoring.iq import iq_maximum
 from app.scoring.question_set import IqLevel, QuestionSet
-from app.services import ideas
+from app.services import ideas, weights
 
 router = APIRouter(prefix="/ideas", tags=["ideas"])
 
@@ -256,6 +256,7 @@ def _assessment_out(
             )
             for p in (assessment.priorities or [])
         ],
+        custom_weights=weights.is_custom(assessment.weights_snapshot),
         vfm=_vfm_out(assessment),
         can_review=(
             assessment.status is IqAssessmentStatus.PROPOSED and ideas.may_change(ctx, idea)

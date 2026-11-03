@@ -27,8 +27,11 @@ An archived organisation is view-only until the archive feature exists (Phase 8)
 | View ideas and their IQ assessments | `ideas.view` | yes | yes | yes | yes | yes | yes |
 | Add an idea (and edit, submit and confirm one's own) | `ideas.create` | yes | yes | yes | yes | no | no |
 | Edit, submit, confirm or archive anyone's idea | `ideas.manage` | yes | yes | no | no | no | no |
+| Set dimension importance (orders tied priorities only) | `weights.manage` | yes | yes | no | no | no | no |
 
 An investor watches: they see assessments, ideas and results but neither answers nor adds ideas. A consultant (Amy) reads assessments, ideas and results only while their grant is live; the service layer additionally limits consultants to assessments that are `final` and to ideas whose latest IQ assessment is confirmed.
+
+Dimension importance (which dimensions matter more) is read by everyone who views the organisation and set by owners and admins. It never changes a score or the IQ; it only orders priorities whose scores tie (Amy Q2, PROVISIONAL Q23).
 
 The person who added an idea is its owner: they may edit it, send it for scoring and confirm or change the AI's proposed scores (Amy Q1) without `ideas.manage`. Owners and admins may do the same for every idea, and archive ideas.
 

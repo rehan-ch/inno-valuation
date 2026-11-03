@@ -18,6 +18,7 @@ CLIENT_TABLES = {
     "ideas",
     "iq_assessments",
     "iq_dimension_scores",
+    "dimension_weights",
 }
 
 

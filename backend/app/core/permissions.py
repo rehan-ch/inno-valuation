@@ -45,6 +45,7 @@ class Permission(StrEnum):
     VIEW_IDEAS = "ideas.view"  # ideas and their IQ assessments
     CREATE_IDEAS = "ideas.create"  # add an idea; its creator edits, submits and confirms it
     MANAGE_IDEAS = "ideas.manage"  # edit, submit, confirm or archive anyone's idea
+    MANAGE_WEIGHTS = "weights.manage"  # dimension importance (orders tied priorities only)
 
 
 _MANAGE: Final = frozenset(Permission)

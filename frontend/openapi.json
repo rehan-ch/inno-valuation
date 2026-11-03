@@ -1826,6 +1826,10 @@
             ],
             "title": "Confirmed By Name"
           },
+          "custom_weights": {
+            "title": "Custom Weights",
+            "type": "boolean"
+          },
           "dimensions": {
             "items": {
               "$ref": "#/components/schemas/DimensionReviewOut"
@@ -1949,6 +1953,7 @@
           "iq_maximum",
           "categories",
           "priorities",
+          "custom_weights",
           "vfm",
           "can_review",
           "requested_at",
@@ -3290,6 +3295,194 @@
           "not_calculable_reason"
         ],
         "title": "VfmOut",
+        "type": "object"
+      },
+      "WeightLimitsOut": {
+        "properties": {
+          "max_decimal_places": {
+            "title": "Max Decimal Places",
+            "type": "integer"
+          },
+          "maximum": {
+            "title": "Maximum",
+            "type": "integer"
+          },
+          "minimum": {
+            "title": "Minimum",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "minimum",
+          "maximum",
+          "max_decimal_places"
+        ],
+        "title": "WeightLimitsOut",
+        "type": "object"
+      },
+      "WeightOut": {
+        "properties": {
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "order": {
+            "title": "Order",
+            "type": "integer"
+          },
+          "weight": {
+            "title": "Weight",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "name",
+          "order",
+          "category",
+          "weight"
+        ],
+        "title": "WeightOut",
+        "type": "object"
+      },
+      "WeightsChangeOut": {
+        "properties": {
+          "custom": {
+            "title": "Custom",
+            "type": "boolean"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "set_at": {
+            "format": "date-time",
+            "title": "Set At",
+            "type": "string"
+          },
+          "set_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Set By Name"
+          },
+          "weights": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Weights",
+            "type": "object"
+          }
+        },
+        "required": [
+          "id",
+          "set_at",
+          "set_by_name",
+          "custom",
+          "weights"
+        ],
+        "title": "WeightsChangeOut",
+        "type": "object"
+      },
+      "WeightsIn": {
+        "additionalProperties": false,
+        "description": "Every dimension's weight. Numbers or decimal strings; the engine checks the limits.",
+        "properties": {
+          "weights": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                  "type": "string"
+                }
+              ]
+            },
+            "maxProperties": 20,
+            "title": "Weights",
+            "type": "object"
+          }
+        },
+        "required": [
+          "weights"
+        ],
+        "title": "WeightsIn",
+        "type": "object"
+      },
+      "WeightsOut": {
+        "properties": {
+          "can_change": {
+            "title": "Can Change",
+            "type": "boolean"
+          },
+          "custom": {
+            "title": "Custom",
+            "type": "boolean"
+          },
+          "limits": {
+            "$ref": "#/components/schemas/WeightLimitsOut"
+          },
+          "question_set_version": {
+            "title": "Question Set Version",
+            "type": "integer"
+          },
+          "set_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Set At"
+          },
+          "set_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Set By Name"
+          },
+          "weights": {
+            "items": {
+              "$ref": "#/components/schemas/WeightOut"
+            },
+            "title": "Weights",
+            "type": "array"
+          }
+        },
+        "required": [
+          "question_set_version",
+          "weights",
+          "custom",
+          "set_at",
+          "set_by_name",
+          "can_change",
+          "limits"
+        ],
+        "title": "WeightsOut",
         "type": "object"
       }
     }
@@ -5433,6 +5626,112 @@
         "summary": "Explain Question",
         "tags": [
           "readiness"
+        ]
+      }
+    },
+    "/api/v1/weights": {
+      "get": {
+        "operationId": "get_weights_api_v1_weights_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeightsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Weights",
+        "tags": [
+          "weights"
+        ]
+      },
+      "put": {
+        "operationId": "set_weights_api_v1_weights_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WeightsIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeightsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Set Weights",
+        "tags": [
+          "weights"
+        ]
+      }
+    },
+    "/api/v1/weights/history": {
+      "get": {
+        "operationId": "get_history_api_v1_weights_history_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/WeightsChangeOut"
+                  },
+                  "title": "Response Get History Api V1 Weights History Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get History",
+        "tags": [
+          "weights"
+        ]
+      }
+    },
+    "/api/v1/weights/reset": {
+      "post": {
+        "operationId": "reset_weights_api_v1_weights_reset_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeightsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Reset Weights",
+        "tags": [
+          "weights"
         ]
       }
     }

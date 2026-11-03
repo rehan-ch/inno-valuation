@@ -63,3 +63,8 @@ export interface ApiErrorEnvelope {
     message: string;
   };
 }
+
+export type WeightsOut = Schemas["WeightsOut"];
+export type WeightOut = Schemas["WeightOut"];
+export type WeightsChangeOut = Schemas["WeightsChangeOut"];
+export type WeightsIn = Schemas["WeightsIn"];

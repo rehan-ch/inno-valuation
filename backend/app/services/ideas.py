@@ -45,6 +45,7 @@ from app.scoring import categories, iq, priorities, vfm
 from app.scoring.errors import ScoringError
 from app.scoring.question_set import QUESTION_SET, QuestionSet, question_set_for
 from app.services import members
+from app.services import weights as weights_service
 from app.services.audit import AuditAction, record
 from app.services.organisations import enforce_limit
 
@@ -632,9 +633,10 @@ def confirm(
     try:
         scored = iq.score_iq(final, question_set=question_set)
         by_category = categories.iq_categories(scored, question_set)
-        # PROVISIONAL: see open-questions Q23 (no organisation weights yet, P4.08; ties go by
-        # book order). Weights would only reorder this list, never change a score (Amy Q2).
-        ranked = priorities.iq_priorities(scored, question_set=question_set)
+        # The organisation's dimension importance only orders tied priorities; it never
+        # changes a score (Amy Q2). PROVISIONAL: see open-questions Q23 (tie-break only).
+        weights = weights_service.current_weights(db, ctx.organisation_id, question_set)
+        ranked = priorities.iq_priorities(scored, weights, question_set=question_set)
         # Spec 5.1 with the IQ the user sees (Q18): cost per innovation point, or None.
         per_point = vfm.vfm(
             idea.investment_minor, currency_exponent(idea.currency), scored.iq, question_set
@@ -658,6 +660,7 @@ def confirm(
     assessment.iq = scored.iq
     assessment.category_scores = {c.key: str(c.score) for c in by_category.categories}
     assessment.priorities = [{"rank": p.rank, "key": p.key, "score": p.score} for p in ranked.items]
+    assessment.weights_snapshot = weights_service.snapshot(weights)
     assessment.investment_minor = idea.investment_minor
     assessment.currency = idea.currency
     assessment.vfm_per_point = per_point

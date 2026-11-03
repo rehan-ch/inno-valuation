@@ -790,6 +790,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/weights": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Weights */
+        get: operations["get_weights_api_v1_weights_get"];
+        /** Set Weights */
+        put: operations["set_weights_api_v1_weights_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/weights/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get History */
+        get: operations["get_history_api_v1_weights_history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/weights/reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reset Weights */
+        post: operations["reset_weights_api_v1_weights_reset_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1413,6 +1465,8 @@ export interface components {
             confirmed_at: string | null;
             /** Confirmed By Name */
             confirmed_by_name: string | null;
+            /** Custom Weights */
+            custom_weights: boolean;
             /** Dimensions */
             dimensions: components["schemas"]["DimensionReviewOut"][];
             /**
@@ -1903,6 +1957,75 @@ export interface components {
             not_calculable_reason: string | null;
             /** Per Point */
             per_point: string | null;
+        };
+        /** WeightLimitsOut */
+        WeightLimitsOut: {
+            /** Max Decimal Places */
+            max_decimal_places: number;
+            /** Maximum */
+            maximum: number;
+            /** Minimum */
+            minimum: number;
+        };
+        /** WeightOut */
+        WeightOut: {
+            /** Category */
+            category: string;
+            /** Key */
+            key: string;
+            /** Name */
+            name: string;
+            /** Order */
+            order: number;
+            /** Weight */
+            weight: string;
+        };
+        /** WeightsChangeOut */
+        WeightsChangeOut: {
+            /** Custom */
+            custom: boolean;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Set At
+             * Format: date-time
+             */
+            set_at: string;
+            /** Set By Name */
+            set_by_name: string | null;
+            /** Weights */
+            weights: {
+                [key: string]: string;
+            };
+        };
+        /**
+         * WeightsIn
+         * @description Every dimension's weight. Numbers or decimal strings; the engine checks the limits.
+         */
+        WeightsIn: {
+            /** Weights */
+            weights: {
+                [key: string]: number | string;
+            };
+        };
+        /** WeightsOut */
+        WeightsOut: {
+            /** Can Change */
+            can_change: boolean;
+            /** Custom */
+            custom: boolean;
+            limits: components["schemas"]["WeightLimitsOut"];
+            /** Question Set Version */
+            question_set_version: number;
+            /** Set At */
+            set_at: string | null;
+            /** Set By Name */
+            set_by_name: string | null;
+            /** Weights */
+            weights: components["schemas"]["WeightOut"][];
         };
     };
     responses: never;
@@ -3474,6 +3597,99 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_weights_api_v1_weights_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WeightsOut"];
+                };
+            };
+        };
+    };
+    set_weights_api_v1_weights_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WeightsIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WeightsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_history_api_v1_weights_history_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WeightsChangeOut"][];
+                };
+            };
+        };
+    };
+    reset_weights_api_v1_weights_reset_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WeightsOut"];
                 };
             };
         };

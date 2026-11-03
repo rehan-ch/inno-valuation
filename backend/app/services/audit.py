@@ -42,6 +42,7 @@ class AuditAction(StrEnum):
     IDEA_RESTORED = "idea.restored"
     IQ_REQUESTED = "iq.requested"
     IQ_CONFIRMED = "iq.confirmed"
+    WEIGHTS_CHANGED = "weights.changed"
 
 
 def record(

@@ -22,12 +22,14 @@ from app.models.readiness import (
     ReadinessResponse,
     ReadinessResult,
 )
+from app.models.weights import DimensionWeights
 
 __all__ = [
     "AiRun",
     "AuditEvent",
     "Base",
     "ConsultantGrant",
+    "DimensionWeights",
     "Idea",
     "Invitation",
     "IqAssessment",

@@ -195,6 +195,9 @@ class IqAssessmentOut(BaseModel):
     iq_maximum: str
     categories: list[IqCategoryOut]
     priorities: list[IqPriorityOut]
+    # The organisation had custom dimension importance when this was confirmed, so tied
+    # priorities are ordered by it (never the scores).
+    custom_weights: bool
     vfm: VfmOut | None
     can_review: bool
     requested_at: datetime

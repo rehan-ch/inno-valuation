@@ -20,6 +20,7 @@ MANAGE = {
     Permission.MANAGE_CONSULTANT_ACCESS,
     Permission.MANAGE_ASSESSMENTS,
     Permission.MANAGE_IDEAS,
+    Permission.MANAGE_WEIGHTS,
 }
 
 

@@ -42,7 +42,8 @@ export function OrganisationSettings() {
         if (!cancelled) {
           setState({
             kind: "error",
-            message: err instanceof ApiError ? err.message : "Something went wrong.",
+            message:
+              err instanceof ApiError ? err.message : "Something went wrong.",
           });
         }
       }
@@ -59,7 +60,10 @@ export function OrganisationSettings() {
         <PageHeader title="Organisation settings" />
         <Alert tone="info">
           Choose an organisation in the switcher above, or{" "}
-          <Link href="/organisations/new" className="font-medium text-primary hover:underline">
+          <Link
+            href="/organisations/new"
+            className="font-medium text-primary hover:underline"
+          >
             create one
           </Link>
           .
@@ -68,8 +72,10 @@ export function OrganisationSettings() {
     );
   }
 
-  if (state.kind === "loading") return <Loading>Loading the organisation...</Loading>;
-  if (state.kind === "error") return <Alert tone="error">{state.message}</Alert>;
+  if (state.kind === "loading")
+    return <Loading>Loading the organisation...</Loading>;
+  if (state.kind === "error")
+    return <Alert tone="error">{state.message}</Alert>;
 
   const { org } = state;
 
@@ -77,7 +83,9 @@ export function OrganisationSettings() {
     return (
       <div className="space-y-4">
         <PageHeader title="Organisation settings" description={org.name} />
-        <Alert tone="info">Only an owner or admin can edit the organisation profile.</Alert>
+        <Alert tone="info">
+          Only an owner or admin can edit the organisation profile.
+        </Alert>
       </div>
     );
   }
@@ -86,7 +94,9 @@ export function OrganisationSettings() {
     return (
       <div className="space-y-4">
         <PageHeader title="Organisation settings" description={org.name} />
-        <Alert tone="info">This organisation is archived, so its profile is view-only.</Alert>
+        <Alert tone="info">
+          This organisation is archived, so its profile is view-only.
+        </Alert>
       </div>
     );
   }
@@ -102,9 +112,25 @@ export function OrganisationSettings() {
         key={org.id}
         org={org}
         onSaved={(saved) =>
-          setState((prev) => (prev.kind === "ready" ? { ...prev, org: saved } : prev))
+          setState((prev) =>
+            prev.kind === "ready" ? { ...prev, org: saved } : prev,
+          )
         }
       />
+      <Card>
+        <CardTitle>Dimension importance</CardTitle>
+        <p className="mt-2 text-sm text-neutral-600">
+          Say which of the 12 dimensions matter more to your company. Importance
+          never changes a score or the IQ; it only decides the order when two
+          priorities have the same score.
+        </p>
+        <Link
+          href="/organisation/importance"
+          className="mt-3 inline-block text-sm font-medium text-primary hover:underline"
+        >
+          Set dimension importance
+        </Link>
+      </Card>
     </div>
   );
 }
@@ -126,8 +152,12 @@ function SettingsForm({
   const [revenueBand, setRevenueBand] = useState(org.revenue_band ?? "");
   const [founderNames, setFounderNames] = useState(org.founder_names ?? "");
   const [website, setWebsite] = useState(org.website ?? "");
-  const [contactName, setContactName] = useState(org.primary_contact_name ?? "");
-  const [contactEmail, setContactEmail] = useState(org.primary_contact_email ?? "");
+  const [contactName, setContactName] = useState(
+    org.primary_contact_name ?? "",
+  );
+  const [contactEmail, setContactEmail] = useState(
+    org.primary_contact_email ?? "",
+  );
   const [currency, setCurrency] = useState(org.currency);
   const [nameError, setNameError] = useState<string | undefined>(undefined);
   const [saved, setSaved] = useState(false);
@@ -164,7 +194,11 @@ function SettingsForm({
   return (
     <Card>
       <CardTitle>Profile</CardTitle>
-      <form onSubmit={(e) => void handleSubmit(e)} className="mt-4 space-y-4" noValidate>
+      <form
+        onSubmit={(e) => void handleSubmit(e)}
+        className="mt-4 space-y-4"
+        noValidate
+      >
         {error && <Alert tone="error">{error.message}</Alert>}
         {saved && <Alert tone="success">Saved.</Alert>}
         <TextField
