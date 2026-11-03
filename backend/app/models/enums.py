@@ -53,6 +53,43 @@ class ReadinessStatus(StrEnum):
     FINAL = "final"
 
 
+class IdeaStage(StrEnum):
+    """How far an idea has come, in the idea owner's words. Context for the reader and the
+    AI; it changes no score."""
+
+    IDEA = "idea"  # a thought, not yet worked up
+    CONCEPT = "concept"  # worked up, not built
+    PROTOTYPE = "prototype"  # being built or tested
+    PILOT = "pilot"  # in use with some customers
+    LAUNCHED = "launched"  # in the market
+
+
+class IdeaStatus(StrEnum):
+    """Where an idea is on its way to an IQ. Archiving is a separate flag (``archived_at``).
+
+    ``draft`` is being written; ``submitted`` means the latest IQ assessment is proposed
+    but not confirmed; ``assessed`` means the latest assessment is confirmed. A re-assessment
+    moves an assessed idea back to ``submitted``; the confirmed assessment stays for history.
+    """
+
+    DRAFT = "draft"
+    SUBMITTED = "submitted"
+    ASSESSED = "assessed"
+
+
+class IqAssessmentStatus(StrEnum):
+    """One IQ assessment of an idea, left to right.
+
+    ``proposed``: the AI proposal is on its way or waiting for the owner's review (Amy Q1).
+    ``confirmed``: the owner confirmed the 12 scores; scored by the engine and immutable.
+    ``superseded``: replaced by a newer proposal before it was confirmed.
+    """
+
+    PROPOSED = "proposed"
+    CONFIRMED = "confirmed"
+    SUPERSEDED = "superseded"
+
+
 class AiTouchpoint(StrEnum):
     """The 8 places AI is used. Each one has its model settings in config/ai.yml."""
 

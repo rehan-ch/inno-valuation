@@ -6,11 +6,17 @@ import type {
   AssessmentSummaryOut,
   ConsultantAccessOut,
   ConsultantGrantOut,
+  DimensionReviewOut,
+  IdeaOut,
+  IdeaSummaryOut,
   InvitationOut,
+  IqAssessmentOut,
   MemberOut,
   MeOut,
   OrganisationOut,
   QuestionSetOut,
+  WeightsChangeOut,
+  WeightsOut,
 } from "@/lib/api/types";
 
 export function jsonResponse(body: unknown, status = 200): Response {
@@ -20,7 +26,11 @@ export function jsonResponse(body: unknown, status = 200): Response {
   });
 }
 
-export function errorResponse(code: string, message: string, status: number): Response {
+export function errorResponse(
+  code: string,
+  message: string,
+  status: number,
+): Response {
   return jsonResponse({ error: { code, message } }, status);
 }
 
@@ -45,14 +55,16 @@ export function stubApi(handlers: Record<string, Handler>): RecordedCall[] {
       const call: RecordedCall = {
         method,
         path: url.pathname,
-        body: typeof init?.body === "string" ? JSON.parse(init.body) : undefined,
+        body:
+          typeof init?.body === "string" ? JSON.parse(init.body) : undefined,
         headers: new Headers(init?.headers),
       };
       calls.push(call);
       const key = `${method} ${url.pathname}`;
       if (!(key in handlers)) throw new TypeError(`Unexpected request: ${key}`);
       const handler = handlers[key];
-      const result = typeof handler === "function" ? await handler(call) : handler;
+      const result =
+        typeof handler === "function" ? await handler(call) : handler;
       return result instanceof Response ? result : jsonResponse(result);
     }),
   );
@@ -79,7 +91,9 @@ export function fakeMe(overrides: Partial<MeOut> = {}): MeOut {
   };
 }
 
-export function fakeOrganisation(overrides: Partial<OrganisationOut> = {}): OrganisationOut {
+export function fakeOrganisation(
+  overrides: Partial<OrganisationOut> = {},
+): OrganisationOut {
   return {
     id: "22222222-2222-2222-2222-222222222222",
     name: "Acme",
@@ -111,7 +125,9 @@ export function fakeMember(overrides: Partial<MemberOut> = {}): MemberOut {
   };
 }
 
-export function fakeInvitation(overrides: Partial<InvitationOut> = {}): InvitationOut {
+export function fakeInvitation(
+  overrides: Partial<InvitationOut> = {},
+): InvitationOut {
   return {
     id: "44444444-4444-4444-4444-444444444444",
     email: "new@example.com",
@@ -124,7 +140,9 @@ export function fakeInvitation(overrides: Partial<InvitationOut> = {}): Invitati
   };
 }
 
-export function fakeGrant(overrides: Partial<ConsultantGrantOut> = {}): ConsultantGrantOut {
+export function fakeGrant(
+  overrides: Partial<ConsultantGrantOut> = {},
+): ConsultantGrantOut {
   return {
     id: "55555555-5555-5555-5555-555555555555",
     email: "amy@example.com",
@@ -137,7 +155,9 @@ export function fakeGrant(overrides: Partial<ConsultantGrantOut> = {}): Consulta
   };
 }
 
-export function fakeAccess(overrides: Partial<ConsultantAccessOut> = {}): ConsultantAccessOut {
+export function fakeAccess(
+  overrides: Partial<ConsultantAccessOut> = {},
+): ConsultantAccessOut {
   return {
     id: "55555555-5555-5555-5555-555555555555",
     organisation_id: "22222222-2222-2222-2222-222222222222",
@@ -168,7 +188,9 @@ export function fakeAssessmentSummary(
   };
 }
 
-export function fakeAssessment(overrides: Partial<AssessmentOut> = {}): AssessmentOut {
+export function fakeAssessment(
+  overrides: Partial<AssessmentOut> = {},
+): AssessmentOut {
   return {
     ...fakeAssessmentSummary(),
     my_answers: {},
@@ -185,8 +207,14 @@ export function fakeAssessment(overrides: Partial<AssessmentOut> = {}): Assessme
 export function fakeQuestionSet(): QuestionSetOut {
   return {
     version: 1,
-    scale: { min: 1, max: 5, labels: { "1": "Strongly Disagree", "5": "Strongly Agree" } },
-    categories: [{ key: "customer_facing", name: "Customer-Facing Innovation", order: 1 }],
+    scale: {
+      min: 1,
+      max: 5,
+      labels: { "1": "Strongly Disagree", "5": "Strongly Agree" },
+    },
+    categories: [
+      { key: "customer_facing", name: "Customer-Facing Innovation", order: 1 },
+    ],
     dimensions: [
       {
         key: "customer_journey",
@@ -195,7 +223,10 @@ export function fakeQuestionSet(): QuestionSetOut {
         category: "customer_facing",
         description: "Map the customer's journey.",
         questions: [
-          { id: "customer_journey_1", text: "Do you understand the end-to-end experience?" },
+          {
+            id: "customer_journey_1",
+            text: "Do you understand the end-to-end experience?",
+          },
           { id: "customer_journey_2", text: "Is feedback integrated?" },
         ],
       },
@@ -211,5 +242,232 @@ export function fakeQuestionSet(): QuestionSetOut {
         ],
       },
     ],
+  };
+}
+
+export const IDEA_ID = "88888888-8888-8888-8888-888888888888";
+export const IQ_ASSESSMENT_ID = "99999999-9999-9999-9999-999999999999";
+
+export function fakeIdeaSummary(
+  overrides: Partial<IdeaSummaryOut> = {},
+): IdeaSummaryOut {
+  return {
+    id: IDEA_ID,
+    title: "Same-day delivery",
+    stage: "prototype",
+    status: "draft",
+    archived: false,
+    currency: "USD",
+    investment: "50000.00",
+    expected_value: null,
+    created_by_name: "Mia Member",
+    created_at: "2026-10-28T09:00:00Z",
+    updated_at: "2026-10-28T09:00:00Z",
+    latest_assessment: null,
+    ...overrides,
+  };
+}
+
+export function fakeIdea(overrides: Partial<IdeaOut> = {}): IdeaOut {
+  return {
+    ...fakeIdeaSummary(),
+    summary: "Local shops deliver within two hours.",
+    problem: null,
+    target_market: null,
+    uniqueness: null,
+    team: null,
+    risks: null,
+    can_change: true,
+    can_archive: true,
+    assessments: [],
+    ...overrides,
+  };
+}
+
+const DIMENSIONS: [string, string, number, string][] = [
+  ["customer_journey", "Customer Journey", 1, "customer_facing"],
+  ["brand_magnetism", "Brand Magnetism", 2, "customer_facing"],
+  ["organizational_agility", "Organizational Agility", 7, "process"],
+];
+
+/** A small assessment (3 dimensions) shaped like the real one. */
+export function fakeIqAssessment(
+  overrides: Partial<IqAssessmentOut> = {},
+): IqAssessmentOut {
+  const dimensions: DimensionReviewOut[] = DIMENSIONS.map(
+    ([key, name, order, category]) => ({
+      key,
+      name,
+      order,
+      category,
+      description: `About ${name}.`,
+      proposed_score: 4,
+      proposed_rationale: [
+        "The idea says a little about this.",
+        "So a middle score fits.",
+      ],
+      proposed_confidence: "0.70",
+      final_score: null,
+      level: null,
+      note: null,
+      changed: false,
+    }),
+  );
+  return {
+    id: IQ_ASSESSMENT_ID,
+    idea_id: IDEA_ID,
+    idea_title: "Same-day delivery",
+    status: "proposed",
+    proposal_status: "ready",
+    sample: false,
+    question_set_version: 1,
+    scale: { min: 1, max: 10 },
+    levels: [
+      {
+        key: "continuous_improvement",
+        name: "Continuous Improvement",
+        min: 1,
+        max: 3,
+        text: "Incremental.",
+      },
+      { key: "innovation", name: "Innovation", min: 4, max: 6, text: "Novel." },
+      {
+        key: "invention",
+        name: "Invention",
+        min: 7,
+        max: 10,
+        text: "Breakthrough.",
+      },
+    ],
+    dimensions,
+    missing_information: [],
+    iq: null,
+    iq_maximum: "100.0",
+    categories: [
+      {
+        key: "customer_facing",
+        name: "Customer-Facing Innovation",
+        score: null,
+        maximum: "100.0",
+      },
+    ],
+    priorities: [],
+    custom_weights: false,
+    vfm: null,
+    can_review: true,
+    requested_at: "2026-10-28T09:05:00Z",
+    requested_by_name: "Mia Member",
+    confirmed_at: null,
+    confirmed_by_name: null,
+    ...overrides,
+  };
+}
+
+export function fakeConfirmedAssessment(
+  overrides: Partial<IqAssessmentOut> = {},
+): IqAssessmentOut {
+  const base = fakeIqAssessment();
+  return {
+    ...base,
+    status: "confirmed",
+    dimensions: base.dimensions.map((d, i) => ({
+      ...d,
+      final_score: i === 2 ? 5 : 4,
+      changed: i === 2,
+      note: i === 2 ? "The team has reorganised twice this year." : null,
+      level: {
+        key: "innovation",
+        name: "Innovation",
+        min: 4,
+        max: 6,
+        text: "Novel.",
+      },
+    })),
+    iq: "70.0",
+    categories: [
+      {
+        key: "customer_facing",
+        name: "Customer-Facing Innovation",
+        score: "74.0",
+        maximum: "100.0",
+      },
+    ],
+    priorities: [
+      {
+        rank: 1,
+        key: "organizational_agility",
+        name: "Organizational Agility",
+        score: 5,
+        level_name: "Innovation",
+        next_steps: "Build adaptable structures.",
+      },
+    ],
+    custom_weights: false,
+    vfm: {
+      investment: "50000.00",
+      currency: "USD",
+      per_point: "714.29",
+      not_calculable_reason: null,
+    },
+    can_review: false,
+    confirmed_at: "2026-10-28T10:00:00Z",
+    confirmed_by_name: "Mia Member",
+    ...overrides,
+  };
+}
+
+const ALL_DIMENSIONS: [string, string, string][] = [
+  ["customer_journey", "Customer Journey", "customer_facing"],
+  ["brand_magnetism", "Brand Magnetism", "customer_facing"],
+  ["channel_navigation", "Channel Navigation", "customer_facing"],
+  ["service_excellence", "Service Excellence", "customer_facing"],
+  ["product_evolution", "Product Evolution", "process"],
+  ["operational_efficiency", "Operational Efficiency", "process"],
+  ["organizational_agility", "Organizational Agility", "process"],
+  ["collaborative_synergy", "Collaborative Synergy", "process"],
+  ["value_creation_engine", "Value Creation Engine", "strategic"],
+  ["sustainable_future", "Sustainable Future", "strategic"],
+  ["data_intelligence", "Data Intelligence", "strategic"],
+  ["financial_imperative", "Financial Imperative", "strategic"],
+];
+
+/** Every dimension counting equally, unless `weights` says otherwise for some keys. */
+export function fakeWeights(
+  weights: Record<string, string> = {},
+  overrides: Partial<WeightsOut> = {},
+): WeightsOut {
+  return {
+    question_set_version: 1,
+    weights: ALL_DIMENSIONS.map(([key, name, category], i) => ({
+      key,
+      name,
+      order: i + 1,
+      category,
+      weight: weights[key] ?? "1",
+    })),
+    custom: Object.values(weights).some((w) => w !== "1"),
+    set_at: null,
+    set_by_name: null,
+    can_change: true,
+    limits: { minimum: 0, maximum: 1000, max_decimal_places: 6 },
+    ...overrides,
+  };
+}
+
+export function fakeWeightsChange(
+  overrides: Partial<WeightsChangeOut> = {},
+): WeightsChangeOut {
+  return {
+    id: "77777777-7777-7777-7777-777777777771",
+    set_at: "2026-11-03T09:00:00Z",
+    set_by_name: "Olive Owner",
+    custom: true,
+    weights: Object.fromEntries(
+      ALL_DIMENSIONS.map(([key]) => [
+        key,
+        key === "data_intelligence" ? "3" : "1",
+      ]),
+    ),
+    ...overrides,
   };
 }

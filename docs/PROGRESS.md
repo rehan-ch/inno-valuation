@@ -1,18 +1,29 @@
 # Progress
 
 ## Phase and branch
-- Phases 0 to 3 are merged to `main` (Phase 2 through PRs 1 and 2, the readiness flow through PR 3, the AI foundation through PR 4, the repository cleanup through PR 5, the whole-codebase review fixes through PR 6).
+- Phases 0 to 3 are merged to `main` (Phase 2 through PRs 1 and 2, the readiness flow through PR 3, the AI foundation through PR 4, the repository cleanup through PR 5, the whole-codebase review fixes through PR 6, the design refresh through PR 7).
 - Work happens on short-lived branches merged through pull requests; the pre-push hook refuses a direct push to `main`. The code is mirrored into Haroon's repository, which starts from one fresh commit; this repository keeps the full history. Personal files (`.claude/`, `CLAUDE.md`, agent notes) are excluded per clone by `bin/setup`; working material (`planning/`, `ask-amy/`, `reference/`, `files3/`, client documents) is in `.gitignore`.
 
 ## In progress
-Design refresh (branch `design-refresh`)
-- Done: every screen and shared component moved to a plain, professional system (one sans face, bordered white panels, one action colour, tab navigation, segmented answer control). Nothing about numbers, wording or behaviour changed; 131 frontend tests, lint, typecheck and the production build pass. Details in `docs/decisions.md` (2026-10-27).
-- Next: merge, then mirror `main` to Haroon's repository (see below).
+Phase 4, ideas and IQ (branch `phase-4-ideas`)
+- Done (P4.01): tables and reversible migration `0010_ideas`: ideas, IQ assessments, dimension scores; money in minor units with the ISO 4217 exponent table; scores 1 to 10 checked in the database; `ideas.view`, `ideas.create` and `ideas.manage` in the permission matrix (consultants see assessed ideas only).
+- Done (P4.02): ideas API and screens: add, edit, archive and restore; title, summary, problem, target market, what makes it different, team, risks, stage; planned investment and expected value with a currency (the organisation's by default); the creator owns the idea, owners and admins manage every idea.
+- Done (P4.04): AI touchpoint 3 `propose_iq_scores`: a 1 to 10 score per dimension with 2 to 4 sentences quoting the idea and a confidence, plus open questions about what is missing; strict output (every dimension exactly once, no IQ, total, level, band or value for money); the dimensions, parts and levels verbatim from the question set; the idea's text as escaped data; money never sent; recorded cases typical, sparse, adversarial, adversarial-obeyed and retry; the offline stand-in proposes marked sample scores.
+- Done (P4.05, P4.06): the owner's review page: the AI's score and reasons beside a 1 to 10 control and a note per dimension, saved as it goes; confirm runs the engine once (IQ, levels, category IQ, priorities with the book's next steps, Value for Money from the idea's investment) and the assessment is immutable afterwards; scoring again creates a new assessment and keeps the old one.
+- Done (P4.07): the ideas list with IQ and cost per innovation point, sort by newest, IQ or Value for Money, a warning when currencies differ, and a compare page (side by side, CSV export). The dashboard shows the ideas at a glance and a "Score your first idea" step; "Ideas" is in the main navigation.
+- Done (P4.09): the golden flow as a request test: a recorded proposal whose 12 scores add up to 83, Organizational Agility changed from 4 to 5, IQ 70.0 and Value for Money 714.29 for 50,000; plus immutability, supersession, a failed proposal retried, review rules, money decimals, roles, consultant and cross-organisation isolation. Backend: 1,329 tests; frontend tests, lint, typecheck and build pass.
+- Done (P4.08): dimension importance: one weight per dimension per organisation (equal by default, 0 to 1000, at most 6 decimals, checked by the engine), set by owners and admins behind `weights.manage`, every change kept as history with a change-log event naming the dimensions; confirming an idea stores the weights in force and uses them only to order tied priorities (the IQ never changes, proven on the golden proposal); the result page says when custom importance ordered the list; screen `/organisation/importance` with reset to equal and the history. Migration `0011_dimension_weights`.
+- Not built yet: P4.03 (AI context questions about the company; waits on IN.02 and the key, and the proposal prompt has a place for the answers). Then P4.10: methodology check, code review, merge, Amy tries scoring an idea.
+- Details per decision in `docs/decisions.md` (2026-11-02, 2026-11-03).
+
+Design refresh (merged, PR 7)
+- Done: every screen and shared component moved to a plain, professional system (one sans face, bordered white panels, one action colour, tab navigation, segmented answer control). Nothing about numbers, wording or behaviour changed. Details in `docs/decisions.md` (2026-10-27).
+- Still to do by a human: push the mirror to Haroon's repository (see below).
 
 Phase 3 close-out (P3.08)
 - Done: code review passed and merged (PR 6). The Trello card's review and merge items are ticked; "Checked against Amy's scoring rules" and "First real demo for Amy" are still open.
-- Next: Amy's first demo (a company answers the questions and sees its result). Until the AI key arrives, explanations show marked sample text. Then Phase 4 starts with P4.01 (ideas and IQ tables).
-- Haroon's mirror holds one commit cut from the PR 5 merge (25 October) without the internal docs (`PROGRESS.md`, `decisions.md`, `data-model.md`, the book PDF, `ai-touchpoints.md`, `open-questions.md`, `prototype-review.md`). Still to do by a human: push a fresh mirror commit from `main` once the design refresh is merged (the pre-push hook refuses pushes to any `main`, so the mirror is built on a local `mirror` branch and pushed by hand), and delete the merged `review-fixes` branch on the remote.
+- Next: Amy's first demo (a company answers the questions and sees its result). Until the AI key arrives, explanations show marked sample text.
+- Haroon's mirror holds one commit cut from the PR 5 merge (25 October) without the internal docs (`PROGRESS.md`, `decisions.md`, `data-model.md`, the book PDF, `ai-touchpoints.md`, `open-questions.md`, `prototype-review.md`). A fresh mirror commit from the PR 7 merge is ready on the local `mirror` branch. Still to do by a human: push it (the pre-push hook refuses pushes to any `main`, so it goes by hand with `--no-verify`), and delete the merged `review-fixes` branch on the remote. Haroon has since pushed an `update-ui` branch to his repository that restyles the sign-in pages and touches the same files; agree which design wins before the push.
 - Deploying `main` signs everyone out once (older session tokens carry no session id).
 
 Whole-codebase review fixes (merged, PR 6)
@@ -61,6 +72,8 @@ Phase 1
 - Q10: `backend/app/ai/touchpoints/explain_question.py` `COMPANY_FIELDS` (only industry, size and country go to the AI provider).
 - Q17: `frontend/src/app/globals.css` (the compass blue and emerald as the brand hues, pending Amy's approval; the rest of the design system is settled, see decisions 2026-10-27).
 - Q11: `backend/config/ai.yml` (consultation nudge off until touchpoint 8 is built; Q11 itself is decided).
+- Q10: `backend/app/ai/touchpoints/propose_iq_scores.py` `IDEA_FIELDS` (the idea's text fields go to the AI provider; the money never does).
+- Q23: `backend/app/services/ideas.py` `confirm` (no organisation weights until P4.08; tied IQ priorities go by book order).
 - Q18: `backend/app/scoring/_rounding.py` (half up), `vfm.py` (uses the rounded IQ), `categories.py` (category IQ 1 decimal).
 - Q19: `backend/app/scoring/priorities.py` (ties in book order).
 - Q21: `backend/app/scoring/priorities.py` `PRIORITY_COUNT = 5`.
@@ -78,7 +91,8 @@ Phase 1
 - `npm audit`: 5 findings (3 high, 2 moderate) in dev-only lint dependencies (eslint-config-next). Production dependencies have none; the pre-push and CI audits check production only.
 - AI test fixtures are hand-written in the model's output format. Replace them with live recordings once the AI key arrives, and try the explain prompt on a few real questions.
 - The backend Docker image (Phase 8) must ship `docs/methodology/dimensions.yml` and set `INNO_QUESTION_SET_PATH`, and must ship `backend/config/ai.yml` and `backend/app/ai/prompts/`.
-- Services built in later phases must pass `IqResult.iq` (already rounded) to `vfm`, so VfM always uses the IQ the user sees (Q18).
+- `app/services/ideas.py` passes `IqResult.iq` (already rounded) to `vfm`, so VfM always uses the IQ the user sees (Q18). Any later caller must do the same.
+- The ideas list sorts and compares on the client from the summaries the API returns; with hundreds of ideas per organisation it would need paging and a server-side sort.
 
 ## How to run and try it manually
 ```bash

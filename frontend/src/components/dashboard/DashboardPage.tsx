@@ -12,12 +12,14 @@ import { Card, CardDescription, CardHeader, CardTitle, Eyebrow, PageHeader } fro
 import { Loading } from "@/components/ui/Loading";
 import { ApiError } from "@/lib/api/client";
 import { listGrants } from "@/lib/api/consultants";
+import { listIdeas } from "@/lib/api/ideas";
 import { assessmentHref, listAssessments } from "@/lib/api/readiness";
 import { getOrganisation } from "@/lib/api/organisation";
 import { listInvitations, listMembers } from "@/lib/api/team";
 import type {
   AssessmentSummaryOut,
   ConsultantGrantOut,
+  IdeaSummaryOut,
   InvitationOut,
   MemberOut,
   OrganisationOut,
@@ -37,6 +39,7 @@ type State =
       invitations: InvitationOut[];
       grants: ConsultantGrantOut[];
       assessments: AssessmentSummaryOut[];
+      ideas: IdeaSummaryOut[];
     };
 
 const TEAM_PREVIEW = 5;
@@ -57,14 +60,15 @@ export function DashboardPage() {
         const org = await getOrganisation();
         const consultant = org.role === "consultant";
         const manage = canManage(org.role) && org.status === "active";
-        const [members, invitations, grants, assessments] = await Promise.all([
+        const [members, invitations, grants, assessments, ideas] = await Promise.all([
           consultant ? Promise.resolve([]) : listMembers(),
           manage ? listInvitations() : Promise.resolve([]),
           manage ? listGrants() : Promise.resolve([]),
           listAssessments(),
+          listIdeas(),
         ]);
         if (!cancelled) {
-          setState({ kind: "ready", org, members, invitations, grants, assessments });
+          setState({ kind: "ready", org, members, invitations, grants, assessments, ideas });
         }
       } catch (err) {
         if (!cancelled) {
@@ -123,6 +127,7 @@ export function DashboardPage() {
           {access ? ` until ${formatDate(access.access_ends_at)}` : ""}.
         </Alert>
         <ReadinessCard latest={state.assessments[0]} manage={false} consultant />
+        <IdeasCard ideas={state.ideas} canAdd={false} />
         <Card>
           <CardTitle>Your consulting access</CardTitle>
           <CardDescription>
@@ -141,6 +146,7 @@ export function DashboardPage() {
   const activeGrants = state.grants.filter((g) => g.status === "active");
   const openGrants = state.grants.filter((g) => g.status === "active" || g.status === "waiting");
   const profileComplete = Boolean(org.industry && org.country && org.size_band);
+  const canAdd = org.role !== "investor" && org.status === "active";
 
   return (
     <div className="space-y-6">
@@ -175,6 +181,7 @@ export function DashboardPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
           <ReadinessCard latest={state.assessments[0]} manage={manage} />
+          <IdeasCard ideas={state.ideas} canAdd={canAdd} />
           {manage && (
             <Card>
               <CardTitle>Getting started</CardTitle>
@@ -203,6 +210,12 @@ export function DashboardPage() {
                   label="Run the readiness assessment"
                   hint="Your team answers 60 questions and agrees a score out of 300."
                   href="/readiness"
+                />
+                <Step
+                  done={state.ideas.some((i) => i.status === "assessed")}
+                  label="Score your first idea"
+                  hint="The AI proposes a score per dimension; the idea's owner confirms. The IQ is out of 100."
+                  href="/ideas"
                 />
               </ol>
             </Card>
@@ -403,6 +416,64 @@ function ReadinessCard({
       />
       <div className="mt-3 text-sm text-neutral-600">{body}</div>
       {action && <div className="mt-4">{action}</div>}
+    </Card>
+  );
+}
+
+/** The ideas at a glance: how many, how many scored, and the best IQ so far. */
+function IdeasCard({ ideas, canAdd }: { ideas: IdeaSummaryOut[]; canAdd: boolean }) {
+  const scored = ideas.filter(
+    (i) => i.latest_assessment?.status === "confirmed" && i.latest_assessment.iq !== null,
+  );
+  const best = [...scored].sort(
+    (a, b) => Number(b.latest_assessment?.iq) - Number(a.latest_assessment?.iq),
+  )[0];
+  return (
+    <Card>
+      <CardHeader
+        title="Ideas"
+        actions={
+          <Link href="/ideas" className="text-sm font-medium text-primary hover:underline">
+            View all
+          </Link>
+        }
+      />
+      <div className="mt-3 text-sm text-neutral-600">
+        {ideas.length === 0 ? (
+          canAdd
+            ? "Describe an idea and the AI proposes a 1 to 10 score for each of the 12 dimensions. You confirm; the IQ is out of 100."
+            : "Ideas added by the team appear here with their IQ."
+        ) : (
+          <div className="flex flex-wrap items-end gap-x-8 gap-y-3">
+            <div>
+              <Eyebrow>Ideas</Eyebrow>
+              <p className="mt-1 text-2xl font-semibold text-neutral-900 tabular-nums">
+                {ideas.length}
+                <span className="ml-1 text-sm font-normal text-neutral-500">
+                  {scored.length} scored
+                </span>
+              </p>
+            </div>
+            {best?.latest_assessment && (
+              <div>
+                <Eyebrow>Highest IQ</Eyebrow>
+                <p className="mt-1 text-2xl font-semibold text-neutral-900 tabular-nums">
+                  {best.latest_assessment.iq}
+                  <span className="ml-1 text-sm font-normal text-neutral-500">/ 100</span>
+                </p>
+                <p className="text-xs text-neutral-600">{best.title}</p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+      {canAdd && (
+        <div className="mt-4">
+          <ActionLink href="/ideas/new" primary={ideas.length === 0}>
+            Add an idea
+          </ActionLink>
+        </div>
+      )}
     </Card>
   );
 }

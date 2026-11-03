@@ -212,6 +212,7 @@ How to use this file:
 - Why it matters: Amy decided weights only change the priority order (Q2), but not how. She answered it for ideas (IQ); it is also not said whether the weights reorder the company's readiness priorities list.
 - Options: (a) rank by score as now, and use the weight only to break ties (more important first); (b) rank by a weighted weakness, so an important dimension can come before a slightly weaker but less important one; (c) other. And: the weights reorder (1) the idea (IQ) priorities only, or (2) both the idea and the readiness priorities.
 - Provisional default: (a), for the idea (IQ) priorities only. The engine accepts weights for both lists; services pass them to the IQ list only until this is decided.
+- Built: the organisation sets its importance on `/organisation/importance`; confirming an idea stores the weights in force and uses them to order ties only. Readiness results ignore them.
 - Affects: `app/scoring/priorities.py`, priorities list, AI touchpoint 5.
 - Decision:
 - Decided by / on:

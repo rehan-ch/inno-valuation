@@ -22,7 +22,10 @@ from app.models import (
     AiRun,
     AuditEvent,
     ConsultantGrant,
+    Idea,
     Invitation,
+    IqAssessment,
+    IqDimensionScore,
     Membership,
     Organisation,
     ReadinessAssessment,
@@ -218,3 +221,31 @@ class AiRunFactory(BaseFactory[AiRun]):
     prompt_version = "1"
     system_prompt = "system"
     user_prompt = "user"
+
+
+class IdeaFactory(BaseFactory[Idea]):
+    class Meta:
+        model = Idea
+
+    organisation = SubFactory(OrganisationFactory)
+    title = Sequence(lambda n: f"Idea {n}")
+    summary = "A short summary of the idea."
+    currency = "USD"
+
+
+class IqAssessmentFactory(BaseFactory[IqAssessment]):
+    class Meta:
+        model = IqAssessment
+
+    idea = SubFactory(IdeaFactory)
+    organisation_id = LazyAttribute(lambda o: o.idea.organisation_id)
+    question_set_version = 1
+
+
+class IqDimensionScoreFactory(BaseFactory[IqDimensionScore]):
+    class Meta:
+        model = IqDimensionScore
+
+    assessment = SubFactory(IqAssessmentFactory)
+    organisation_id = LazyAttribute(lambda o: o.assessment.organisation_id)
+    dimension_key = "customer_journey"

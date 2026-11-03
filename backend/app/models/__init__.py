@@ -15,19 +15,25 @@ from app.models.accounts import (
 from app.models.ai import AiRun
 from app.models.audit import AuditEvent
 from app.models.auth import RevokedSession, SignInThrottle
+from app.models.ideas import Idea, IqAssessment, IqDimensionScore
 from app.models.readiness import (
     ReadinessAssessment,
     ReadinessConsensus,
     ReadinessResponse,
     ReadinessResult,
 )
+from app.models.weights import DimensionWeights
 
 __all__ = [
     "AiRun",
     "AuditEvent",
     "Base",
     "ConsultantGrant",
+    "DimensionWeights",
+    "Idea",
     "Invitation",
+    "IqAssessment",
+    "IqDimensionScore",
     "Membership",
     "Organisation",
     "ReadinessAssessment",

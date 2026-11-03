@@ -1,7 +1,12 @@
 "use client";
 
 import { useId } from "react";
-import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes } from "react";
+import type {
+  InputHTMLAttributes,
+  ReactNode,
+  SelectHTMLAttributes,
+  TextareaHTMLAttributes,
+} from "react";
 
 type Size = "sm" | "md";
 
@@ -86,6 +91,33 @@ export function TextField({
         aria-invalid={error ? true : undefined}
         aria-describedby={describedBy(fieldId, hint, error)}
         className={inputClass(Boolean(error), compact ? "sm" : "md")}
+        {...rest}
+      />
+    </Chrome>
+  );
+}
+
+export function TextAreaField({
+  label,
+  labelHidden,
+  hint,
+  error,
+  id,
+  rows = 3,
+  ...rest
+}: Omit<FieldChrome, "compact"> & TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  const generated = useId();
+  const fieldId = id ?? generated;
+  return (
+    <Chrome id={fieldId} label={label} labelHidden={labelHidden} hint={hint} error={error}>
+      <textarea
+        id={fieldId}
+        rows={rows}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={describedBy(fieldId, hint, error)}
+        className={`${INPUT} min-h-9 px-3 py-2 text-sm ${
+          error ? "border-red-400 focus:outline-red-700" : "border-neutral-300 focus:outline-primary"
+        }`}
         {...rest}
       />
     </Chrome>
