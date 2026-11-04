@@ -100,7 +100,11 @@ export function IdeaForm({ ideaId }: { ideaId?: string }) {
       </div>
     );
   }
-  if (state.idea && state.idea.status === "submitted") {
+  if (
+    state.idea &&
+    state.idea.status === "submitted" &&
+    state.idea.latest_assessment?.proposal_status !== "failed"
+  ) {
     return (
       <div className="space-y-4">
         <PageHeader title={state.idea.title} />

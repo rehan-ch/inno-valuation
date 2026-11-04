@@ -68,15 +68,19 @@ def latest(db: Session, organisation_id: uuid.UUID) -> DimensionWeights | None:
     ).first()
 
 
-def current_weights(
-    db: Session, organisation_id: uuid.UUID, question_set: QuestionSet = QUESTION_SET
-) -> Weights:
-    """The organisation's weights for ``question_set``: the newest row, or equal weights when
-    there is none or it was set on another question set version."""
-    row = latest(db, organisation_id)
+def weights_of(row: DimensionWeights | None, question_set: QuestionSet = QUESTION_SET) -> Weights:
+    """The weights a stored row means for ``question_set``: equal weights when there is no
+    row or it was set on another question set version."""
     if row is None or row.question_set_version != question_set.version:
         return equal_weights(question_set)
     return from_snapshot(row.weights, question_set) or equal_weights(question_set)
+
+
+def current_weights(
+    db: Session, organisation_id: uuid.UUID, question_set: QuestionSet = QUESTION_SET
+) -> Weights:
+    """The organisation's weights for ``question_set``: the newest row, or equal weights."""
+    return weights_of(latest(db, organisation_id), question_set)
 
 
 def history(db: Session, organisation_id: uuid.UUID) -> list[DimensionWeights]:

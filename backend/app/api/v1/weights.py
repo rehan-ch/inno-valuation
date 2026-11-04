@@ -31,8 +31,8 @@ def _names(db: Session, rows: list[DimensionWeights]) -> dict[uuid.UUID, str]:
 
 
 def _weights_out(db: Session, ctx: OrgContext) -> WeightsOut:
-    current = weights.current_weights(db, ctx.organisation_id)
     row = weights.latest(db, ctx.organisation_id)
+    current = weights.weights_of(row)
     names = _names(db, [row]) if row is not None else {}
     set_at: datetime | None = row.created_at if row is not None else None
     return WeightsOut(

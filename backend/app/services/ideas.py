@@ -56,7 +56,6 @@ logger = logging.getLogger(__name__)
 DAILY_LIMIT: Final = 50
 DAILY_LIMIT_PERIOD: Final = timedelta(days=1)
 
-NOTE_MAX_LENGTH: Final = 2000
 
 # The idea fields a request may set. Money arrives in major units (``investment``,
 # ``expected_value``) and is stored in minor units.
@@ -101,8 +100,20 @@ def question_set_of(assessment: IqAssessment) -> QuestionSet:
 # Reading
 
 
+def _has_confirmed_assessment() -> Any:
+    """SQL: the idea has at least one confirmed assessment. A consultant sees only these
+    ideas, and keeps seeing them while a newer proposal is on its way (the idea's own
+    status is ``submitted`` again then)."""
+    return (
+        select(IqAssessment.id)
+        .where(IqAssessment.idea_id == Idea.id, IqAssessment.status == IqAssessmentStatus.CONFIRMED)
+        .exists()
+    )
+
+
 def list_ideas(db: Session, ctx: OrgContext, *, include_archived: bool = False) -> list[Idea]:
-    """The organisation's ideas, newest first. A consultant sees assessed ideas only."""
+    """The organisation's ideas, newest first. A consultant sees ideas with a confirmed
+    assessment only."""
     stmt = (
         select(Idea)
         .where(Idea.organisation_id == ctx.organisation_id)
@@ -111,18 +122,21 @@ def list_ideas(db: Session, ctx: OrgContext, *, include_archived: bool = False) 
     if not include_archived:
         stmt = stmt.where(Idea.archived_at.is_(None))
     if ctx.is_consultant:
-        stmt = stmt.where(Idea.status == IdeaStatus.ASSESSED)
+        stmt = stmt.where(_has_confirmed_assessment())
     return list(db.scalars(stmt))
 
 
 def get_idea(db: Session, ctx: OrgContext, idea_id: uuid.UUID, *, lock: bool = False) -> Idea:
     """One idea of the active organisation; 404 for another organisation's, and for a
-    consultant asking about one that is not assessed. ``lock`` takes it ``FOR UPDATE``."""
+    consultant asking about one without a confirmed assessment. ``lock`` takes it
+    ``FOR UPDATE``."""
     stmt = select(Idea).where(Idea.id == idea_id, Idea.organisation_id == ctx.organisation_id)
+    if ctx.is_consultant:
+        stmt = stmt.where(_has_confirmed_assessment())
     if lock:
         stmt = stmt.with_for_update().execution_options(populate_existing=True)
     idea = db.scalar(stmt)
-    if idea is None or (ctx.is_consultant and idea.status is not IdeaStatus.ASSESSED):
+    if idea is None:
         raise _not_found()
     return idea
 
@@ -171,9 +185,12 @@ def run_of(db: Session, assessment: IqAssessment) -> AiRun | None:
     return db.get(AiRun, assessment.ai_run_id)
 
 
-def proposal_status(db: Session, assessment: IqAssessment, run: AiRun | None) -> ProposalStatus:
+def proposal_status(
+    db: Session, assessment: IqAssessment, run: AiRun | None, *, commit: bool = True
+) -> ProposalStatus:
     """Where the AI proposal stands. A run left waiting past the touchpoint's stale window
-    (a lost worker) is failed on the way, so the page never waits forever. Commits then."""
+    (a lost worker) is failed on the way, so the page never waits forever. Commits then,
+    unless the caller holds a lock and commits itself (``commit=False``)."""
     if assessment.status is IqAssessmentStatus.CONFIRMED:
         return "ready"
     if run is None:
@@ -182,7 +199,8 @@ def proposal_status(db: Session, assessment: IqAssessment, run: AiRun | None) ->
         settings = get_ai_config().touchpoint(run.touchpoint)
         if datetime.now(UTC) - run.created_at > runner.stale_after(settings):
             runner.mark_failed(db, run, "The run did not finish in time.")
-            db.commit()
+            if commit:
+                db.commit()
             return "failed"
         return "pending"
     return "ready" if run.status is AiRunStatus.SUCCEEDED else "failed"
@@ -202,8 +220,12 @@ class Overview:
     creator_name: str | None
 
 
-def overviews(db: Session, ideas: list[Idea]) -> dict[uuid.UUID, Overview]:
-    """Overviews for many ideas at once: a fixed number of queries, not a few per row."""
+def overviews(
+    db: Session, ideas: list[Idea], *, confirmed_only: bool = False
+) -> dict[uuid.UUID, Overview]:
+    """Overviews for many ideas at once: a fixed number of queries, not a few per row.
+    ``confirmed_only`` (consultants) takes the newest confirmed assessment, not a proposal
+    they may not open."""
     ids = [i.id for i in ideas]
     if not ids:
         return {}
@@ -213,17 +235,14 @@ def overviews(db: Session, ideas: list[Idea]) -> dict[uuid.UUID, Overview]:
         .where(IqAssessment.idea_id.in_(ids))
         .order_by(IqAssessment.idea_id, IqAssessment.created_at.desc(), IqAssessment.id.desc())
     )
+    if confirmed_only:
+        newest = newest.where(IqAssessment.status == IqAssessmentStatus.CONFIRMED)
     latest = {a.idea_id: a for a in db.scalars(newest)}
     run_ids = [a.ai_run_id for a in latest.values() if a.ai_run_id is not None]
     runs = (
         {r.id: r for r in db.scalars(select(AiRun).where(AiRun.id.in_(run_ids)))} if run_ids else {}
     )
-    creator_ids = {i.created_by_user_id for i in ideas if i.created_by_user_id}
-    names: dict[uuid.UUID, str] = (
-        dict(db.execute(select(User.id, User.name).where(User.id.in_(creator_ids))).all())
-        if creator_ids
-        else {}
-    )
+    names = user_names(db, {i.created_by_user_id for i in ideas if i.created_by_user_id})
     result = {}
     for idea in ideas:
         found = latest.get(idea.id)
@@ -325,6 +344,23 @@ def create_idea(db: Session, ctx: OrgContext, values: dict[str, Any]) -> Idea:
     return idea
 
 
+def _require_editable(db: Session, idea: Idea) -> None:
+    """Not archived, and no proposal on its way or waiting for review. A submitted idea
+    whose proposal failed becomes a draft again, so it can be changed and rescored."""
+    if idea.archived_at is not None:
+        raise _wrong_status("This idea is archived. Restore it to change it.")
+    if idea.status is not IdeaStatus.SUBMITTED:
+        return
+    standing = _latest_proposal_standing(db, idea)
+    if standing == "pending":
+        raise _wrong_status("This idea is being scored. Wait for the proposal, then change it.")
+    if standing == "ready":
+        raise _wrong_status(
+            "This idea has a proposal waiting for review. Confirm or replace it first."
+        )
+    idea.status = IdeaStatus.DRAFT
+
+
 def update_idea(db: Session, ctx: OrgContext, idea_id: uuid.UUID, changes: dict[str, Any]) -> Idea:
     """Change the fields sent. Not while a proposal is being made (the AI is reading the
     idea as it stands) and not when archived. The audit event lists field names only.
@@ -334,10 +370,7 @@ def update_idea(db: Session, ctx: OrgContext, idea_id: uuid.UUID, changes: dict[
         raise ValueError(f"Not editable: {sorted(unknown)}")
     idea = get_idea(db, ctx, idea_id, lock=True)
     _require_may_change(db, ctx, idea)
-    if idea.archived_at is not None:
-        raise _wrong_status("This idea is archived. Restore it to change it.")
-    if idea.status is IdeaStatus.SUBMITTED:
-        raise _wrong_status("This idea is being scored. Wait for the proposal, then change it.")
+    _require_editable(db, idea)
 
     currency = changes.get("currency") or idea.currency
     before = {field: getattr(idea, field) for field in TEXT_FIELDS}
@@ -423,6 +456,15 @@ def restore_idea(db: Session, ctx: OrgContext, idea_id: uuid.UUID) -> Idea:
 # Proposing
 
 
+def _latest_proposal_standing(db: Session, idea: Idea) -> ProposalStatus | None:
+    """Where the latest unconfirmed proposal stands, under the caller's lock (no commit);
+    None when the latest assessment is confirmed or superseded, or there is none."""
+    latest = latest_assessment(db, idea)
+    if latest is None or latest.status is not IqAssessmentStatus.PROPOSED:
+        return None
+    return proposal_status(db, latest, run_of(db, latest), commit=False)
+
+
 def request_assessment(db: Session, ctx: OrgContext, idea_id: uuid.UUID) -> IqAssessment:
     """Send the idea for scoring: a new assessment whose AI proposal is queued. An earlier
     proposal that was never confirmed is superseded; a confirmed one stays for history.
@@ -437,7 +479,8 @@ def request_assessment(db: Session, ctx: OrgContext, idea_id: uuid.UUID) -> IqAs
 
     latest = latest_assessment(db, idea)
     if latest is not None and latest.status is IqAssessmentStatus.PROPOSED:
-        if proposal_status(db, latest, run_of(db, latest)) == "pending":
+        # No commit here: the idea lock must hold until the new assessment is written.
+        if proposal_status(db, latest, run_of(db, latest), commit=False) == "pending":
             raise AppError(
                 "proposal_pending", "A proposal for this idea is already on its way.", 409
             )
@@ -505,11 +548,13 @@ def _scores(db: Session, assessment: IqAssessment) -> list[IqDimensionScore]:
     )
 
 
-def load_scores(db: Session, assessment: IqAssessment) -> list[IqDimensionScore]:
+def load_scores(
+    db: Session, assessment: IqAssessment, *, commit: bool = True
+) -> list[IqDimensionScore]:
     """The assessment's dimension rows in book order. Written from the AI run's answer the
     first time they are asked for after it succeeds, under the assessment lock so two
     readers do not both write them. Empty while the proposal is on its way or failed.
-    Commits when it writes."""
+    Commits when it writes, unless the caller holds a lock and commits itself."""
     question_set = question_set_of(assessment)
     order = {key: i for i, key in enumerate(question_set.dimension_keys)}
     rows = _scores(db, assessment)
@@ -537,7 +582,10 @@ def load_scores(db: Session, assessment: IqAssessment) -> list[IqDimensionScore]
                     )
                 )
             db.add_all(rows)
-            db.commit()
+            if commit:
+                db.commit()
+            else:
+                db.flush()
     return sorted(rows, key=lambda r: order.get(r.dimension_key, len(order)))
 
 
@@ -589,7 +637,7 @@ def save_review(
     idea = get_idea(db, ctx, idea_id, lock=True)
     assessment = get_assessment(db, ctx, idea, assessment_id)
     _require_reviewable(db, ctx, idea, assessment)
-    rows = load_scores(db, assessment)
+    rows = load_scores(db, assessment, commit=False)  # the idea lock holds until the commit
     if not rows:
         raise AppError("proposal_not_ready", "The proposed scores are not ready yet.", 409)
     question_set = question_set_of(assessment)
@@ -605,8 +653,8 @@ def save_review(
         row.final_score = value
         row.reviewed_by_user_id = ctx.user.id
     for key, note in notes.items():
-        text = (note or "").strip()
-        by_key[key].note = text[:NOTE_MAX_LENGTH] if text else None
+        text = (note or "").strip()  # length is checked by the schema (NOTE_MAX_LENGTH)
+        by_key[key].note = text or None
         by_key[key].reviewed_by_user_id = ctx.user.id
     db.commit()
     return assessment
@@ -623,7 +671,7 @@ def confirm(
     assessment = get_assessment(db, ctx, idea, assessment_id)
     _require_reviewable(db, ctx, idea, assessment)
     question_set = question_set_of(assessment)
-    rows = load_scores(db, assessment)
+    rows = load_scores(db, assessment, commit=False)  # the idea lock holds until the commit
     if len(rows) != len(question_set.dimensions):
         raise AppError("proposal_not_ready", "The proposed scores are not ready yet.", 409)
     final = {

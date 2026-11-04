@@ -170,7 +170,7 @@ describe("AssessmentPage", () => {
     expect(screen.getAllByText("Proposed by AI: 4")).toHaveLength(3);
 
     await user.click(screen.getByRole("radio", { name: "Organizational Agility: 5" }));
-    expect(await screen.findByText("1 of 12 scores changed")).toBeInTheDocument();
+    expect(await screen.findByText("1 of 3 scores changed")).toBeInTheDocument();
     expect(calls.find((c) => c.method === "PATCH")?.body).toEqual({
       scores: { organizational_agility: 5 },
       notes: {},
@@ -201,6 +201,27 @@ describe("AssessmentPage", () => {
     expect(screen.getByText("The team has reorganised twice this year.")).toBeInTheDocument();
     expect(screen.getByText("Build adaptable structures.")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Confirm the scores" })).not.toBeInTheDocument();
+  });
+
+  it("does not let the owner confirm while a change failed to save", async () => {
+    stubApi({
+      [`GET ${A}`]: fakeIqAssessment(),
+      [`PATCH ${A}/review`]: () =>
+        new Response(
+          JSON.stringify({ error: { code: "server_error", message: "Something went wrong." } }),
+          { status: 500, headers: { "Content-Type": "application/json" } },
+        ),
+    });
+    const user = userEvent.setup();
+    renderWithMe(<AssessmentPage ideaId={IDEA_ID} assessmentId={IQ_ASSESSMENT_ID} />, fakeMe());
+    expect(await screen.findByText("No scores changed")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("radio", { name: "Organizational Agility: 5" }));
+    const status = await screen.findByRole("status", { name: "Save status" });
+    expect(status).not.toHaveTextContent("Saved");
+    expect(status.textContent).not.toBe("");
+    // The IQ would be worked out from the server's older score, so confirming waits.
+    expect(screen.getByRole("button", { name: "Confirm the scores" })).toBeDisabled();
   });
 
   it("explains a failed proposal and offers to try again", async () => {

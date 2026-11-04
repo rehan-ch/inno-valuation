@@ -41,17 +41,33 @@ export function ComparePage() {
     let cancelled = false;
     async function load() {
       try {
-        const ideas = await Promise.all(ids.map((id) => getIdea(id)));
-        const columns: Column[] = [];
+        const loaded = await Promise.allSettled(ids.map((id) => getIdea(id)));
         const skipped: string[] = [];
-        for (const idea of ideas) {
+        const unreadable = loaded.filter((r) => r.status === "rejected").length;
+        if (unreadable > 0) {
+          skipped.push(
+            unreadable === 1
+              ? "One idea could not be loaded"
+              : `${unreadable} ideas could not be loaded`,
+          );
+        }
+        const confirmed: { idea: IdeaOut; assessmentId: string }[] = [];
+        for (const result of loaded) {
+          if (result.status !== "fulfilled") continue;
+          const idea = result.value;
           const latest = idea.assessments.find((a) => a.status === "confirmed");
           if (!latest) {
             skipped.push(idea.title);
             continue;
           }
-          columns.push({ idea, result: await getAssessment(idea.id, latest.id) });
+          confirmed.push({ idea, assessmentId: latest.id });
         }
+        const columns: Column[] = await Promise.all(
+          confirmed.map(async ({ idea, assessmentId }) => ({
+            idea,
+            result: await getAssessment(idea.id, assessmentId),
+          })),
+        );
         if (!cancelled) setState({ kind: "ready", columns, skipped });
       } catch (err) {
         if (!cancelled) {

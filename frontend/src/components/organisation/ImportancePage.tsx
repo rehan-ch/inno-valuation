@@ -220,6 +220,7 @@ function WeightsForm({
     for (const w of weights.weights) {
       found[w.key] = weightError(values[w.key] ?? "", weights.limits);
     }
+    // PROVISIONAL: see open-questions Q22. The server enforces the same rule (422).
     const allZero = weights.weights.every((w) => Number(values[w.key]) === 0);
     if (allZero && !Object.values(found).some(Boolean)) {
       const first = weights.weights[0];
