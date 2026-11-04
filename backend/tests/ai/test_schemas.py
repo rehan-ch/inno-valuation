@@ -3,19 +3,33 @@ scoring engine owns."""
 
 import importlib
 import pkgutil
+import uuid
 from typing import Any
 
 import pytest
 from pydantic import BaseModel, ValidationError
 
 import app.ai.schemas
+from app.ai.runner import OutputRejectedError
 from app.ai.schemas.common import AiOutput
 from app.ai.schemas.explain_question import ExplainQuestionOutput
 from app.ai.schemas.propose_iq_scores import ProposeIqScoresOutput
+from app.ai.touchpoints import propose_iq_scores
+from app.models import AiRun
 from app.scoring.question_set import QUESTION_SET
 
 # Field names that would mean the AI produced a number the engine owns.
-ENGINE_OWNED = ("total", "band", "rank", "ranking", "vfm", "value_for_money", "iq", "priority")
+ENGINE_OWNED = (
+    "total",
+    "band",
+    "level",
+    "rank",
+    "ranking",
+    "vfm",
+    "value_for_money",
+    "iq",
+    "priority",
+)
 
 
 def _output_models() -> list[type[BaseModel]]:
@@ -129,9 +143,8 @@ def test_a_valid_proposal_passes() -> None:
 @pytest.mark.parametrize(
     ("change", "message"),
     [
-        (lambda p: p["scores"].pop(), "at least 12"),
-        (lambda p: p["scores"].append(dict(p["scores"][0])), "at most 12"),
-        (lambda p: p["scores"][1].update(dimension_key="customer_journey"), "exactly once"),
+        (lambda p: p["scores"].clear(), "at least 1"),
+        (lambda p: p["scores"][1].update(dimension_key="customer_journey"), "only once"),
         (lambda p: p["scores"][0].update(score=11), "less than or equal to 10"),
         (lambda p: p["scores"][0].update(score=0), "greater than or equal to 1"),
         (lambda p: p["scores"][0].update(score=7.5), "integer"),
@@ -147,3 +160,16 @@ def test_bad_proposals_are_refused(change: Any, message: str) -> None:
     change(data)
     with pytest.raises(ValidationError, match=message):
         ProposeIqScoresOutput.model_validate(data)
+
+
+def test_the_touchpoint_wants_every_dimension_of_its_question_set() -> None:
+    """The set and count of dimensions belong to the assessment's question set version, so
+    the touchpoint checks them (and writes them into the schema), not the output model."""
+    data = _proposal()
+    data["scores"].pop()
+    run = AiRun(subject_id=propose_iq_scores.subject_id(QUESTION_SET.version, uuid.uuid4()))
+    spec = propose_iq_scores.spec_for(run)
+    with pytest.raises(OutputRejectedError, match="exactly once"):
+        spec.check(ProposeIqScoresOutput.model_validate(data))
+    scores = spec.output_schema["properties"]["scores"]
+    assert (scores["minItems"], scores["maxItems"]) == (12, 12)

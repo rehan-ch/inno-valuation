@@ -111,7 +111,9 @@ def spec_for(run: AiRun) -> Touchpoint[ProposeIqScoresOutput]:
     keys = list(question_set.dimension_keys)
     schema = transform_schema(ProposeIqScoresOutput)
     # Constrain generation to the known dimension keys; the check below still applies.
-    items = schema["properties"]["scores"]["items"]
+    scores = schema["properties"]["scores"]
+    scores["minItems"] = scores["maxItems"] = len(keys)
+    items = scores["items"]
     if "$ref" in items:  # the item model is shared through $defs
         items = schema["$defs"][items["$ref"].rsplit("/", 1)[-1]]
     items["properties"]["dimension_key"]["enum"] = keys

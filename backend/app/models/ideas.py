@@ -20,7 +20,7 @@ organisation. People become NULL ("created by", "requested by", "confirmed by",
 import uuid
 from datetime import datetime
 from decimal import Decimal
-from typing import Any
+from typing import Any, Final
 
 from sqlalchemy import (
     CHAR,
@@ -41,6 +41,9 @@ from app.db.base import Base
 from app.models._mixins import CreatedAt, Timestamps, UuidPrimaryKey
 from app.models.accounts import Organisation
 from app.models.enums import IdeaStage, IdeaStatus, IqAssessmentStatus, enum_type
+
+# The longest note an owner may leave on one dimension score (schema and service agree).
+NOTE_MAX_LENGTH: Final = 2000
 
 
 class Idea(UuidPrimaryKey, Timestamps, Base):
