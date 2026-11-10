@@ -26,7 +26,7 @@ from app.schemas.ideas import (
     ReviewIn,
     VfmOut,
 )
-from app.scoring.iq import iq_maximum
+from app.scoring.iq import iq_level, iq_maximum
 from app.scoring.question_set import IqLevel, QuestionSet
 from app.services import ideas, weights
 
@@ -77,7 +77,7 @@ def _summary(db: Session, idea: Idea, overview: ideas.Overview) -> IdeaSummaryOu
 
 
 def _detail(db: Session, ctx: OrgContext, idea: Idea) -> IdeaOut:
-    overview = ideas.overviews(db, [idea])[idea.id]
+    overview = ideas.overviews(db, [idea], confirmed_only=ctx.is_consultant)[idea.id]
     history = ideas.assessments_of(db, idea)
     if ctx.is_consultant:
         history = [a for a in history if a.status is IqAssessmentStatus.CONFIRMED]
@@ -104,7 +104,7 @@ def list_ideas(
     """The organisation's ideas, newest first, each with its latest assessment's IQ and
     Value for Money. Compare and sort on the client: every number is already here."""
     found = ideas.list_ideas(db, ctx, include_archived=include_archived)
-    overviews = ideas.overviews(db, found)
+    overviews = ideas.overviews(db, found, confirmed_only=ctx.is_consultant)
     return [_summary(db, idea, overviews[idea.id]) for idea in found]
 
 
@@ -186,7 +186,14 @@ def _assessment_out(
     dimensions = []
     for dimension in question_set.dimensions:
         row = rows.get(dimension.key)
-        level = levels.get(row.level_key) if row is not None and row.level_key else None
+        # The engine derives every level (spec 3.1): the stored one once confirmed, before
+        # that the level of the score in force (the owner's choice, else the proposal).
+        level = None
+        if row is not None and row.level_key:
+            level = levels.get(row.level_key)
+        elif row is not None:
+            in_force = row.final_score if row.final_score is not None else row.proposed_score
+            level = iq_level(in_force, question_set) if in_force is not None else None
         dimensions.append(
             DimensionReviewOut(
                 key=dimension.key,
@@ -249,9 +256,7 @@ def _assessment_out(
                 key=str(p["key"]),
                 name=question_set.dimension(str(p["key"])).name,
                 score=int(p["score"]),
-                level_name=next(
-                    lv.name for lv in question_set.iq_levels if lv.min <= int(p["score"]) <= lv.max
-                ),
+                level_name=iq_level(int(p["score"]), question_set).name,
                 next_steps=question_set.dimension(str(p["key"])).next_steps,
             )
             for p in (assessment.priorities or [])

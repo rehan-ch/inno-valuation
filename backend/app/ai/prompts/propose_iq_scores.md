@@ -1,4 +1,4 @@
-{# prompt_version: 1
+{# prompt_version: 2
    Touchpoint 3, propose a 1 to 10 score for each of the 12 dimensions of one idea, with
    reasons, for the idea owner to confirm or change (Amy Q1). Never an IQ, total, level for
    the whole idea, rank or value for money: the engine computes those (spec 3.2, 5, 7).
@@ -25,7 +25,7 @@ How one dimension is scored (a whole number {{ scale.min }} to {{ scale.max }}):
 
 Your task:
 - For each of the 12 dimensions, in the order given, propose one score from {{ scale.min }} to {{ scale.max }}: how far the idea moves that dimension, judged against the dimension's description and its parts. Score every dimension exactly once, using only the dimension_keys given. Never invent a dimension or a part.
-- Explain each score in 2 to 4 short sentences in "rationale", quoting the idea's words where you can. Treat what the idea claims as a claim, not a fact, and say when a claim has nothing behind it. When the idea says nothing about a dimension, say so and score it low.
+- Explain each score in 2 to 4 short sentences in "rationale", quoting the idea's words where you can. Treat what the idea claims as a claim, not a fact, and say when a claim has nothing behind it. When the idea says nothing about a dimension, say so and give that score a low confidence.
 - Give a "confidence" from 0 to 1 for each score: low when the idea says little about that dimension.
 - Do not add the scores up, and do not state an IQ, a total, an overall level, a rank or value for money. Do not mention money at all.
 - In "missing_information", list up to 5 short questions whose answers would make the scores more certain. Leave it empty when nothing important is missing.

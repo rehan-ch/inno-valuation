@@ -13,6 +13,7 @@ from typing import Annotated, Literal, Self
 from pydantic import AfterValidator, BaseModel, Field, StrictInt, StringConstraints, model_validator
 
 from app.models.enums import IdeaStage, IdeaStatus, IqAssessmentStatus
+from app.models.ideas import NOTE_MAX_LENGTH
 from app.schemas.common import NoControlCharacters, RequestModel
 from app.schemas.organisation import CurrencyCode
 
@@ -146,7 +147,8 @@ class DimensionReviewOut(BaseModel):
     proposed_confidence: str | None
     # The owner's choice so far; null means the proposal stands.
     final_score: int | None
-    # The level of the final score (spec 3.1), set at confirmation.
+    # The engine's level (spec 3.1) of the score in force: the owner's choice, else the
+    # proposal; fixed at confirmation. Null until a proposal exists.
     level: LevelOut | None
     note: str | None
     changed: bool
@@ -207,7 +209,8 @@ class IqAssessmentOut(BaseModel):
 
 
 ScoreMap = Annotated[dict[str, StrictInt | None], Field(max_length=20)]
-NoteMap = Annotated[dict[str, str | None], Field(max_length=20)]
+Note = Annotated[str, StringConstraints(strip_whitespace=True, max_length=NOTE_MAX_LENGTH)]
+NoteMap = Annotated[dict[str, Note | None], Field(max_length=20)]
 
 
 class ReviewIn(RequestModel):

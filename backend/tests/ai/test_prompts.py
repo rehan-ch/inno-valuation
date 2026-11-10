@@ -16,8 +16,8 @@ PINNED = {
         "0fff3255d1a840e71f47e8f68ab38a86372a1bdc34364e963e49b429b9c83b8b",
     ),
     "propose_iq_scores": (
-        "1",
-        "aebb0792095cc476872908b50038d6aabb241c63d2475c85c7c676779301cb17",
+        "2",
+        "770bc4d596f43bf550acc9da85cba9135bcfcb08bf972b5ec8270cc18af63817",
     ),
 }
 

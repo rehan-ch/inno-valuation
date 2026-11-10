@@ -394,7 +394,7 @@ function ReviewView({
           <span className="text-sm font-medium text-neutral-900 tabular-nums">
             {changed === 0
               ? "No scores changed"
-              : `${changed} of 12 scores changed`}
+              : `${changed} of ${assessment.dimensions.length} scores changed`}
           </span>
           <span
             role="status"
@@ -414,7 +414,13 @@ function ReviewView({
             )}
             {!confirming ? (
               <Button
-                disabled={confirm.busy}
+                // A change that did not save would be left out of the IQ for good.
+                disabled={confirm.busy || save === "error"}
+                title={
+                  save === "error"
+                    ? "A change could not be saved. Choose the score again first."
+                    : undefined
+                }
                 onClick={() => setConfirming(true)}
               >
                 Confirm the scores
@@ -462,8 +468,11 @@ function ReviewView({
       <p className="text-sm text-neutral-600">
         For each dimension, read the AI&apos;s reasons and choose the score you
         stand behind. The proposed score is selected until you change it.
-        Levels: 1 to 3 Continuous Improvement, 4 to 6 Innovation, 7 to 10
-        Invention.
+        Levels:{" "}
+        {assessment.levels
+          .map((l) => `${l.min} to ${l.max} ${l.name}`)
+          .join(", ")}
+        .
       </p>
 
       {assessment.dimensions.map((d) => {
@@ -507,10 +516,8 @@ function ReviewView({
                   onChange={(value) => choose(d.key, value)}
                   ariaLabel={(value) => `${d.name}: ${value}`}
                 />
-                {current !== null && (
-                  <span className="text-xs text-neutral-500">
-                    {levelOf(assessment, current)}
-                  </span>
+                {d.level && current === (d.final_score ?? d.proposed_score) && (
+                  <span className="text-xs text-neutral-500">{d.level.name}</span>
                 )}
               </div>
             </fieldset>
@@ -531,12 +538,6 @@ function ReviewView({
         );
       })}
     </>
-  );
-}
-
-function levelOf(assessment: IqAssessmentOut, score: number): string {
-  return (
-    assessment.levels.find((l) => l.min <= score && score <= l.max)?.name ?? ""
   );
 }
 
@@ -664,8 +665,10 @@ function ResultView({ assessment }: { assessment: IqAssessmentOut }) {
           <CardTitle>How the scores were set</CardTitle>
           <CardDescription>
             The AI proposed each score; the idea&apos;s owner confirmed or
-            changed it (both are kept). The IQ is the sum of the 12 final scores
-            out of 120, as a percentage.
+            changed it (both are kept). The IQ is the sum of the{" "}
+            {assessment.dimensions.length} final scores out of{" "}
+            {assessment.dimensions.length * assessment.scale.max}, as a
+            percentage.
           </CardDescription>
           <dl className="mt-4 grid grid-cols-2 gap-4 text-sm">
             <Stat

@@ -14,7 +14,9 @@ from app.scoring.question_set import QUESTION_SET
 
 SCORE_MIN: Final = QUESTION_SET.iq_scale.min
 SCORE_MAX: Final = QUESTION_SET.iq_scale.max
-DIMENSION_COUNT: Final = len(QUESTION_SET.dimensions)
+# The exact dimension keys and count belong to the assessment's question set version:
+# ``touchpoints.propose_iq_scores.spec_for`` puts them in the schema and checks the output.
+MAX_DIMENSIONS: Final = 50
 MAX_OPEN_QUESTIONS: Final = 5
 
 
@@ -30,12 +32,13 @@ class ProposedScore(AiOutput):
 
 
 class ProposeIqScoresOutput(AiOutput):
-    scores: list[ProposedScore] = Field(min_length=DIMENSION_COUNT, max_length=DIMENSION_COUNT)
+    scores: list[ProposedScore] = Field(min_length=1, max_length=MAX_DIMENSIONS)
     # Short questions whose answers would make the scores more certain; empty if none.
     missing_information: list[Sentence] = Field(default_factory=list, max_length=MAX_OPEN_QUESTIONS)
 
     @model_validator(mode="after")
-    def _every_dimension_once(self) -> Self:
-        if sorted(s.dimension_key for s in self.scores) != sorted(QUESTION_SET.dimension_keys):
-            raise ValueError("every dimension must be scored exactly once")
+    def _each_dimension_at_most_once(self) -> Self:
+        keys = [s.dimension_key for s in self.scores]
+        if len(set(keys)) != len(keys):
+            raise ValueError("a dimension may be scored only once")
         return self

@@ -197,7 +197,7 @@ def test_importance_orders_tied_priorities_and_never_the_iq(
     """The recorded proposal has Channel Navigation and Operational Efficiency tied at 6
     (book order puts Channel Navigation first) and three dimensions tied at 7. Importance
     reorders the ties; the IQ, levels and category scores are exactly as before."""
-    use_ai(*recorded_replies(GOLDEN))
+    use_ai(*recorded_replies(GOLDEN), *recorded_replies(GOLDEN))
     owner, org = member(MembershipRole.OWNER)
     _as(client, owner, org)
     assert _put(client, _weights(operational_efficiency=3, service_excellence=2)).status_code == 200
@@ -239,6 +239,27 @@ def test_importance_orders_tied_priorities_and_never_the_iq(
     after = client.get(f"/api/v1/ideas/{idea_id}/assessments/{assessment_id}").json()
     assert after["priorities"] == body["priorities"]
     assert after["custom_weights"] is True
+
+    # The same proposal confirmed under equal importance: every number the same, only the
+    # order of the tied priorities differs (Q2: weights change no score).
+    again = client.post(f"/api/v1/ideas/{idea_id}/assessments", headers=csrf(client)).json()
+    equal = client.post(
+        f"/api/v1/ideas/{idea_id}/assessments/{again['id']}/confirm", headers=csrf(client)
+    ).json()
+    assert equal["custom_weights"] is False
+    assert equal["iq"] == body["iq"] == "69.2"
+    assert equal["categories"] == body["categories"]
+    assert [c["score"] for c in body["categories"]] == ["74.0", "50.0", "72.0"]
+    assert [(d["key"], d["level"]["name"]) for d in equal["dimensions"]] == [
+        (d["key"], d["level"]["name"]) for d in body["dimensions"]
+    ]
+    assert [(p["key"], p["score"]) for p in equal["priorities"]] == [
+        ("organizational_agility", 4),
+        ("sustainable_future", 5),
+        ("channel_navigation", 6),
+        ("operational_efficiency", 6),
+        ("brand_magnetism", 7),
+    ]
 
 
 def test_equal_importance_keeps_book_order(client: TestClient, use_ai: UseAi) -> None:
