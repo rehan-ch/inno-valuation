@@ -37,7 +37,7 @@ Things to know before you start:
 9. **Compare ideas.** In the ideas list tick two scored ideas and compare them side by side.
 10. **Dimension importance.** Organisation, "Set dimension importance". It only decides the order of priorities whose scores tie; it never changes a score or the IQ.
 11. **Activity log.** Organisation, "Open the activity log": who did what and when, with the method version and the AI model. Filter by action or person, export as CSV. Nothing in it can be edited.
-12. **Other roles.** Sign in as Ines (investor) to show a read-only member, and as Amy (consultant) to show that she sees final results and confirmed ideas only, and neither the team nor the activity log.
+12. **Other roles.** Sign in as Ines (investor) to show a read-only member, and as Amy (consultant) to show that she sees final results and confirmed ideas only, and neither the team nor the activity log. Amy first picks Northwind Outfitters in the organisation switcher at the top right.
 
 ## Not built yet
 
