@@ -245,6 +245,7 @@ def start_assessment(db: Session, ctx: OrgContext) -> ReadinessAssessment:
         organisation_id=ctx.organisation_id,
         target_type="readiness_assessment",
         target_id=assessment.id,
+        details={"question_set_version": assessment.question_set_version},
     )
     db.commit()
     return assessment
@@ -550,6 +551,7 @@ def finalise(db: Session, ctx: OrgContext, assessment_id: uuid.UUID) -> Readines
         organisation_id=ctx.organisation_id,
         target_type="readiness_assessment",
         target_id=assessment.id,
+        details={"question_set_version": assessment.question_set_version},
     )
     db.commit()
     return result
