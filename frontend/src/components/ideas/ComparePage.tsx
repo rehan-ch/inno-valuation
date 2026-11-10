@@ -12,6 +12,7 @@ import { Table, Td, Th } from "@/components/ui/Table";
 import { ApiError } from "@/lib/api/client";
 import { getAssessment, getIdea } from "@/lib/api/ideas";
 import type { IdeaOut, IqAssessmentOut } from "@/lib/api/types";
+import { downloadCsv } from "@/lib/csv";
 import { formatMoney } from "@/lib/money";
 
 interface Column {
@@ -113,17 +114,10 @@ export function ComparePage() {
   const rows = buildRows(columns);
 
   function exportCsv() {
-    const lines = [
+    downloadCsv("innovaluation-ideas-comparison.csv", [
       ["", ...columns.map((c) => c.idea.title)],
       ...rows.map((r) => [r.label, ...r.cells]),
-    ].map((cells) => cells.map(csvCell).join(","));
-    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "innovaluation-ideas-comparison.csv";
-    link.click();
-    URL.revokeObjectURL(url);
+    ]);
   }
 
   return (
@@ -218,8 +212,4 @@ export function buildRows(columns: Column[]): Row[] {
     })),
   ];
   return rows;
-}
-
-function csvCell(value: string): string {
-  return /[",\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
 }

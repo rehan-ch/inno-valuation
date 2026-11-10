@@ -174,6 +174,8 @@ export function AppShell({ children }: { children: ReactNode }) {
             <>
               <NavLink href="/readiness">Readiness</NavLink>
               <NavLink href="/ideas">Ideas</NavLink>
+              <NavLink href="/targets">Targets</NavLink>
+              <NavLink href="/history">History</NavLink>
             </>
           )}
           {membership && <NavLink href="/team">Team</NavLink>}

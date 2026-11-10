@@ -131,6 +131,19 @@ export function OrganisationSettings() {
           Set dimension importance
         </Link>
       </Card>
+      <Card>
+        <CardTitle>Activity log</CardTitle>
+        <p className="mt-2 text-sm text-neutral-600">
+          Who did what, and when: invitations, role changes, assessments, idea scores and
+          settings. Entries cannot be changed or removed.
+        </p>
+        <Link
+          href="/organisation/activity"
+          className="mt-3 inline-block text-sm font-medium text-primary hover:underline"
+        >
+          Open the activity log
+        </Link>
+      </Card>
     </div>
   );
 }

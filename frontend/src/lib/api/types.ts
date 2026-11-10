@@ -68,3 +68,29 @@ export type WeightsOut = Schemas["WeightsOut"];
 export type WeightOut = Schemas["WeightOut"];
 export type WeightsChangeOut = Schemas["WeightsChangeOut"];
 export type WeightsIn = Schemas["WeightsIn"];
+
+export type CompassOut = Schemas["CompassOut"];
+export type CompassSegmentOut = Schemas["CompassSegmentOut"];
+export type CompassCategoryOut = Schemas["CompassCategoryOut"];
+export type DashboardOut = Schemas["DashboardOut"];
+export type ReadinessHeadlineOut = Schemas["ReadinessHeadlineOut"];
+export type IqHeadlineOut = Schemas["IqHeadlineOut"];
+export type IdeaChoiceOut = Schemas["IdeaChoiceOut"];
+export type PriorityItemOut = Schemas["PriorityItemOut"];
+export type DimensionDetailOut = Schemas["DimensionDetailOut"];
+export type TrendPointOut = Schemas["TrendPointOut"];
+export type ReadinessHistoryOut = Schemas["ReadinessHistoryOut"];
+export type ReadinessHistoryEntryOut = Schemas["ReadinessHistoryEntryOut"];
+export type IdeaHistoryOut = Schemas["IdeaHistoryOut"];
+export type IqHistoryEntryOut = Schemas["IqHistoryEntryOut"];
+export type HistoryDimensionOut = Schemas["HistoryDimensionOut"];
+export type Direction = NonNullable<TrendPointOut["direction"]>;
+
+export type TargetsOut = Schemas["TargetsOut"];
+export type TargetScaleOut = Schemas["TargetScaleOut"];
+export type TargetsChangeOut = Schemas["TargetsChangeOut"];
+export type TargetScale = Schemas["TargetScale"];
+
+export type AuditPageOut = Schemas["AuditPageOut"];
+export type AuditEventOut = Schemas["AuditEventOut"];
+export type AuditFiltersOut = Schemas["AuditFiltersOut"];

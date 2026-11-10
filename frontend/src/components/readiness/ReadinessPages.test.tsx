@@ -557,6 +557,7 @@ describe("ResultPage", () => {
         { key: "channel_navigation", name: "Channel Navigation", order: 3, category: "customer_facing", score: 15, maximum: 25 },
       ],
       categories: [{ key: "customer_facing", name: "Customer-Facing Innovation", score: 85, maximum: 125 }],
+      compass: null,
       priorities: [
         {
           rank: 1,

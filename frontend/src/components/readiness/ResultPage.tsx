@@ -3,11 +3,13 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { Compass } from "@/components/compass/Compass";
 import { Alert } from "@/components/ui/Alert";
 import { Bar } from "@/components/ui/Bar";
 import { Card, CardDescription, CardTitle, Eyebrow, PageHeader } from "@/components/ui/Card";
 import { Loading } from "@/components/ui/Loading";
 import { ApiError } from "@/lib/api/client";
+import { dimensionHref } from "@/lib/api/insights";
 import { getResult } from "@/lib/api/readiness";
 import type { ResultOut } from "@/lib/api/types";
 import { formatDate } from "@/lib/format";
@@ -54,9 +56,14 @@ export function ResultPage({ assessmentId }: { assessmentId: string }) {
           result.submitted_count === 1 ? "person" : "people"
         } · question set version ${result.question_set_version}`}
         actions={
-          <Link href="/readiness" className="text-sm font-medium text-primary hover:underline">
-            All assessments
-          </Link>
+          <>
+            <Link href="/history" className="text-sm font-medium text-primary hover:underline">
+              History
+            </Link>
+            <Link href="/readiness" className="text-sm font-medium text-primary hover:underline">
+              All assessments
+            </Link>
+          </>
         }
       />
 
@@ -93,6 +100,28 @@ export function ResultPage({ assessmentId }: { assessmentId: string }) {
           </div>
         ))}
       </section>
+
+      {result.compass && (
+        <Card>
+          <CardTitle>Readiness compass</CardTitle>
+          <CardDescription>
+            The 12 dimensions in the method&apos;s order, grouped into its three categories.
+            Choose a dimension to see its questions, next steps and target.
+          </CardDescription>
+          <div className="mt-5">
+            <Compass
+              title="Readiness compass"
+              compass={result.compass}
+              headline={{
+                value: String(result.total),
+                maximum: String(result.total_maximum),
+                label: result.band.name,
+              }}
+              hrefFor={(key) => dimensionHref(key)}
+            />
+          </div>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card>
@@ -143,6 +172,7 @@ export function ResultPage({ assessmentId }: { assessmentId: string }) {
         </Card>
       </div>
 
+      {!result.compass && (
       <Card>
         <CardTitle>The 12 dimensions</CardTitle>
         <ul className="mt-4 grid grid-cols-1 gap-x-10 gap-y-4 md:grid-cols-2">
@@ -163,6 +193,7 @@ export function ResultPage({ assessmentId }: { assessmentId: string }) {
           ))}
         </ul>
       </Card>
+      )}
     </div>
   );
 }

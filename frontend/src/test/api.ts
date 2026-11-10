@@ -4,6 +4,11 @@ import { vi } from "vitest";
 import type {
   AssessmentOut,
   AssessmentSummaryOut,
+  AuditEventOut,
+  CompassOut,
+  DashboardOut,
+  DimensionDetailOut,
+  TargetsOut,
   ConsultantAccessOut,
   ConsultantGrantOut,
   DimensionReviewOut,
@@ -352,6 +357,8 @@ export function fakeIqAssessment(
       },
     ],
     priorities: [],
+    strengths: [],
+    compass: null,
     custom_weights: false,
     vfm: null,
     can_review: true,
@@ -468,6 +475,260 @@ export function fakeWeightsChange(
         key === "data_intelligence" ? "3" : "1",
       ]),
     ),
+    ...overrides,
+  };
+}
+
+const COMPASS_DIMENSIONS: [string, string, number, string][] = [
+  ["customer_journey", "Customer Journey", 1, "customer_facing"],
+  ["brand_magnetism", "Brand Magnetism", 2, "customer_facing"],
+  ["operational_efficiency", "Operational Efficiency", 6, "process"],
+  ["organizational_agility", "Organizational Agility", 7, "process"],
+  ["data_intelligence", "Data Intelligence", 11, "strategic"],
+  ["financial_imperative", "Financial Imperative", 12, "strategic"],
+];
+
+const IQ_LEVELS = [
+  { key: "continuous_improvement", name: "Continuous Improvement", order: 1, min: 1, max: 3, text: "Incremental." },
+  { key: "innovation", name: "Innovation", order: 2, min: 4, max: 6, text: "Novel." },
+  { key: "invention", name: "Invention", order: 3, min: 7, max: 10, text: "Breakthrough." },
+];
+
+/** A small compass (6 dimensions in 3 categories) shaped like the real one. The scores are
+ * arbitrary: the page shows what it is sent. */
+export function fakeCompass(scale: "readiness" | "iq", scores?: number[]): CompassOut {
+  const readiness = scale === "readiness";
+  const values = scores ?? (readiness ? [20, 20, 15, 15, 12, 18] : [8, 7, 6, 3, 8, 5]);
+  const maximum = readiness ? 25 : 10;
+  const levelOf = (score: number) => {
+    const level = IQ_LEVELS.find((l) => score >= l.min && score <= l.max) ?? IQ_LEVELS[0]!;
+    return { key: level.key, name: level.name, order: level.order };
+  };
+  const categories: [string, string][] = [
+    ["customer_facing", "Customer-Facing Innovation"],
+    ["process", "Process Innovation"],
+    ["strategic", "Strategic Innovation"],
+  ];
+  return {
+    scale,
+    question_set_version: 1,
+    minimum: readiness ? 5 : 1,
+    maximum,
+    segments: COMPASS_DIMENSIONS.map(([key, name, order, category], i) => ({
+      key,
+      name,
+      order,
+      category,
+      score: values[i] ?? 0,
+      maximum,
+      level: readiness ? null : levelOf(values[i] ?? 1),
+      priority_rank: null,
+      target: null,
+      gap: null,
+    })),
+    categories: categories.map(([key, name], i) => ({
+      key,
+      name,
+      order: i + 1,
+      score: readiness ? "40" : "75.0",
+      maximum: readiness ? "50" : "100.0",
+      dimension_keys: COMPASS_DIMENSIONS.filter((d) => d[3] === key).map((d) => d[0]),
+    })),
+    levels: readiness ? [] : IQ_LEVELS,
+  };
+}
+
+export const EMPTY_DASHBOARD: DashboardOut = { readiness: null, ideas: [], iq: null };
+
+/** A dashboard with both scores: readiness 190 (Building Blocks) and an idea's IQ 70.0. */
+export function fakeDashboard(overrides: Partial<DashboardOut> = {}): DashboardOut {
+  return {
+    readiness: {
+      assessment_id: "55555555-5555-5555-5555-555555555555",
+      finalised_at: "2026-10-20T10:00:00Z",
+      question_set_version: 1,
+      total: 190,
+      total_maximum: 300,
+      band: {
+        key: "building_blocks",
+        name: "Building Blocks",
+        text: "You have a strong foundation but may need to focus on specific weaknesses.",
+      },
+      compass: fakeCompass("readiness"),
+      priorities: [
+        {
+          rank: 1,
+          key: "data_intelligence",
+          name: "Data Intelligence",
+          score: 12,
+          maximum: 25,
+          level_name: null,
+          next_steps: "Invest in analytics capabilities.",
+        },
+      ],
+    },
+    ideas: [
+      {
+        idea_id: IDEA_ID,
+        title: "Same-day delivery",
+        assessment_id: IQ_ASSESSMENT_ID,
+        iq: "70.0",
+        confirmed_at: "2026-10-28T09:30:00Z",
+      },
+    ],
+    iq: {
+      idea_id: IDEA_ID,
+      idea_title: "Same-day delivery",
+      assessment_id: IQ_ASSESSMENT_ID,
+      confirmed_at: "2026-10-28T09:30:00Z",
+      question_set_version: 1,
+      iq: "70.0",
+      iq_maximum: "100.0",
+      vfm: {
+        investment: "50000.00",
+        currency: "USD",
+        per_point: "714.29",
+        not_calculable_reason: null,
+      },
+      custom_weights: false,
+      compass: fakeCompass("iq"),
+      priorities: [
+        {
+          rank: 1,
+          key: "organizational_agility",
+          name: "Organizational Agility",
+          score: 3,
+          maximum: 10,
+          level_name: "Continuous Improvement",
+          next_steps: "Adopt agile ways of working.",
+        },
+      ],
+    },
+    ...overrides,
+  };
+}
+
+export function fakeDimensionDetail(
+  overrides: Partial<DimensionDetailOut> = {},
+): DimensionDetailOut {
+  return {
+    key: "organizational_agility",
+    name: "Organizational Agility",
+    order: 7,
+    category: { key: "process", name: "Process Innovation", order: 2 },
+    description: "How quickly the organisation adapts.",
+    sub_aspects: ["Decision speed", "Team structure"],
+    next_steps: "Adopt agile ways of working.",
+    previous: { key: "operational_efficiency", name: "Operational Efficiency", order: 6 },
+    next: { key: "collaborative_synergy", name: "Collaborative Synergy", order: 8 },
+    readiness: {
+      assessment_id: "55555555-5555-5555-5555-555555555555",
+      finalised_at: "2026-10-20T10:00:00Z",
+      question_set_version: 1,
+      score: 15,
+      maximum: 25,
+      priority_rank: 5,
+      target: 20,
+      gap: 5,
+      answer_scale: { min: 1, max: 5, labels: { "1": "Strongly Disagree", "5": "Strongly Agree" } },
+      questions: [
+        { id: "organizational_agility_1", text: "We adapt quickly to change.", answer: 3 },
+        { id: "organizational_agility_2", text: "Teams can reorganise themselves.", answer: 4 },
+      ],
+      history: [
+        {
+          assessment_id: "55555555-5555-5555-5555-555555555555",
+          at: "2026-10-20T10:00:00Z",
+          score: 15,
+          maximum: 25,
+          change: 2,
+          direction: "up",
+        },
+        {
+          assessment_id: "66666666-6666-6666-6666-666666666666",
+          at: "2026-09-01T10:00:00Z",
+          score: 13,
+          maximum: 25,
+          change: null,
+          direction: null,
+        },
+      ],
+    },
+    ideas: [
+      {
+        idea_id: IDEA_ID,
+        title: "Same-day delivery",
+        assessment_id: IQ_ASSESSMENT_ID,
+        iq: "70.0",
+        confirmed_at: "2026-10-28T09:30:00Z",
+      },
+    ],
+    iq: {
+      idea_id: IDEA_ID,
+      idea_title: "Same-day delivery",
+      assessment_id: IQ_ASSESSMENT_ID,
+      confirmed_at: "2026-10-28T09:30:00Z",
+      question_set_version: 1,
+      score: 5,
+      maximum: 10,
+      level: { key: "innovation", name: "Innovation", min: 4, max: 6, text: "Novel." },
+      proposed_score: 4,
+      changed: true,
+      rationale: ["The idea says the team reorganised.", "So a middle score fits."],
+      note: "The team has reorganised twice this year.",
+      priority_rank: 1,
+      target: 8,
+      gap: 3,
+      history: [],
+    },
+    ...overrides,
+  };
+}
+
+export function fakeTargets(overrides: Partial<TargetsOut> = {}): TargetsOut {
+  const rows = (targets: Record<string, number>) =>
+    COMPASS_DIMENSIONS.map(([key, name, order, category]) => ({
+      key,
+      name,
+      order,
+      category,
+      target: targets[key] ?? null,
+    }));
+  return {
+    question_set_version: 1,
+    readiness: {
+      scale: "readiness",
+      minimum: 5,
+      maximum: 25,
+      targets: rows({ customer_journey: 22 }),
+      set_at: "2026-11-01T09:00:00Z",
+      set_by_name: "Olive Owner",
+    },
+    iq: {
+      scale: "iq",
+      minimum: 1,
+      maximum: 10,
+      targets: rows({}),
+      set_at: null,
+      set_by_name: null,
+    },
+    can_change: true,
+    ...overrides,
+  };
+}
+
+export function fakeAuditEvent(overrides: Partial<AuditEventOut> = {}): AuditEventOut {
+  return {
+    id: "77777777-7777-7777-7777-777777777777",
+    at: "2026-11-02T09:30:00Z",
+    action: "iq.confirmed",
+    action_label: "Idea scores confirmed",
+    actor_id: "11111111-1111-1111-1111-111111111111",
+    actor_name: "Olive Owner",
+    subject: "Same-day delivery",
+    detail: "Changed from the AI's proposal: Organizational Agility.",
+    question_set_version: 1,
+    ai_model: "claude-opus-5-5",
     ...overrides,
   };
 }

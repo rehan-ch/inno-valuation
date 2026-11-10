@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
+import { Compass } from "@/components/compass/Compass";
 import { ScaleChoice } from "@/components/readiness/ScaleChoice";
 import { Alert } from "@/components/ui/Alert";
 import { Badge } from "@/components/ui/Badge";
@@ -27,6 +28,7 @@ import {
   requestAssessment,
   saveReview,
 } from "@/lib/api/ideas";
+import { dimensionHref } from "@/lib/api/insights";
 import type { DimensionReviewOut, IqAssessmentOut } from "@/lib/api/types";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { useSubmit } from "@/lib/forms";
@@ -618,6 +620,29 @@ function ResultView({ assessment }: { assessment: IqAssessmentOut }) {
         ))}
       </section>
 
+      {assessment.compass && (
+        <Card>
+          <CardTitle>Idea compass</CardTitle>
+          <CardDescription>
+            The confirmed scores on the 12 dimensions, in the method&apos;s order and grouped
+            into its three categories. Choose a dimension for its reasons, next steps and
+            target.
+          </CardDescription>
+          <div className="mt-5">
+            <Compass
+              title="Idea compass"
+              compass={assessment.compass}
+              headline={{
+                value: assessment.iq ?? "",
+                maximum: assessment.iq_maximum.replace(/\.0+$/, ""),
+                label: "Innovation Quotient",
+              }}
+              hrefFor={(key) => dimensionHref(key, assessment.idea_id)}
+            />
+          </div>
+        </Card>
+      )}
+
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card>
           <CardTitle>Focus first</CardTitle>
@@ -662,6 +687,35 @@ function ResultView({ assessment }: { assessment: IqAssessmentOut }) {
           </ol>
         </Card>
         <Card>
+          <CardTitle>Strengths</CardTitle>
+          <CardDescription>
+            {assessment.strengths.length > 0
+              ? "The dimensions that score above every priority."
+              : "No dimension scores above the priorities, so none stands out as a strength."}
+          </CardDescription>
+          <ul className="mt-4 space-y-4">
+            {assessment.strengths.map((strength) => (
+              <li key={strength.key}>
+                <span className="flex items-baseline justify-between gap-3 text-sm">
+                  <Link
+                    href={dimensionHref(strength.key, assessment.idea_id)}
+                    className="font-medium text-neutral-900 hover:text-primary hover:underline"
+                  >
+                    {strength.name}
+                  </Link>
+                  <span className="text-neutral-500 tabular-nums">
+                    {strength.score} / {strength.maximum} · {strength.level_name}
+                  </span>
+                </span>
+                <Bar value={strength.score} maximum={strength.maximum} tone="accent" />
+              </li>
+            ))}
+          </ul>
+        </Card>
+      </div>
+
+      <div>
+        <Card>
           <CardTitle>How the scores were set</CardTitle>
           <CardDescription>
             The AI proposed each score; the idea&apos;s owner confirmed or
@@ -670,7 +724,7 @@ function ResultView({ assessment }: { assessment: IqAssessmentOut }) {
             {assessment.dimensions.length * assessment.scale.max}, as a
             percentage.
           </CardDescription>
-          <dl className="mt-4 grid grid-cols-2 gap-4 text-sm">
+          <dl className="mt-4 grid grid-cols-2 gap-4 text-sm md:grid-cols-5">
             <Stat
               label="Scores changed"
               value={assessment.dimensions.filter((d) => d.changed).length}
@@ -688,6 +742,10 @@ function ResultView({ assessment }: { assessment: IqAssessmentOut }) {
                 value={formatDate(assessment.confirmed_at)}
               />
             )}
+            <Stat
+              label="Method version"
+              value={`Question set ${assessment.question_set_version}`}
+            />
           </dl>
         </Card>
       </div>
@@ -752,6 +810,12 @@ function ResultView({ assessment }: { assessment: IqAssessmentOut }) {
           className={buttonClass("ghost", "sm")}
         >
           Back to the idea
+        </Link>
+        <Link
+          href={`/history?idea=${assessment.idea_id}`}
+          className={buttonClass("ghost", "sm")}
+        >
+          This idea over time
         </Link>
       </p>
     </>

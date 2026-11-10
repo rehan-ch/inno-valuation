@@ -2,6 +2,7 @@ import { screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  EMPTY_DASHBOARD,
   fakeAssessmentSummary,
   fakeGrant,
   fakeInvitation,
@@ -37,6 +38,7 @@ describe("DashboardPage", () => {
       "GET /api/v1/organisation/consultants": [fakeGrant({ status: "active" })],
       "GET /api/v1/readiness/assessments": [],
       "GET /api/v1/ideas": [],
+      "GET /api/v1/dashboard": EMPTY_DASHBOARD,
     });
 
     renderWithMe(<DashboardPage />, fakeMe());
@@ -77,6 +79,7 @@ describe("DashboardPage", () => {
       "GET /api/v1/organisation/members": [fakeMember()],
       "GET /api/v1/readiness/assessments": [],
       "GET /api/v1/ideas": [],
+      "GET /api/v1/dashboard": EMPTY_DASHBOARD,
     });
 
     renderWithMe(
@@ -105,6 +108,7 @@ describe("DashboardPage", () => {
       "GET /api/v1/organisation": fakeOrganisation({ role: "consultant" }),
       "GET /api/v1/readiness/assessments": [],
       "GET /api/v1/ideas": [],
+      "GET /api/v1/dashboard": EMPTY_DASHBOARD,
     });
 
     renderWithMe(
@@ -133,6 +137,7 @@ describe("DashboardPage", () => {
       "GET /api/v1/organisation": fakeOrganisation({ role: "member" }),
       "GET /api/v1/organisation/members": [fakeMember()],
       "GET /api/v1/ideas": [],
+      "GET /api/v1/dashboard": EMPTY_DASHBOARD,
       "GET /api/v1/readiness/assessments": [
         fakeAssessmentSummary({ status: "final", total: 190, band_name: "Building Blocks" }),
       ],
