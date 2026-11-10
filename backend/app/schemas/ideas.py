@@ -15,6 +15,7 @@ from pydantic import AfterValidator, BaseModel, Field, StrictInt, StringConstrai
 from app.models.enums import IdeaStage, IdeaStatus, IqAssessmentStatus
 from app.models.ideas import NOTE_MAX_LENGTH
 from app.schemas.common import NoControlCharacters, RequestModel
+from app.schemas.compass import CompassOut
 from app.schemas.organisation import CurrencyCode
 
 
@@ -170,6 +171,15 @@ class IqPriorityOut(BaseModel):
     next_steps: str
 
 
+class IqStrengthOut(BaseModel):
+    key: str
+    name: str
+    order: int
+    score: int
+    maximum: int
+    level_name: str
+
+
 class VfmOut(BaseModel):
     """Value for Money (spec 5.1): the investment the assessment was confirmed with and the
     cost per innovation point, or why there is none."""
@@ -197,6 +207,11 @@ class IqAssessmentOut(BaseModel):
     iq_maximum: str
     categories: list[IqCategoryOut]
     priorities: list[IqPriorityOut]
+    # The dimensions that score above every priority, strongest first; empty until confirmed.
+    strengths: list[IqStrengthOut]
+    # The 12-segment compass of the confirmed scores, with targets and gaps; null until
+    # the assessment is confirmed (suggestions are never drawn).
+    compass: CompassOut | None
     # The organisation had custom dimension importance when this was confirmed, so tied
     # priorities are ordered by it (never the scores).
     custom_weights: bool

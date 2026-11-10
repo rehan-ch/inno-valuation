@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field, StrictInt
 
 from app.models.enums import ReadinessStatus
 from app.schemas.common import RequestModel
+from app.schemas.compass import CompassOut
 
 # The engine checks the scale and the ids; this only keeps payloads sane. StrictInt, so
 # "3" and true are refused instead of quietly becoming 3 and 1.
@@ -163,6 +164,8 @@ class ResultOut(BaseModel):
     categories: list[CategoryScoreOut]
     priorities: list[PriorityOut]
     strengths: list[DimensionScoreOut]
+    # The 12-segment compass of this result, with targets and gaps.
+    compass: CompassOut | None
     submitted_count: int
     finalised_at: datetime
 

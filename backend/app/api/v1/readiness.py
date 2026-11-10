@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.ai.client import OFFLINE_MODEL
 from app.ai.touchpoints import explain_question as explain_question_touchpoint
+from app.api import presenters
 from app.core.deps import get_db, require_permission
 from app.core.errors import AppError
 from app.core.permissions import OrgContext, Permission, has_permission
@@ -38,7 +39,7 @@ from app.schemas.readiness import (
 )
 from app.scoring.errors import ScoringError
 from app.scoring.question_set import QUESTION_SET, question_set_for
-from app.services import explanations, readiness
+from app.services import explanations, insights, readiness
 
 router = APIRouter(prefix="/readiness", tags=["readiness"])
 
@@ -319,6 +320,7 @@ def _result_out(db: Session, assessment: ReadinessAssessment) -> ResultOut:
         )
         for d in question_set.dimensions
     ]
+    record = insights.readiness_record(db, assessment, result)
     highest_priority = max((int(p["score"]) for p in result.priorities), default=-1)
     strongest = [
         d
@@ -353,6 +355,7 @@ def _result_out(db: Session, assessment: ReadinessAssessment) -> ResultOut:
             for p in result.priorities
         ],
         strengths=strongest,
+        compass=presenters.readiness_compass(record) if record is not None else None,
         submitted_count=result.participant_count,
         finalised_at=assessment.finalised_at,
     )
