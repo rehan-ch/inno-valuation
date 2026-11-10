@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
+import { useMe } from "@/components/app/me-context";
 import { gapWords } from "@/components/compass/Compass";
 import { Alert } from "@/components/ui/Alert";
 import { Badge } from "@/components/ui/Badge";
@@ -26,13 +27,25 @@ type State =
  * organisation's readiness score for it and the selected idea's score for it, kept apart,
  * each with its target, gap and earlier scores. Everything shown comes from the API. */
 export function DimensionPage({ dimensionKey }: { dimensionKey: string }) {
+  const { me } = useMe();
+  const activeOrgId = me.active_organisation_id;
   const params = useSearchParams();
   const router = useRouter();
   const ideaId = params.get("idea");
   const [state, setState] = useState<State>({ kind: "loading" });
+  const loadedFor = useRef(activeOrgId);
 
   useEffect(() => {
     let cancelled = false;
+    // After a switch of organisation the idea in the address belongs to the other one:
+    // show this organisation's own, and drop it from the address.
+    const switched = loadedFor.current !== activeOrgId;
+    loadedFor.current = activeOrgId;
+    if (switched && ideaId) {
+      router.replace(dimensionHref(dimensionKey));
+      return;
+    }
+    setState({ kind: "loading" });
     getDimension(dimensionKey, ideaId)
       .then((detail) => {
         if (!cancelled) setState({ kind: "ready", detail });
@@ -49,7 +62,7 @@ export function DimensionPage({ dimensionKey }: { dimensionKey: string }) {
     return () => {
       cancelled = true;
     };
-  }, [dimensionKey, ideaId]);
+  }, [dimensionKey, ideaId, activeOrgId, router]);
 
   if (state.kind === "loading") return <Loading>Loading the dimension...</Loading>;
   if (state.kind === "error") {
@@ -338,8 +351,9 @@ function IqSide({
             {iq.changed ? `; the owner set ${iq.score}` : "; the owner kept it"}
           </p>
           <ul className="mt-1.5 list-disc space-y-1 pl-4 text-neutral-700">
-            {iq.rationale.map((sentence) => (
-              <li key={sentence}>{sentence}</li>
+            {iq.rationale.map((sentence, i) => (
+              // Keyed by position: the list is fixed and two sentences may be equal.
+              <li key={i}>{sentence}</li>
             ))}
           </ul>
         </div>

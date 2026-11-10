@@ -74,9 +74,11 @@ class ReadinessRecord:
         return {key: int(value) for key, value in self.result.per_dimension.items()}
 
 
-def readiness_records(db: Session, ctx: OrgContext) -> list[ReadinessRecord]:
-    """Every final readiness result of the organisation, newest first, each with its gaps
-    to today's targets."""
+def readiness_records(
+    db: Session, ctx: OrgContext, *, limit: int | None = None
+) -> list[ReadinessRecord]:
+    """The organisation's final readiness results, newest first, each with its gaps to
+    today's targets: all of them, or the newest ``limit``."""
     rows = db.execute(
         select(ReadinessAssessment, ReadinessResult)
         .join(ReadinessResult, ReadinessResult.assessment_id == ReadinessAssessment.id)
@@ -86,6 +88,7 @@ def readiness_records(db: Session, ctx: OrgContext) -> list[ReadinessRecord]:
             ReadinessAssessment.finalised_at.is_not(None),
         )
         .order_by(ReadinessAssessment.finalised_at.desc(), ReadinessAssessment.id.desc())
+        .limit(limit)
     ).all()
     return _readiness_records(db, ctx.organisation_id, [(a, r) for a, r in rows])
 

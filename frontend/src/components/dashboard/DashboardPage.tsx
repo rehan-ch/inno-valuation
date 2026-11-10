@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
 import { useMe } from "@/components/app/me-context";
@@ -55,12 +55,21 @@ export function DashboardPage() {
   const { me } = useMe();
   const activeOrgId = me.active_organisation_id;
   const [state, setState] = useState<State>({ kind: "loading" });
+  const [selecting, setSelecting] = useState(false);
+  const [selectError, setSelectError] = useState<string | null>(null);
+
+  // Bumped on every load, so a late answer to an idea pick made in another organisation
+  // (or before a newer pick) is dropped instead of landing on this one.
+  const generation = useRef(0);
 
   useEffect(() => {
     if (!activeOrgId) return;
     let cancelled = false;
+    generation.current += 1;
     async function load() {
       setState({ kind: "loading" });
+      setSelectError(null);
+      setSelecting(false);
       try {
         const org = await getOrganisation();
         const consultant = org.role === "consultant";
@@ -101,20 +110,22 @@ export function DashboardPage() {
   }, [activeOrgId]);
 
   const firstName = me.name.trim().split(/\s+/)[0] || me.name;
-  const [selecting, setSelecting] = useState(false);
-  const [selectError, setSelectError] = useState<string | null>(null);
 
   /** Show another idea's IQ: only the scores are fetched again. */
   async function selectIdea(ideaId: string) {
+    generation.current += 1;
+    const mine = generation.current;
     setSelecting(true);
     setSelectError(null);
     try {
       const dashboard = await getDashboard(ideaId);
+      if (generation.current !== mine) return;
       setState((current) => (current.kind === "ready" ? { ...current, dashboard } : current));
     } catch (err) {
+      if (generation.current !== mine) return;
       setSelectError(err instanceof ApiError ? err.message : "Something went wrong.");
     } finally {
-      setSelecting(false);
+      if (generation.current === mine) setSelecting(false);
     }
   }
 

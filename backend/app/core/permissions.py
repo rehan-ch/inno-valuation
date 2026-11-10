@@ -63,7 +63,7 @@ _PARTICIPATE: Final = _VIEW | {Permission.ANSWER_ASSESSMENT, Permission.CREATE_I
 
 # What anyone may still do in an archived organisation (view-only until the archive
 # feature exists; see docs/decisions.md 2026-10-13).
-READ_ONLY_PERMISSIONS: Final = _VIEW
+READ_ONLY_PERMISSIONS: Final = _VIEW | {Permission.VIEW_AUDIT}
 
 ROLE_PERMISSIONS: Final[dict[OrgRole, frozenset[Permission]]] = {
     OrgRole.OWNER: _MANAGE,

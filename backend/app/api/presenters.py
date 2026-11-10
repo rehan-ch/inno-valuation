@@ -17,6 +17,7 @@ from app.schemas.compass import (
 )
 from app.schemas.ideas import LevelOut, VfmOut
 from app.schemas.insights import PriorityItemOut
+from app.scoring.categories import readiness_category_maximum
 from app.scoring.iq import iq_level, iq_maximum
 from app.scoring.question_set import IqLevel, QuestionSet
 from app.services.insights import IqRecord, ReadinessRecord
@@ -102,9 +103,7 @@ def readiness_compass(record: ReadinessRecord) -> CompassOut:
                 name=c.name,
                 order=c.order,
                 score=str(int(category_scores[c.key])),
-                maximum=str(
-                    len(question_set.dimensions_in_category(c.key)) * question_set.dimension_max
-                ),
+                maximum=str(readiness_category_maximum(c.key, question_set)),
                 dimension_keys=[d.key for d in question_set.dimensions_in_category(c.key)],
             )
             for c in question_set.categories

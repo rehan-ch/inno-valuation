@@ -6,7 +6,7 @@ A 15 minute tour of what is built through Phase 5, on the local stack with the d
 
 ```bash
 bin/dev                 # API :8000, worker, web :3000 (leave it running)
-bin/seed-demo --reset   # a fresh Northwind Outfitters; prints the accounts
+bin/seed-demo --reset   # a fresh Northwind Outfitters; prints the accounts (needs ENVIRONMENT=development in .env)
 ```
 
 Open http://localhost:3000/sign-in. Every demo account uses the password the seed prints.
@@ -21,6 +21,7 @@ Open http://localhost:3000/sign-in. Every demo account uses the password the see
 Things to know before you start:
 - There is no AI key yet. Idea proposals are sample scores (every dimension at the middle of the scale) and the AI's reasons are placeholder text, both marked as sample on screen. The demo ideas were given realistic scores through the owner's review, which is the real flow.
 - Signing in more than 30 times in 15 minutes from one machine locks sign-in for that machine. `bin/seed-demo` clears the lock.
+- Four things on screen are working defaults that Amy has not confirmed yet, so present them as open, not as her rule: the priorities list shows the lowest five; dimension importance only orders priorities whose scores tie; a target is set per dimension, and an idea target applies to every idea; "strengths" are our own display choice (up to three dimensions above every priority).
 - A browser extension can make the development overlay show "1 issue" (a hydration notice). It is not from the app.
 
 ## The tour

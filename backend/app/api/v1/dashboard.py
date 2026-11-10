@@ -10,6 +10,7 @@ come from the engine.
 import uuid
 from collections.abc import Mapping, Sequence
 from datetime import datetime
+from typing import Final
 
 from fastapi import APIRouter, Depends, Path, status
 from sqlalchemy.orm import Session
@@ -52,6 +53,7 @@ _view_assessments = require_permission(Permission.VIEW_ASSESSMENTS)
 _view_ideas = require_permission(Permission.VIEW_IDEAS)
 
 DimensionKey = Path(max_length=50)
+LATEST_LOOKBACK: Final = 5
 
 
 def _choice(record: IqRecord) -> IdeaChoiceOut:
@@ -109,7 +111,9 @@ def get_dashboard(
     """The two headline scores, kept apart: the latest final readiness result (out of 300,
     with its band) and the IQ (out of 100) of the selected idea, each with its compass and
     priorities. Without ``idea_id`` the most recently confirmed idea is selected."""
-    readiness = insights.readiness_records(db, ctx)
+    # Only the latest result is shown here; the history routes load the rest. A few are
+    # asked for in case the newest is on a question set version this server lacks.
+    readiness = insights.readiness_records(db, ctx, limit=LATEST_LOOKBACK)
     iq_records = insights.latest_iq_records(db, ctx)
     selected = insights.pick_idea(iq_records, idea_id)
     return DashboardOut(

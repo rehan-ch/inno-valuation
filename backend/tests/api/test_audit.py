@@ -7,12 +7,13 @@ import io
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models import AuditEvent
-from app.models.enums import MembershipRole
+from app.models.enums import MembershipRole, OrganisationStatus
 from app.scoring.question_set import QUESTION_SET
 from app.services import audit_log
 from app.services.audit import AuditAction
@@ -392,3 +393,46 @@ def test_nobody_can_change_or_delete_an_event(client: TestClient, db: Session) -
             assert response.status_code in (404, 405), (method, path, response.status_code)
     assert [e["id"] for e in _events(client)] == [event["id"]]
     assert db.get(AuditEvent, event["id"]) is not None
+
+
+def test_a_cut_export_says_so(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    owner, org = member(MembershipRole.OWNER)
+    for _ in range(4):
+        AuditEventFactory.create(
+            organisation_id=org.id, actor_user_id=owner.id, action=AuditAction.IDEA_CREATED.value
+        )
+    as_user(client, owner, org)
+    monkeypatch.setattr(audit_log, "EXPORT_LIMIT", 3)
+    rows = list(csv.reader(io.StringIO(client.get(f"{BASE}/export").text)))
+    assert len(rows) == 1 + 3 + 1
+    assert rows[-1][2].startswith("Only the newest 3 entries are in this file.")
+    monkeypatch.setattr(audit_log, "EXPORT_LIMIT", 4)
+    assert len(list(csv.reader(io.StringIO(client.get(f"{BASE}/export").text)))) == 1 + 4
+
+
+def test_an_archived_organisation_keeps_its_log_readable(client: TestClient, db: Session) -> None:
+    owner, org = member(MembershipRole.OWNER)
+    as_user(client, owner, org)
+    add_idea(client)
+    org.status = OrganisationStatus.ARCHIVED
+    db.commit()
+    assert len(_events(client)) == 1
+
+
+def test_an_event_never_names_another_organisations_record(client: TestClient) -> None:
+    owner, org = member(MembershipRole.OWNER)
+    outsider, other = member(MembershipRole.OWNER)
+    as_user(client, outsider, other)
+    theirs = add_idea(client, title="Their secret idea")
+    # A row that points at the other organisation's idea (it could only come from a bug).
+    AuditEventFactory.create(
+        organisation_id=org.id,
+        actor_user_id=owner.id,
+        action=AuditAction.IDEA_UPDATED.value,
+        target_type="idea",
+        target_id=theirs,
+    )
+    as_user(client, owner, org)
+    [event] = _events(client)
+    assert event["subject"] is None
+    assert "Their secret idea" not in client.get(f"{BASE}/export").text

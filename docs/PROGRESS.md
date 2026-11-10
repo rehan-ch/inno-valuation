@@ -17,8 +17,9 @@ Phase 5, dashboard and compass (branch `phase-5-dashboard`, stacked on `phase-4-
 - Done (P5.10): activity log `/organisation/activity` (`audit.view`, owners and admins): who, when, what, in plain words, with the question set version and AI model where recorded; filters by action and person, paging, CSV export; read-only (no route changes an event; a test proves it). Idea scoring events now record the method version, the model, whether it is a re-run, which scores changed and which carry a note.
 - Found by trying it in the browser: no browser could save dimension importance (P4.08) or targets, because CORS did not allow `PUT`; the test meant to catch that had gone silent after a FastAPI upgrade nested the routes. Fixed, and the test now reads the generated contract and fails if it finds no routes.
 - Demo data: `bin/seed-demo` (development only) creates Northwind Outfitters with five people, a consultant, two readiness results two months apart, four ideas at different stages, importance and targets, all through the running API. See `docs/demo.md`.
-- Checks: backend 1,416 tests, ruff, mypy strict; frontend 180 tests, lint, typecheck, build.
-- Still to do: P5.08 (methodology check and code review of this branch, merge, Amy tries the compass and dashboard). Not built: "send gaps to AI advice and reports" (Phases 6 and 7), the same compass in the PDF (Phase 7), cross-browser and phone-size checks by hand.
+- Done (P5.08, review): methodology check 0 BLOCK, 4 WARN; code review 8 findings, none on tenancy or permissions; all applied. The strengths choice and the readiness category maximum moved into the engine; the history table matches cells by dimension key; the dimension page reloads on an organisation switch; late answers after a switch are dropped; the dashboard loads only the latest readiness results; the activity log stays readable in an archived organisation, its export says when it was cut at 5,000 rows, and its name lookups are scoped to the organisation; `bin/seed-demo` no longer assumes development and refuses a database that is not on this machine.
+- Checks: backend 1,426 tests, ruff, mypy strict; frontend 181 tests, lint, typecheck, build.
+- Still to do for P5.08: merge, and Amy tries the compass and dashboard. Not built: "send gaps to AI advice and reports" (Phases 6 and 7), the same compass in the PDF (Phase 7), cross-browser and phone-size checks by hand.
 - Details per decision in `docs/decisions.md` (2026-11-10).
 
 Phase 4, ideas and IQ (merged, PR 8; review fixes on branch `phase-4-review`)
@@ -87,7 +88,7 @@ Phase 1
 ## PROVISIONAL markers in code
 - Q8: `backend/app/services/targets.py` and `backend/app/models/targets.py` (targets per dimension only, on both scales; an idea target is the organisation's and is held against every idea).
 - Q4: `backend/app/api/presenters.py` `readiness_compass` (no per-dimension readiness label, so readiness segments carry no level).
-- Display only: `backend/app/api/v1/ideas.py` `STRENGTH_COUNT` (up to 3 strengths, as on the readiness result).
+- Display only, no question yet: `backend/app/scoring/priorities.py` `STRENGTH_COUNT` and `strengths` (up to 3 strengths, above every priority, on both results).
 - Q8: `backend/app/scoring/targets.py` (per dimension, both scales).
 - Q10: `backend/app/ai/touchpoints/explain_question.py` `COMPANY_FIELDS` (only industry, size and country go to the AI provider).
 - Q17: `frontend/src/app/globals.css` (the compass blue and emerald as the brand hues, pending Amy's approval; the rest of the design system is settled, see decisions 2026-10-27).
@@ -101,6 +102,7 @@ Phase 1
 - Q23: `backend/app/scoring/priorities.py` (weight breaks ties after score, before book order; IQ list only for now).
 
 ## Open questions
+- To raise with Amy (no question number yet): "strengths" on a result are our display choice (up to 3 dimensions scoring above every priority; `STRENGTH_COUNT` in `backend/app/scoring/priorities.py`). And Q8 should say that an idea target is the organisation's and applies to every idea. Both need `/decision` to enter `open-questions.md`.
 - Still OPEN in `docs/methodology/open-questions.md`: Q3, Q4, Q6, Q8, Q10, Q13 to Q15, Q17 to Q19, Q21 to Q23. Q3, Q4 and Q6 are settled informally (see above) and should be closed with `/decision` when convenient.
 - Q23 is the only new methodology question for Amy: how weights reorder priorities, and whether readiness priorities use them too. Ask it together with Q19 if needed.
 

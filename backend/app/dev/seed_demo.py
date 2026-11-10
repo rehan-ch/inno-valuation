@@ -23,7 +23,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any, Final
 
 import httpx2
-from sqlalchemy import delete, select, update
+from sqlalchemy import delete, make_url, select, update
 
 from app.core.security import hash_password
 from app.core.sessions import CSRF_COOKIE, CSRF_HEADER
@@ -44,6 +44,7 @@ from app.models.enums import MembershipRole
 from app.scoring.question_set import QUESTION_SET
 from app.services.audit import AuditAction, record
 
+LOCAL_HOSTS: Final = frozenset({"localhost", "127.0.0.1", "::1"})
 PASSWORD: Final = "demo-compass-2026"  # noqa: S105 (a local demo account, printed on purpose)
 ORGANISATION: Final = "Northwind Outfitters"
 OWNER_EMAIL: Final = "dana@northwind.example"
@@ -440,6 +441,10 @@ def main() -> int:
     if settings.environment != "development":
         print(f"Refusing to seed: ENVIRONMENT is {settings.environment}, not development.")
         return 1
+    database_host = make_url(settings.database_url).host
+    if database_host not in LOCAL_HOSTS:
+        print(f"Refusing to seed: the database is on {database_host}, not on this machine.")
+        return 1
 
     if args.reset:
         _reset()
@@ -452,14 +457,19 @@ def main() -> int:
     if created:
         api = Api(args.api, settings.frontend_origin)
         rng = random.Random(12)  # noqa: S311 (demo answers, not a secret)
-        print("Readiness: the first assessment...")
-        earlier = _readiness(api, org_id, EARLIER_LEVELS, rng)
-        print("Readiness: the second assessment...")
-        _readiness(api, org_id, LATER_LEVELS, rng)
-        print("Ideas: scoring and confirming...")
-        _rental, first_scoring = _ideas(api, org_id)
-        _settings(api, org_id)
-        _backdate(org_id, earlier, first_scoring)
+        try:
+            print("Readiness: the first assessment...")
+            earlier = _readiness(api, org_id, EARLIER_LEVELS, rng)
+            print("Readiness: the second assessment...")
+            _readiness(api, org_id, LATER_LEVELS, rng)
+            print("Ideas: scoring and confirming...")
+            _rental, first_scoring = _ideas(api, org_id)
+            _settings(api, org_id)
+            _backdate(org_id, earlier, first_scoring)
+        except (SystemExit, httpx2.HTTPError) as error:
+            print(f"Stopped part-way: {error}")
+            print("The demo company is incomplete. Run bin/seed-demo --reset to start again.")
+            return 1
         print("Done.")
     else:
         print("The demo company is already there; nothing was added.")

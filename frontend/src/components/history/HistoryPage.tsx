@@ -43,6 +43,11 @@ type State =
       idea: IdeaHistoryOut | null;
     };
 
+/** "100.0" reads as "100" after the slash; the figure itself is the server's. */
+function trimZero(value: string): string {
+  return value.replace(/\.0+$/, "");
+}
+
 /** One result in a comparison: a column of the table. */
 interface Column {
   id: string;
@@ -140,10 +145,10 @@ export function HistoryPage() {
       headline: (
         <>
           {entry.iq}
-          <span className="font-normal text-neutral-500"> / {entry.iq_maximum}</span>
+          <span className="font-normal text-neutral-500"> / {trimZero(entry.iq_maximum)}</span>
         </>
       ),
-      headlineText: `${entry.iq} / ${entry.iq_maximum}`,
+      headlineText: `${entry.iq} / ${trimZero(entry.iq_maximum)}`,
       change: { change: entry.iq_change, direction: entry.iq_direction },
       extra: [
         {
@@ -327,7 +332,7 @@ function Comparison({
             {hasTargets && <Td />}
           </tr>
         ))}
-        {first.dimensions.map((dimension, rowIndex) => (
+        {first.dimensions.map((dimension) => (
           <tr key={dimension.key}>
             <Td>
               <Link
@@ -339,7 +344,9 @@ function Comparison({
               </Link>
             </Td>
             {columns.map((column) => {
-              const cell = column.dimensions[rowIndex];
+              // By key, never by position: a result on another question set version may
+              // hold other dimensions, and then the cell stays empty.
+              const cell = column.dimensions.find((d) => d.key === dimension.key);
               if (!cell) return <Td key={column.id} />;
               return (
                 <Td key={column.id} className="text-right">
@@ -389,10 +396,10 @@ export function csvRows(headlineLabel: string, columns: Column[]): string[][] {
       ),
     ],
     ...first.extra.map((row, i) => [row.label, ...columns.map((c) => c.extra[i]?.text ?? "")]),
-    ...first.dimensions.map((dimension, i) => [
+    ...first.dimensions.map((dimension) => [
       `${dimension.order}. ${dimension.name}`,
       ...columns.map((c) => {
-        const cell = c.dimensions[i];
+        const cell = c.dimensions.find((d) => d.key === dimension.key);
         if (!cell) return "";
         return withChange(`${cell.score} / ${cell.maximum}`, changeText(cell.change, cell.direction));
       }),

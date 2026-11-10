@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 
 import { useMe } from "@/components/app/me-context";
@@ -53,10 +53,13 @@ export function TargetsPage() {
   const activeOrgId = me.active_organisation_id;
   const [state, setState] = useState<State>({ kind: "loading" });
   const [notice, setNotice] = useState<string | null>(null);
+  // The organisation the page is showing, so a save that finishes after a switch is dropped.
+  const showing = useRef(activeOrgId);
 
   useEffect(() => {
     if (!activeOrgId) return;
     let cancelled = false;
+    showing.current = activeOrgId;
     async function load() {
       setState({ kind: "loading" });
       setNotice(null);
@@ -104,10 +107,12 @@ export function TargetsPage() {
 
   /** After a save: the new targets, and the gaps and history the server now reports. */
   async function saved(next: TargetsOut, message: string) {
+    const savedFor = activeOrgId;
     const [freshHistory, freshDashboard] = await Promise.all([
       getTargetsHistory().catch(() => history),
       getDashboard(dashboard.iq?.idea_id).catch(() => dashboard),
     ]);
+    if (showing.current !== savedFor) return;
     setState({ kind: "ready", targets: next, history: freshHistory, dashboard: freshDashboard });
     setNotice(message);
   }
@@ -221,7 +226,11 @@ function ScaleForm({
     scale.targets.map((t) => [t.key, targetError(values[t.key] ?? "", scale)]),
   );
   const invalid = Object.values(errors).some(Boolean);
-  const dirty = scale.targets.some((t) => (values[t.key] ?? "").trim() !== initial[t.key]);
+  // Compared as numbers, so "08" is not a change from 8.
+  const asTarget = (text: string) => (text.trim() === "" ? null : Number(text));
+  const dirty = scale.targets.some(
+    (t) => asTarget(values[t.key] ?? "") !== asTarget(initial[t.key] ?? ""),
+  );
   const current = new Map(compass?.segments.map((s) => [s.key, s]) ?? []);
 
   async function submit(event: FormEvent) {

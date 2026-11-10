@@ -163,7 +163,7 @@ export function Compass({ compass, headline, hrefFor, title }: CompassProps) {
                 key={segment.key}
                 href={hrefFor(segment.key)}
                 aria-label={describe(segment)}
-                className="outline-none [&:focus-visible>.ring]:opacity-100"
+                className="outline-none [&:focus-visible>.focus-mark]:opacity-100"
                 onMouseEnter={() => setActive(segment.key)}
                 onFocus={() => setActive(segment.key)}
                 onBlur={() => setActive(null)}
@@ -191,7 +191,7 @@ export function Compass({ compass, headline, hrefFor, title }: CompassProps) {
                   />
                 )}
                 <path
-                  className="ring opacity-0"
+                  className="focus-mark opacity-0"
                   d={slice(INNER - 3, OUTER + 3, from + 0.5, to - 0.5)}
                   fill="none"
                   stroke="var(--color-neutral-900)"

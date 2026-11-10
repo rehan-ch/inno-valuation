@@ -116,9 +116,13 @@ def page(
     return events, None
 
 
-def export(db: Session, organisation_id: uuid.UUID, filters: Filters) -> list[AuditEvent]:
-    """Up to ``EXPORT_LIMIT`` events, newest first, for the CSV download."""
-    return list(db.scalars(_query(organisation_id, filters).limit(EXPORT_LIMIT)))
+def export(
+    db: Session, organisation_id: uuid.UUID, filters: Filters
+) -> tuple[list[AuditEvent], bool]:
+    """Up to ``EXPORT_LIMIT`` events, newest first, for the CSV download, and whether older
+    ones were left out."""
+    events = list(db.scalars(_query(organisation_id, filters).limit(EXPORT_LIMIT + 1)))
+    return events[:EXPORT_LIMIT], len(events) > EXPORT_LIMIT
 
 
 def actions_in_use(db: Session, organisation_id: uuid.UUID) -> list[str]:
@@ -234,8 +238,12 @@ def _detail(event: AuditEvent) -> str | None:  # noqa: PLR0911, PLR0912 (one cas
     return None
 
 
-def describe(db: Session, events: Sequence[AuditEvent]) -> list[Described]:
-    """Each event with its names looked up, in a fixed number of queries."""
+def describe(
+    db: Session, organisation_id: uuid.UUID, events: Sequence[AuditEvent]
+) -> list[Described]:
+    """Each event with its names looked up, in a fixed number of queries. Ideas,
+    assessments, invitations and grants are looked up inside the organisation only, so an
+    id in an event can never name another organisation's record."""
     user_ids = {e.actor_user_id for e in events if e.actor_user_id is not None} | _ids(
         events, "user"
     )
@@ -254,7 +262,8 @@ def describe(db: Session, events: Sequence[AuditEvent]) -> list[Described]:
             row[0]: row[1]
             for row in db.execute(
                 select(IqAssessment.id, IqAssessment.idea_id).where(
-                    IqAssessment.id.in_(assessment_ids)
+                    IqAssessment.id.in_(assessment_ids),
+                    IqAssessment.organisation_id == organisation_id,
                 )
             )
         }
@@ -265,7 +274,11 @@ def describe(db: Session, events: Sequence[AuditEvent]) -> list[Described]:
     ideas: dict[uuid.UUID, str] = (
         {
             row[0]: row[1]
-            for row in db.execute(select(Idea.id, Idea.title).where(Idea.id.in_(all_idea_ids)))
+            for row in db.execute(
+                select(Idea.id, Idea.title).where(
+                    Idea.id.in_(all_idea_ids), Idea.organisation_id == organisation_id
+                )
+            )
         }
         if all_idea_ids
         else {}
@@ -275,7 +288,10 @@ def describe(db: Session, events: Sequence[AuditEvent]) -> list[Described]:
         {
             row[0]: row[1]
             for row in db.execute(
-                select(Invitation.id, Invitation.email).where(Invitation.id.in_(invitation_ids))
+                select(Invitation.id, Invitation.email).where(
+                    Invitation.id.in_(invitation_ids),
+                    Invitation.organisation_id == organisation_id,
+                )
             )
         }
         if invitation_ids
@@ -287,7 +303,8 @@ def describe(db: Session, events: Sequence[AuditEvent]) -> list[Described]:
             row[0]: row[1]
             for row in db.execute(
                 select(ConsultantGrant.id, ConsultantGrant.consultant_email).where(
-                    ConsultantGrant.id.in_(grant_ids)
+                    ConsultantGrant.id.in_(grant_ids),
+                    ConsultantGrant.organisation_id == organisation_id,
                 )
             )
         }

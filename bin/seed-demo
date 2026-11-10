@@ -5,9 +5,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-if [ -z "${ENVIRONMENT:-}" ] && ! grep -qE '^ENVIRONMENT=' .env 2>/dev/null; then
-  export ENVIRONMENT=development
-fi
+# Unlike bin/dev, this never assumes development: it writes accounts with a known password,
+# so ENVIRONMENT=development must be set on purpose (in .env or the shell).
 
 if ! curl -fsS -o /dev/null http://localhost:8000/api/v1/health; then
   echo "bin/seed-demo: the API is not answering on :8000. Start it with bin/dev first." >&2

@@ -1,7 +1,6 @@
 """Ideas of the active organisation and their IQ assessments (spec 3, 5, 7; Amy Q1, Q7)."""
 
 import uuid
-from typing import Final
 
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
@@ -26,15 +25,11 @@ from app.schemas.ideas import (
     ReviewIn,
 )
 from app.scoring.iq import iq_level, iq_maximum
+from app.scoring.priorities import strengths
 from app.scoring.question_set import QuestionSet
 from app.services import ideas, insights, weights
 
 router = APIRouter(prefix="/ideas", tags=["ideas"])
-
-# PROVISIONAL (display only, not scoring): how many of the highest dimensions are shown as
-# strengths, as on the readiness result. Amy has set the priorities list (lowest 5); she
-# has not set strengths. A dimension is a strength only when it scores above every priority.
-STRENGTH_COUNT: Final = 3
 
 
 _money = presenters.money
@@ -208,25 +203,26 @@ def _assessment_out(
     )
     category_scores = assessment.category_scores or {}
     record = insights.iq_record(db, idea, assessment)
-    strengths: list[IqStrengthOut] = []
+    strongest: list[IqStrengthOut] = []
     if record is not None:
-        highest_priority = max((int(p["score"]) for p in (assessment.priorities or [])), default=-1)
-        scored = sorted(
-            (d for d in dimensions if d.final_score is not None and d.level is not None),
-            key=lambda d: (-(d.final_score or 0), d.order),
-        )
-        strengths = [
-            IqStrengthOut(
-                key=d.key,
-                name=d.name,
-                order=d.order,
-                score=d.final_score or 0,
-                maximum=question_set.iq_scale.max,
-                level_name=d.level.name if d.level else "",
+        reviewed = {d.key: d for d in dimensions}
+        # The engine picks the strengths (a display choice, not Amy's rule; see scoring.priorities).
+        for key in strengths(
+            record.scores, [int(p["score"]) for p in (assessment.priorities or [])], question_set
+        ):
+            shown = reviewed[key]
+            strongest.append(
+                IqStrengthOut(
+                    key=shown.key,
+                    name=shown.name,
+                    order=shown.order,
+                    score=record.scores[key],
+                    maximum=question_set.iq_scale.max,
+                    level_name=presenters.stored_level(
+                        question_set, record.rows[key].level_key, record.scores[key]
+                    ).name,
+                )
             )
-            for d in scored
-            if (d.final_score or 0) > highest_priority
-        ][:STRENGTH_COUNT]
     return IqAssessmentOut(
         id=assessment.id,
         idea_id=idea.id,
@@ -261,7 +257,7 @@ def _assessment_out(
             )
             for p in (assessment.priorities or [])
         ],
-        strengths=strengths,
+        strengths=strongest,
         compass=presenters.iq_compass(record) if record is not None else None,
         custom_weights=weights.is_custom(assessment.weights_snapshot),
         vfm=_vfm_out(assessment),

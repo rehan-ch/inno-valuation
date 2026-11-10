@@ -118,7 +118,7 @@ describe("HistoryPage", () => {
 
     const idea = within(screen.getByRole("table", { name: "Scorings of the idea over time" }));
     const iq = idea.getByRole("row", { name: /^IQ/ });
-    expect(iq).toHaveTextContent("70.0 / 100.0");
+    expect(iq).toHaveTextContent("70.0 / 100");
     expect(iq).toHaveTextContent("+0.8");
     const vfm = idea.getByRole("row", { name: /Value for money/ });
     expect(vfm).toHaveTextContent("$714.29");

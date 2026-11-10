@@ -11,7 +11,13 @@ import pytest
 import app.scoring.priorities as priorities_module
 from app.scoring.errors import ScoringError
 from app.scoring.iq import score_iq
-from app.scoring.priorities import PRIORITY_COUNT, iq_priorities, readiness_priorities
+from app.scoring.priorities import (
+    PRIORITY_COUNT,
+    STRENGTH_COUNT,
+    iq_priorities,
+    readiness_priorities,
+    strengths,
+)
 from app.scoring.readiness import score_readiness
 from tests.scoring.support import (
     KEYS,
@@ -253,3 +259,44 @@ def test_weights_are_validated_before_the_completeness_check() -> None:
 def test_valid_weights_do_not_hide_an_incomplete_result() -> None:
     with pytest.raises(ScoringError, match="complete result"):
         readiness_priorities(score_readiness({}), dict.fromkeys(KEYS, 1))
+
+
+# Strengths (PROVISIONAL display rule: above every priority, highest first, at most 3)
+
+
+def _scores_by_key(values: list[int]) -> dict[str, int]:
+    return dict(zip(KEYS, values, strict=True))
+
+
+def test_strengths_are_the_highest_dimensions_above_every_priority() -> None:
+    scores = _scores_by_key([8, 7, 6, 7, 9, 6, 5, 7, 8, 5, 8, 8])
+    # Priorities: the five lowest (5, 5, 6, 6, 7).
+    assert strengths(scores, [5, 5, 6, 6, 7]) == (KEYS[4], KEYS[0], KEYS[8])
+    assert STRENGTH_COUNT == 3
+
+
+def test_strength_ties_go_by_book_order_and_never_include_a_priority() -> None:
+    scores = _scores_by_key([20, 20, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15])
+    assert strengths(scores, [15, 15, 15, 15, 15]) == (KEYS[0], KEYS[1])
+    # A dimension that only equals the highest priority is not a strength.
+    assert strengths(_scores_by_key([15] * 12), [15] * 5) == ()
+
+
+def test_strengths_without_priorities_are_simply_the_highest() -> None:
+    scores = _scores_by_key([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10])
+    assert strengths(scores, []) == (KEYS[9], KEYS[10], KEYS[11])
+
+
+@pytest.mark.parametrize("bad", [1.5, "7", True, None])
+def test_strengths_refuse_anything_but_whole_scores(bad: Any) -> None:
+    with pytest.raises(ScoringError, match="whole number"):
+        strengths({**_scores_by_key([5] * 12), KEYS[0]: bad}, [5])
+    with pytest.raises(ScoringError, match="whole number"):
+        strengths(_scores_by_key([5] * 12), [bad])
+
+
+def test_strengths_need_every_dimension() -> None:
+    partial = _scores_by_key([5] * 12)
+    del partial[KEYS[2]]
+    with pytest.raises(ScoringError, match="every dimension"):
+        strengths(partial, [5])

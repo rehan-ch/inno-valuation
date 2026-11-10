@@ -71,7 +71,7 @@ def list_events(
         limit=limit,
     )
     return AuditPageOut(
-        events=[_event_out(item) for item in audit_log.describe(db, events)],
+        events=[_event_out(item) for item in audit_log.describe(db, ctx.organisation_id, events)],
         next_before=next_before,
     )
 
@@ -104,13 +104,15 @@ def export_events(
 ) -> Response:
     """The same list as a CSV file (newest first, at most 5,000 rows), with the same
     filters. Times are UTC."""
-    events = audit_log.export(db, ctx.organisation_id, Filters(action=action, actor_id=actor_id))
+    events, cut = audit_log.export(
+        db, ctx.organisation_id, Filters(action=action, actor_id=actor_id)
+    )
     buffer = io.StringIO()
     writer = csv.writer(buffer)
     writer.writerow(
         ["Time (UTC)", "Person", "Action", "About", "Details", "Question set version", "AI model"]
     )
-    for item in audit_log.describe(db, events):
+    for item in audit_log.describe(db, ctx.organisation_id, events):
         writer.writerow(
             [
                 item.event.created_at.strftime("%Y-%m-%d %H:%M:%S"),
@@ -120,6 +122,15 @@ def export_events(
                 _cell(item.detail),
                 item.question_set_version if item.question_set_version is not None else "",
                 _cell(item.ai_model),
+            ]
+        )
+    if cut:
+        writer.writerow(
+            [
+                "",
+                "",
+                f"Only the newest {audit_log.EXPORT_LIMIT} entries are in this file. "
+                "Filter by action or person to export the earlier ones.",
             ]
         )
     return Response(

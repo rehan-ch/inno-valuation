@@ -1,8 +1,9 @@
-import { render, screen, within } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import { IDEA_ID, errorResponse, fakeDimensionDetail, stubApi } from "@/test/api";
-import { setLocation } from "@/test/navigation";
+import { IDEA_ID, errorResponse, fakeDimensionDetail, fakeMe, stubApi } from "@/test/api";
+import { renderWithMe } from "@/test/me";
+import { routerReplace, setLocation } from "@/test/navigation";
 
 import { DimensionPage } from "./DimensionPage";
 
@@ -18,7 +19,7 @@ describe("DimensionPage", () => {
   it("shows the book's text and the two scores apart, each with target, gap and trend", async () => {
     setLocation(`/dimensions/organizational_agility?idea=${IDEA_ID}`);
     const calls = stubApi({ [`GET ${PATH}`]: fakeDimensionDetail() });
-    render(<DimensionPage dimensionKey="organizational_agility" />);
+    renderWithMe(<DimensionPage dimensionKey="organizational_agility" />, fakeMe());
 
     expect(await screen.findByRole("heading", { name: "7. Organizational Agility" })).toBeInTheDocument();
     expect(calls[0]?.path).toBe(PATH);
@@ -57,10 +58,27 @@ describe("DimensionPage", () => {
     );
   });
 
+  it("drops the other organisation's idea and loads again when the organisation is switched", async () => {
+    setLocation(`/dimensions/organizational_agility?idea=${IDEA_ID}`);
+    routerReplace.mockClear();
+    const calls = stubApi({ [`GET ${PATH}`]: fakeDimensionDetail() });
+    const { setMe } = renderWithMe(<DimensionPage dimensionKey="organizational_agility" />, fakeMe());
+    await screen.findByRole("heading", { name: "7. Organizational Agility" });
+
+    setMe(fakeMe({ active_organisation_id: "33333333-3333-3333-3333-333333333333" }));
+    expect(routerReplace).toHaveBeenCalledWith("/dimensions/organizational_agility");
+
+    // Without an idea in the address, the switch simply loads the new organisation's page.
+    setLocation("/dimensions/organizational_agility");
+    setMe(fakeMe({ active_organisation_id: "44444444-4444-4444-4444-444444444444" }));
+    await screen.findByRole("heading", { name: "7. Organizational Agility" });
+    expect(calls.filter((c) => c.path === PATH)).toHaveLength(2);
+  });
+
   it("says what is missing when there is no result on either scale", async () => {
     setLocation("/dimensions/organizational_agility");
     stubApi({ [`GET ${PATH}`]: fakeDimensionDetail({ readiness: null, iq: null, ideas: [] }) });
-    render(<DimensionPage dimensionKey="organizational_agility" />);
+    renderWithMe(<DimensionPage dimensionKey="organizational_agility" />, fakeMe());
 
     expect(await screen.findByText(/no final readiness result yet/)).toBeInTheDocument();
     expect(screen.getByText(/No idea has confirmed scores yet/)).toBeInTheDocument();
@@ -70,7 +88,7 @@ describe("DimensionPage", () => {
   it("explains an unknown dimension instead of failing", async () => {
     setLocation("/dimensions/nope");
     stubApi({ "GET /api/v1/dashboard/dimensions/nope": errorResponse("not_found", "Not found.", 404) });
-    render(<DimensionPage dimensionKey="nope" />);
+    renderWithMe(<DimensionPage dimensionKey="nope" />, fakeMe());
 
     expect(await screen.findByText("This dimension or idea could not be found.")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Back to the dashboard" })).toHaveAttribute("href", "/dashboard");
