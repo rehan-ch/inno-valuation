@@ -46,6 +46,8 @@ class Permission(StrEnum):
     CREATE_IDEAS = "ideas.create"  # add an idea; its creator edits, submits and confirms it
     MANAGE_IDEAS = "ideas.manage"  # edit, submit, confirm or archive anyone's idea
     MANAGE_WEIGHTS = "weights.manage"  # dimension importance (orders tied priorities only)
+    MANAGE_TARGETS = "targets.manage"  # target scores per dimension (change no score)
+    VIEW_AUDIT = "audit.view"  # the organisation's activity log, read-only
 
 
 _MANAGE: Final = frozenset(Permission)

@@ -22,6 +22,7 @@ from app.models.readiness import (
     ReadinessResponse,
     ReadinessResult,
 )
+from app.models.targets import DimensionTargets
 from app.models.weights import DimensionWeights
 
 __all__ = [
@@ -29,6 +30,7 @@ __all__ = [
     "AuditEvent",
     "Base",
     "ConsultantGrant",
+    "DimensionTargets",
     "DimensionWeights",
     "Idea",
     "Invitation",

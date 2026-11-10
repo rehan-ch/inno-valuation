@@ -21,6 +21,8 @@ MANAGE = {
     Permission.MANAGE_ASSESSMENTS,
     Permission.MANAGE_IDEAS,
     Permission.MANAGE_WEIGHTS,
+    Permission.MANAGE_TARGETS,
+    Permission.VIEW_AUDIT,
 }
 
 
