@@ -84,7 +84,12 @@ def get_history(
             set_at=row.created_at,
             set_by_name=names.get(row.set_by_user_id) if row.set_by_user_id else None,
             custom=weights.is_custom(row.weights),
-            weights={str(k): str(v) for k, v in row.weights.items()},
+            # In book order: JSONB keeps its own key order.
+            weights={
+                key: str(row.weights[key])
+                for key in QUESTION_SET.dimension_keys
+                if key in row.weights
+            },
         )
         for row in rows
     ]

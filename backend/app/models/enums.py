@@ -90,6 +90,13 @@ class IqAssessmentStatus(StrEnum):
     SUPERSEDED = "superseded"
 
 
+class TargetScale(StrEnum):
+    """Which of the two scores a target is set on. They are never mixed (spec 4)."""
+
+    READINESS = "readiness"  # a dimension score, 5 to 25
+    IQ = "iq"  # a dimension score of an idea, 1 to 10
+
+
 class AiTouchpoint(StrEnum):
     """The 8 places AI is used. Each one has its model settings in config/ai.yml."""
 

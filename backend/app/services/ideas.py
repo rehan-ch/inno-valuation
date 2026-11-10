@@ -531,7 +531,15 @@ def request_assessment(db: Session, ctx: OrgContext, idea_id: uuid.UUID) -> IqAs
         organisation_id=ctx.organisation_id,
         target_type="idea",
         target_id=idea.id,
-        details={"assessment_id": str(assessment.id)},
+        # Which method version and AI model were asked, and whether this scores the idea
+        # again. Never the idea's text.
+        details={
+            "assessment_id": str(assessment.id),
+            "question_set_version": assessment.question_set_version,
+            "ai_model": settings.model,
+            "prompt_version": prompt.version,
+            "rerun": latest is not None,
+        },
     )
     db.commit()
     try:
@@ -723,10 +731,25 @@ def confirm(
         organisation_id=ctx.organisation_id,
         target_type="iq_assessment",
         target_id=assessment.id,
-        details={"changed": changed},
+        # Which scores the owner changed from the proposal and which of those carry a note
+        # (the reason itself stays with the assessment), the method version, and the model
+        # that answered. Never a score or any text.
+        details={
+            "changed": changed,
+            "with_note": [row.dimension_key for row in rows if row.note],
+            "question_set_version": assessment.question_set_version,
+            "ai_model": _answering_model(db, assessment),
+        },
     )
     db.commit()
     return assessment
+
+
+def _answering_model(db: Session, assessment: IqAssessment) -> str | None:
+    run = run_of(db, assessment)
+    if run is None:
+        return None
+    return run.response_model or run.model
 
 
 def confirmed_count(db: Session, ctx: OrgContext) -> int:

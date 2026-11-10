@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
 import { useMe } from "@/components/app/me-context";
@@ -13,12 +13,14 @@ import { Loading } from "@/components/ui/Loading";
 import { ApiError } from "@/lib/api/client";
 import { listGrants } from "@/lib/api/consultants";
 import { listIdeas } from "@/lib/api/ideas";
+import { getDashboard } from "@/lib/api/insights";
 import { assessmentHref, listAssessments } from "@/lib/api/readiness";
 import { getOrganisation } from "@/lib/api/organisation";
 import { listInvitations, listMembers } from "@/lib/api/team";
 import type {
   AssessmentSummaryOut,
   ConsultantGrantOut,
+  DashboardOut,
   IdeaSummaryOut,
   InvitationOut,
   MemberOut,
@@ -28,6 +30,8 @@ import { formatDate } from "@/lib/format";
 import { canManage, roleLabel, roleWithArticle } from "@/lib/roles";
 
 import { STATUS_LABELS, STATUS_TONES } from "@/components/readiness/status";
+
+import { ScoresPanel } from "./ScoresPanel";
 
 type State =
   | { kind: "loading" }
@@ -40,6 +44,7 @@ type State =
       grants: ConsultantGrantOut[];
       assessments: AssessmentSummaryOut[];
       ideas: IdeaSummaryOut[];
+      dashboard: DashboardOut;
     };
 
 const TEAM_PREVIEW = 5;
@@ -50,25 +55,44 @@ export function DashboardPage() {
   const { me } = useMe();
   const activeOrgId = me.active_organisation_id;
   const [state, setState] = useState<State>({ kind: "loading" });
+  const [selecting, setSelecting] = useState(false);
+  const [selectError, setSelectError] = useState<string | null>(null);
+
+  // Bumped on every load, so a late answer to an idea pick made in another organisation
+  // (or before a newer pick) is dropped instead of landing on this one.
+  const generation = useRef(0);
 
   useEffect(() => {
     if (!activeOrgId) return;
     let cancelled = false;
+    generation.current += 1;
     async function load() {
       setState({ kind: "loading" });
+      setSelectError(null);
+      setSelecting(false);
       try {
         const org = await getOrganisation();
         const consultant = org.role === "consultant";
         const manage = canManage(org.role) && org.status === "active";
-        const [members, invitations, grants, assessments, ideas] = await Promise.all([
+        const [members, invitations, grants, assessments, ideas, dashboard] = await Promise.all([
           consultant ? Promise.resolve([]) : listMembers(),
           manage ? listInvitations() : Promise.resolve([]),
           manage ? listGrants() : Promise.resolve([]),
           listAssessments(),
           listIdeas(),
+          getDashboard(),
         ]);
         if (!cancelled) {
-          setState({ kind: "ready", org, members, invitations, grants, assessments, ideas });
+          setState({
+            kind: "ready",
+            org,
+            members,
+            invitations,
+            grants,
+            assessments,
+            ideas,
+            dashboard,
+          });
         }
       } catch (err) {
         if (!cancelled) {
@@ -86,6 +110,24 @@ export function DashboardPage() {
   }, [activeOrgId]);
 
   const firstName = me.name.trim().split(/\s+/)[0] || me.name;
+
+  /** Show another idea's IQ: only the scores are fetched again. */
+  async function selectIdea(ideaId: string) {
+    generation.current += 1;
+    const mine = generation.current;
+    setSelecting(true);
+    setSelectError(null);
+    try {
+      const dashboard = await getDashboard(ideaId);
+      if (generation.current !== mine) return;
+      setState((current) => (current.kind === "ready" ? { ...current, dashboard } : current));
+    } catch (err) {
+      if (generation.current !== mine) return;
+      setSelectError(err instanceof ApiError ? err.message : "Something went wrong.");
+    } finally {
+      if (generation.current === mine) setSelecting(false);
+    }
+  }
 
   if (!activeOrgId) {
     return (
@@ -126,8 +168,16 @@ export function DashboardPage() {
           You have read-only consultant access to {org.name}
           {access ? ` until ${formatDate(access.access_ends_at)}` : ""}.
         </Alert>
-        <ReadinessCard latest={state.assessments[0]} manage={false} consultant />
-        <IdeasCard ideas={state.ideas} canAdd={false} />
+        {selectError && <Alert tone="error">{selectError}</Alert>}
+        <ScoresPanel
+          dashboard={state.dashboard}
+          onSelectIdea={(id) => void selectIdea(id)}
+          selecting={selecting}
+          readinessFallback={
+            <ReadinessCard latest={state.assessments[0]} manage={false} consultant />
+          }
+          iqFallback={<IdeasCard ideas={state.ideas} canAdd={false} />}
+        />
         <Card>
           <CardTitle>Your consulting access</CardTitle>
           <CardDescription>
@@ -178,10 +228,21 @@ export function DashboardPage() {
         <Stat label="Currency" value={org.currency} />
       </section>
 
+      {selectError && <Alert tone="error">{selectError}</Alert>}
+      <ScoresPanel
+        dashboard={state.dashboard}
+        onSelectIdea={(id) => void selectIdea(id)}
+        selecting={selecting}
+        readinessFallback={<ReadinessCard latest={state.assessments[0]} manage={manage} />}
+        iqFallback={<IdeasCard ideas={state.ideas} canAdd={canAdd} />}
+      />
+
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
-          <ReadinessCard latest={state.assessments[0]} manage={manage} />
-          <IdeasCard ideas={state.ideas} canAdd={canAdd} />
+          {state.dashboard.readiness && state.assessments[0]?.status !== "final" && (
+            <ReadinessCard latest={state.assessments[0]} manage={manage} />
+          )}
+          {state.dashboard.iq && <IdeasCard ideas={state.ideas} canAdd={canAdd} />}
           {manage && (
             <Card>
               <CardTitle>Getting started</CardTitle>
@@ -258,6 +319,9 @@ export function DashboardPage() {
               {manage && <Shortcut href="/team">Invite a team member</Shortcut>}
               {manage && <Shortcut href="/organisation">Organisation settings</Shortcut>}
               {manage && <Shortcut href="/consultants">Consultant access</Shortcut>}
+              <Shortcut href="/targets">Targets and gaps</Shortcut>
+              <Shortcut href="/history">History over time</Shortcut>
+              {manage && <Shortcut href="/organisation/activity">Activity log</Shortcut>}
               {!manage && <Shortcut href="/team">See the team</Shortcut>}
               <Shortcut href="/account">Your account</Shortcut>
             </ul>

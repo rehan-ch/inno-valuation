@@ -21,6 +21,8 @@ MANAGE = {
     Permission.MANAGE_ASSESSMENTS,
     Permission.MANAGE_IDEAS,
     Permission.MANAGE_WEIGHTS,
+    Permission.MANAGE_TARGETS,
+    Permission.VIEW_AUDIT,
 }
 
 
@@ -55,6 +57,7 @@ def test_archived_organisation_keeps_viewing_only() -> None:
         Permission.VIEW_TEAM,
         Permission.VIEW_ASSESSMENTS,
         Permission.VIEW_IDEAS,
+        Permission.VIEW_AUDIT,  # reading the activity log changes nothing
     }
     assert expected == READ_ONLY_PERMISSIONS
 

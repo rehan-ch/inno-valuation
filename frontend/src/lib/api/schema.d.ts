@@ -4,6 +4,65 @@
  */
 
 export interface paths {
+    "/api/v1/audit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Events
+         * @description The organisation's recorded actions, newest first, optionally only one action or one
+         *     person. ``next_before`` is the cursor of the next page.
+         */
+        get: operations["list_events_api_v1_audit_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/audit/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Events
+         * @description The same list as a CSV file (newest first, at most 5,000 rows), with the same
+         *     filters. Times are UTC.
+         */
+        get: operations["export_events_api_v1_audit_export_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/audit/filters": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Filters */
+        get: operations["get_filters_api_v1_audit_filters_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/password/forgot": {
         parameters: {
             query?: never;
@@ -127,6 +186,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Dashboard
+         * @description The two headline scores, kept apart: the latest final readiness result (out of 300,
+         *     with its band) and the IQ (out of 100) of the selected idea, each with its compass and
+         *     priorities. Without ``idea_id`` the most recently confirmed idea is selected.
+         */
+        get: operations["get_dashboard_api_v1_dashboard_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/dashboard/dimensions/{key}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Dimension
+         * @description One dimension: the book's description, sub-aspects and fixed next-step text, the
+         *     organisation's readiness score for it and the selected idea's score for it (kept
+         *     apart), each with its target, gap and earlier scores.
+         */
+        get: operations["get_dimension_api_v1_dashboard_dimensions__key__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/health": {
         parameters: {
             query?: never;
@@ -136,6 +239,49 @@ export interface paths {
         };
         /** Health */
         get: operations["health_api_v1_health_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/history/ideas/{idea_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Idea History
+         * @description Every confirmed IQ assessment of one idea, newest first, each compared with the one
+         *     before it on the same question set version: change in IQ, Value for Money (same
+         *     currency only) and per dimension (spec 9).
+         */
+        get: operations["get_idea_history_api_v1_history_ideas__idea_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/history/readiness": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Readiness History
+         * @description Every final readiness result, newest first, each compared with the one before it on
+         *     the same question set version: change on the total and per dimension (spec 9).
+         */
+        get: operations["get_readiness_history_api_v1_history_readiness_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -790,6 +936,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/targets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Targets
+         * @description The organisation's targets per dimension on both scales, kept apart.
+         */
+        get: operations["get_targets_api_v1_targets_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/targets/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get History
+         * @description Every change of the targets, newest first: earlier targets are kept.
+         */
+        get: operations["get_history_api_v1_targets_history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/targets/{scale}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set Targets
+         * @description Replace one scale's targets. A dimension left out, or sent as null, has no target.
+         */
+        put: operations["set_targets_api_v1_targets__scale__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/weights": {
         parameters: {
             query?: never;
@@ -967,6 +1173,69 @@ export interface components {
             /** Total */
             total: number | null;
         };
+        /** AuditActionOut */
+        AuditActionOut: {
+            /** Action */
+            action: string;
+            /** Label */
+            label: string;
+        };
+        /** AuditActorOut */
+        AuditActorOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+        };
+        /** AuditEventOut */
+        AuditEventOut: {
+            /** Action */
+            action: string;
+            /** Action Label */
+            action_label: string;
+            /** Actor Id */
+            actor_id: string | null;
+            /** Actor Name */
+            actor_name: string | null;
+            /** Ai Model */
+            ai_model: string | null;
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /** Detail */
+            detail: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Question Set Version */
+            question_set_version: number | null;
+            /** Subject */
+            subject: string | null;
+        };
+        /**
+         * AuditFiltersOut
+         * @description What the log can be filtered by: the actions and the people that appear in it.
+         */
+        AuditFiltersOut: {
+            /** Actions */
+            actions: components["schemas"]["AuditActionOut"][];
+            /** Actors */
+            actors: components["schemas"]["AuditActorOut"][];
+        };
+        /** AuditPageOut */
+        AuditPageOut: {
+            /** Events */
+            events: components["schemas"]["AuditEventOut"][];
+            /** Next Before */
+            next_before: string | null;
+        };
         /** BandOut */
         BandOut: {
             /** Key */
@@ -1002,6 +1271,84 @@ export interface components {
             current_password: string;
             /** New Password */
             new_password: string;
+        };
+        /** CompassCategoryOut */
+        CompassCategoryOut: {
+            /** Dimension Keys */
+            dimension_keys: string[];
+            /** Key */
+            key: string;
+            /** Maximum */
+            maximum: string;
+            /** Name */
+            name: string;
+            /** Order */
+            order: number;
+            /** Score */
+            score: string;
+        };
+        /** CompassLevelOut */
+        CompassLevelOut: {
+            /** Key */
+            key: string;
+            /** Max */
+            max: number;
+            /** Min */
+            min: number;
+            /** Name */
+            name: string;
+            /** Order */
+            order: number;
+            /** Text */
+            text: string;
+        };
+        /**
+         * CompassOut
+         * @description Everything the 12-segment compass draws, for one result on one scale.
+         */
+        CompassOut: {
+            /** Categories */
+            categories: components["schemas"]["CompassCategoryOut"][];
+            /** Levels */
+            levels: components["schemas"]["CompassLevelOut"][];
+            /** Maximum */
+            maximum: number;
+            /** Minimum */
+            minimum: number;
+            /** Question Set Version */
+            question_set_version: number;
+            /**
+             * Scale
+             * @enum {string}
+             */
+            scale: "readiness" | "iq";
+            /** Segments */
+            segments: components["schemas"]["CompassSegmentOut"][];
+        };
+        /**
+         * CompassSegmentOut
+         * @description One dimension of the compass, in book order.
+         */
+        CompassSegmentOut: {
+            /** Category */
+            category: string;
+            /** Gap */
+            gap: number | null;
+            /** Key */
+            key: string;
+            level: components["schemas"]["SegmentLevelOut"] | null;
+            /** Maximum */
+            maximum: number;
+            /** Name */
+            name: string;
+            /** Order */
+            order: number;
+            /** Priority Rank */
+            priority_rank: number | null;
+            /** Score */
+            score: number;
+            /** Target */
+            target: number | null;
         };
         /** ConsensusIn */
         ConsensusIn: {
@@ -1124,6 +1471,84 @@ export interface components {
             organisation_name: string;
             organisation_status: components["schemas"]["OrganisationStatus"];
         };
+        /**
+         * DashboardOut
+         * @description The two headline scores side by side, never combined (spec 4).
+         */
+        DashboardOut: {
+            /** Ideas */
+            ideas: components["schemas"]["IdeaChoiceOut"][];
+            iq: components["schemas"]["IqHeadlineOut"] | null;
+            readiness: components["schemas"]["ReadinessHeadlineOut"] | null;
+        };
+        /**
+         * DimensionDetailOut
+         * @description One dimension: the book's text, and its score on each scale, kept apart.
+         */
+        DimensionDetailOut: {
+            category: components["schemas"]["CategoryOut"];
+            /** Description */
+            description: string;
+            /** Ideas */
+            ideas: components["schemas"]["IdeaChoiceOut"][];
+            iq: components["schemas"]["DimensionIqOut"] | null;
+            /** Key */
+            key: string;
+            /** Name */
+            name: string;
+            next: components["schemas"]["DimensionRefOut"] | null;
+            /** Next Steps */
+            next_steps: string;
+            /** Order */
+            order: number;
+            previous: components["schemas"]["DimensionRefOut"] | null;
+            readiness: components["schemas"]["DimensionReadinessOut"] | null;
+            /** Sub Aspects */
+            sub_aspects: string[];
+        };
+        /** DimensionIqOut */
+        DimensionIqOut: {
+            /**
+             * Assessment Id
+             * Format: uuid
+             */
+            assessment_id: string;
+            /** Changed */
+            changed: boolean;
+            /**
+             * Confirmed At
+             * Format: date-time
+             */
+            confirmed_at: string;
+            /** Gap */
+            gap: number | null;
+            /** History */
+            history: components["schemas"]["TrendPointOut"][];
+            /**
+             * Idea Id
+             * Format: uuid
+             */
+            idea_id: string;
+            /** Idea Title */
+            idea_title: string;
+            level: components["schemas"]["LevelOut"];
+            /** Maximum */
+            maximum: number;
+            /** Note */
+            note: string | null;
+            /** Priority Rank */
+            priority_rank: number | null;
+            /** Proposed Score */
+            proposed_score: number | null;
+            /** Question Set Version */
+            question_set_version: number;
+            /** Rationale */
+            rationale: string[];
+            /** Score */
+            score: number;
+            /** Target */
+            target: number | null;
+        };
         /** DimensionOut */
         DimensionOut: {
             /** Category */
@@ -1138,6 +1563,45 @@ export interface components {
             order: number;
             /** Questions */
             questions: components["schemas"]["QuestionOut"][];
+        };
+        /** DimensionReadinessOut */
+        DimensionReadinessOut: {
+            answer_scale: components["schemas"]["ScaleOut"];
+            /**
+             * Assessment Id
+             * Format: uuid
+             */
+            assessment_id: string;
+            /**
+             * Finalised At
+             * Format: date-time
+             */
+            finalised_at: string;
+            /** Gap */
+            gap: number | null;
+            /** History */
+            history: components["schemas"]["TrendPointOut"][];
+            /** Maximum */
+            maximum: number;
+            /** Priority Rank */
+            priority_rank: number | null;
+            /** Question Set Version */
+            question_set_version: number;
+            /** Questions */
+            questions: components["schemas"]["QuestionAnswerOut"][];
+            /** Score */
+            score: number;
+            /** Target */
+            target: number | null;
+        };
+        /** DimensionRefOut */
+        DimensionRefOut: {
+            /** Key */
+            key: string;
+            /** Name */
+            name: string;
+            /** Order */
+            order: number;
         };
         /**
          * DimensionReviewOut
@@ -1246,6 +1710,52 @@ export interface components {
             /** Version */
             version: string;
         };
+        /** HistoryDimensionOut */
+        HistoryDimensionOut: {
+            /** Change */
+            change: number | null;
+            /** Direction */
+            direction: ("up" | "down" | "same") | null;
+            /** Gap */
+            gap: number | null;
+            /** Key */
+            key: string;
+            /** Maximum */
+            maximum: number;
+            /** Name */
+            name: string;
+            /** Order */
+            order: number;
+            /** Score */
+            score: number;
+            /** Target */
+            target: number | null;
+        };
+        /**
+         * IdeaChoiceOut
+         * @description An idea with a confirmed IQ assessment, for the idea picker.
+         */
+        IdeaChoiceOut: {
+            /**
+             * Assessment Id
+             * Format: uuid
+             */
+            assessment_id: string;
+            /**
+             * Confirmed At
+             * Format: date-time
+             */
+            confirmed_at: string;
+            /**
+             * Idea Id
+             * Format: uuid
+             */
+            idea_id: string;
+            /** Iq */
+            iq: string;
+            /** Title */
+            title: string;
+        };
         /**
          * IdeaCreateIn
          * @description A new idea: a title and summary are required; the currency defaults to the
@@ -1274,6 +1784,18 @@ export interface components {
             title: string;
             /** Uniqueness */
             uniqueness?: string | null;
+        };
+        /** IdeaHistoryOut */
+        IdeaHistoryOut: {
+            /** Entries */
+            entries: components["schemas"]["IqHistoryEntryOut"][];
+            /**
+             * Idea Id
+             * Format: uuid
+             */
+            idea_id: string;
+            /** Idea Title */
+            idea_title: string;
         };
         /** IdeaOut */
         IdeaOut: {
@@ -1461,6 +1983,7 @@ export interface components {
             can_review: boolean;
             /** Categories */
             categories: components["schemas"]["IqCategoryOut"][];
+            compass: components["schemas"]["CompassOut"] | null;
             /** Confirmed At */
             confirmed_at: string | null;
             /** Confirmed By Name */
@@ -1509,6 +2032,8 @@ export interface components {
             sample: boolean;
             scale: components["schemas"]["IqScaleOut"];
             status: components["schemas"]["IqAssessmentStatus"];
+            /** Strengths */
+            strengths: components["schemas"]["IqStrengthOut"][];
             vfm: components["schemas"]["VfmOut"] | null;
         };
         /**
@@ -1532,6 +2057,73 @@ export interface components {
             /** Score */
             score: string | null;
         };
+        /**
+         * IqHeadlineOut
+         * @description The selected idea's latest confirmed IQ assessment.
+         */
+        IqHeadlineOut: {
+            /**
+             * Assessment Id
+             * Format: uuid
+             */
+            assessment_id: string;
+            compass: components["schemas"]["CompassOut"];
+            /**
+             * Confirmed At
+             * Format: date-time
+             */
+            confirmed_at: string;
+            /** Custom Weights */
+            custom_weights: boolean;
+            /**
+             * Idea Id
+             * Format: uuid
+             */
+            idea_id: string;
+            /** Idea Title */
+            idea_title: string;
+            /** Iq */
+            iq: string;
+            /** Iq Maximum */
+            iq_maximum: string;
+            /** Priorities */
+            priorities: components["schemas"]["PriorityItemOut"][];
+            /** Question Set Version */
+            question_set_version: number;
+            vfm: components["schemas"]["VfmOut"] | null;
+        };
+        /** IqHistoryEntryOut */
+        IqHistoryEntryOut: {
+            /**
+             * Assessment Id
+             * Format: uuid
+             */
+            assessment_id: string;
+            /** Compared With */
+            compared_with: string | null;
+            /**
+             * Confirmed At
+             * Format: date-time
+             */
+            confirmed_at: string;
+            /** Dimensions */
+            dimensions: components["schemas"]["HistoryDimensionOut"][];
+            /** Iq */
+            iq: string;
+            /** Iq Change */
+            iq_change: string | null;
+            /** Iq Direction */
+            iq_direction: ("up" | "down" | "same") | null;
+            /** Iq Maximum */
+            iq_maximum: string;
+            /** Question Set Version */
+            question_set_version: number;
+            vfm: components["schemas"]["VfmOut"] | null;
+            /** Vfm Change */
+            vfm_change: string | null;
+            /** Vfm Direction */
+            vfm_direction: ("up" | "down" | "same") | null;
+        };
         /** IqPriorityOut */
         IqPriorityOut: {
             /** Key */
@@ -1553,6 +2145,21 @@ export interface components {
             max: number;
             /** Min */
             min: number;
+        };
+        /** IqStrengthOut */
+        IqStrengthOut: {
+            /** Key */
+            key: string;
+            /** Level Name */
+            level_name: string;
+            /** Maximum */
+            maximum: number;
+            /** Name */
+            name: string;
+            /** Order */
+            order: number;
+            /** Score */
+            score: number;
         };
         /** LevelOut */
         LevelOut: {
@@ -1773,6 +2380,23 @@ export interface components {
              */
             user_id: string;
         };
+        /** PriorityItemOut */
+        PriorityItemOut: {
+            /** Key */
+            key: string;
+            /** Level Name */
+            level_name: string | null;
+            /** Maximum */
+            maximum: number;
+            /** Name */
+            name: string;
+            /** Next Steps */
+            next_steps: string;
+            /** Rank */
+            rank: number;
+            /** Score */
+            score: number;
+        };
         /** PriorityOut */
         PriorityOut: {
             /** Key */
@@ -1787,6 +2411,15 @@ export interface components {
             rank: number;
             /** Score */
             score: number;
+        };
+        /** QuestionAnswerOut */
+        QuestionAnswerOut: {
+            /** Answer */
+            answer: number | null;
+            /** Id */
+            id: string;
+            /** Text */
+            text: string;
         };
         /** QuestionConsensusOut */
         QuestionConsensusOut: {
@@ -1825,6 +2458,66 @@ export interface components {
             version: number;
         };
         /**
+         * ReadinessHeadlineOut
+         * @description The organisation's latest final readiness result.
+         */
+        ReadinessHeadlineOut: {
+            /**
+             * Assessment Id
+             * Format: uuid
+             */
+            assessment_id: string;
+            band: components["schemas"]["BandOut"];
+            compass: components["schemas"]["CompassOut"];
+            /**
+             * Finalised At
+             * Format: date-time
+             */
+            finalised_at: string;
+            /** Priorities */
+            priorities: components["schemas"]["PriorityItemOut"][];
+            /** Question Set Version */
+            question_set_version: number;
+            /** Total */
+            total: number;
+            /** Total Maximum */
+            total_maximum: number;
+        };
+        /** ReadinessHistoryEntryOut */
+        ReadinessHistoryEntryOut: {
+            /**
+             * Assessment Id
+             * Format: uuid
+             */
+            assessment_id: string;
+            /** Band Name */
+            band_name: string;
+            /** Compared With */
+            compared_with: string | null;
+            /** Dimensions */
+            dimensions: components["schemas"]["HistoryDimensionOut"][];
+            /**
+             * Finalised At
+             * Format: date-time
+             */
+            finalised_at: string;
+            /** Question Set Version */
+            question_set_version: number;
+            /** Total */
+            total: number;
+            /** Total Change */
+            total_change: number | null;
+            /** Total Direction */
+            total_direction: ("up" | "down" | "same") | null;
+            /** Total Maximum */
+            total_maximum: number;
+        };
+        /** ReadinessHistoryOut */
+        ReadinessHistoryOut: {
+            /** Entries */
+            entries: components["schemas"]["ReadinessHistoryEntryOut"][];
+        };
+        /**
          * ReadinessStatus
          * @description The life of a readiness assessment, left to right. It never moves backwards.
          *
@@ -1851,6 +2544,7 @@ export interface components {
             band: components["schemas"]["BandOut"];
             /** Categories */
             categories: components["schemas"]["CategoryScoreOut"][];
+            compass: components["schemas"]["CompassOut"] | null;
             /** Dimensions */
             dimensions: components["schemas"]["DimensionScoreOut"][];
             /**
@@ -1896,6 +2590,19 @@ export interface components {
             /** Min */
             min: number;
         };
+        /**
+         * SegmentLevelOut
+         * @description The book's level of one IQ dimension score (spec 3.1). ``order`` is its place among
+         *     the levels, lowest first, so the compass can colour segments without knowing a level.
+         */
+        SegmentLevelOut: {
+            /** Key */
+            key: string;
+            /** Name */
+            name: string;
+            /** Order */
+            order: number;
+        };
         /** SignInIn */
         SignInIn: {
             /**
@@ -1922,6 +2629,108 @@ export interface components {
             name: string;
             /** Password */
             password: string;
+        };
+        /** TargetOut */
+        TargetOut: {
+            /** Category */
+            category: string;
+            /** Key */
+            key: string;
+            /** Name */
+            name: string;
+            /** Order */
+            order: number;
+            /** Target */
+            target: number | null;
+        };
+        /**
+         * TargetScale
+         * @description Which of the two scores a target is set on. They are never mixed (spec 4).
+         * @enum {string}
+         */
+        TargetScale: "readiness" | "iq";
+        /**
+         * TargetScaleOut
+         * @description One scale's targets. Readiness and IQ targets are separate and never mixed.
+         */
+        TargetScaleOut: {
+            /** Maximum */
+            maximum: number;
+            /** Minimum */
+            minimum: number;
+            scale: components["schemas"]["TargetScale"];
+            /** Set At */
+            set_at: string | null;
+            /** Set By Name */
+            set_by_name: string | null;
+            /** Targets */
+            targets: components["schemas"]["TargetOut"][];
+        };
+        /** TargetsChangeOut */
+        TargetsChangeOut: {
+            /** Changed */
+            changed: string[];
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            scale: components["schemas"]["TargetScale"];
+            /**
+             * Set At
+             * Format: date-time
+             */
+            set_at: string;
+            /** Set By Name */
+            set_by_name: string | null;
+            /** Targets */
+            targets: {
+                [key: string]: number;
+            };
+        };
+        /**
+         * TargetsIn
+         * @description Every target of one scale: a dimension left out (or null) has no target.
+         */
+        TargetsIn: {
+            /** Targets */
+            targets: {
+                [key: string]: number | null;
+            };
+        };
+        /** TargetsOut */
+        TargetsOut: {
+            /** Can Change */
+            can_change: boolean;
+            iq: components["schemas"]["TargetScaleOut"];
+            /** Question Set Version */
+            question_set_version: number;
+            readiness: components["schemas"]["TargetScaleOut"];
+        };
+        /**
+         * TrendPointOut
+         * @description One earlier or current score of a dimension, with its change from the result before
+         *     it on the same question set version (null when there is none to compare with).
+         */
+        TrendPointOut: {
+            /**
+             * Assessment Id
+             * Format: uuid
+             */
+            assessment_id: string;
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /** Change */
+            change: number | null;
+            /** Direction */
+            direction: ("up" | "down" | "same") | null;
+            /** Maximum */
+            maximum: number;
+            /** Score */
+            score: number;
         };
         /** ValidationError */
         ValidationError: {
@@ -2036,6 +2845,90 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    list_events_api_v1_audit_get: {
+        parameters: {
+            query?: {
+                action?: string | null;
+                actor_id?: string | null;
+                before?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditPageOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_events_api_v1_audit_export_get: {
+        parameters: {
+            query?: {
+                action?: string | null;
+                actor_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_filters_api_v1_audit_filters_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditFiltersOut"];
+                };
+            };
+        };
+    };
     forgot_password_api_v1_auth_password_forgot_post: {
         parameters: {
             query?: never;
@@ -2254,6 +3147,70 @@ export interface operations {
             };
         };
     };
+    get_dashboard_api_v1_dashboard_get: {
+        parameters: {
+            query?: {
+                idea_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_dimension_api_v1_dashboard_dimensions__key__get: {
+        parameters: {
+            query?: {
+                idea_id?: string | null;
+            };
+            header?: never;
+            path: {
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DimensionDetailOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     health_api_v1_health_get: {
         parameters: {
             query?: never;
@@ -2270,6 +3227,57 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HealthOut"];
+                };
+            };
+        };
+    };
+    get_idea_history_api_v1_history_ideas__idea_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                idea_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdeaHistoryOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_readiness_history_api_v1_history_readiness_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReadinessHistoryOut"];
                 };
             };
         };
@@ -3588,6 +4596,81 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ExplanationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_targets_api_v1_targets_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TargetsOut"];
+                };
+            };
+        };
+    };
+    get_history_api_v1_targets_history_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TargetsChangeOut"][];
+                };
+            };
+        };
+    };
+    set_targets_api_v1_targets__scale__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                scale: components["schemas"]["TargetScale"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TargetsIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TargetsOut"];
                 };
             };
             /** @description Validation Error */

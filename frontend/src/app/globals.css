@@ -31,6 +31,12 @@
   --color-primary-soft: hsl(207 70% 95%);
   --color-accent: hsl(159 65% 32%);
 
+  /* Chart ramp: one hue, light to dark, for ordered levels (the three IQ levels on the
+     compass). The lightest step is always paired with a visible label and a table. */
+  --color-ramp-1: #9cc9ee;
+  --color-ramp-2: #2e86d1;
+  --color-ramp-3: #114a7a;
+
   /* Ink: a cool grey scale with just enough of the brand navy to sit with the mark */
   --color-neutral-50: hsl(210 20% 98%);
   --color-neutral-100: hsl(210 18% 95%);

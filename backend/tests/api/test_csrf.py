@@ -1,7 +1,6 @@
 """CSRF token, origin check and CORS."""
 
 import pytest
-from fastapi.routing import APIRoute
 from fastapi.testclient import TestClient
 
 from app.core import csrf as csrf_module
@@ -123,8 +122,8 @@ def test_cors_preflight_allows_the_csrf_header() -> None:
 def test_cors_rejects_unused_methods_and_headers() -> None:
     client = TestClient(app)
     origin = get_settings().frontend_origin
-    put = client.options(ME, headers={"Origin": origin, "Access-Control-Request-Method": "PUT"})
-    assert put.status_code == 400
+    trace = client.options(ME, headers={"Origin": origin, "Access-Control-Request-Method": "TRACE"})
+    assert trace.status_code == 400
     header = client.options(
         ME,
         headers={
@@ -137,13 +136,39 @@ def test_cors_rejects_unused_methods_and_headers() -> None:
 
 
 def test_every_route_method_is_allowed_by_cors() -> None:
+    # Read from the generated contract, not ``app.routes``: included routers are nested
+    # there, and a walk that finds no route would pass without checking anything (it did,
+    # while PUT routes existed and the browser could not call them).
     used = {
-        method
-        for route in app.routes
-        if isinstance(route, APIRoute)
-        for method in route.methods or ()
+        method.upper() for operations in app.openapi()["paths"].values() for method in operations
     }
+    assert {"GET", "POST"} <= used, "the route walk found no routes"
     assert used <= set(CORS_METHODS) | {"HEAD"}, "add the new method to CORS_METHODS"
+
+
+@pytest.mark.parametrize(
+    ("method", "path"),
+    [
+        ("PUT", "/api/v1/weights"),
+        ("PUT", "/api/v1/targets/readiness"),
+        ("PATCH", "/api/v1/organisation"),
+        ("DELETE", "/api/v1/organisation/members/00000000-0000-0000-0000-000000000000"),
+    ],
+)
+def test_the_browser_may_send_every_kind_of_write(
+    client: TestClient, method: str, path: str
+) -> None:
+    """The preflight a browser sends before a write from the frontend origin passes."""
+    response = client.options(
+        path,
+        headers={
+            "Origin": get_settings().frontend_origin,
+            "Access-Control-Request-Method": method,
+            "Access-Control-Request-Headers": "content-type,x-csrf-token",
+        },
+    )
+    assert response.status_code == 200, response.text
+    assert method in response.headers["access-control-allow-methods"]
 
 
 def test_null_origin_is_rejected(client: TestClient) -> None:

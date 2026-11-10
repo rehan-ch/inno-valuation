@@ -1,0 +1,16 @@
+#!/bin/bash
+# Fill the local stack with a demo company (development only). Needs bin/dev running:
+# the script drives the real API, so every number on screen comes from the scoring engine.
+set -euo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
+
+# Unlike bin/dev, this never assumes development: it writes accounts with a known password,
+# so ENVIRONMENT=development must be set on purpose (in .env or the shell).
+
+if ! curl -fsS -o /dev/null http://localhost:8000/api/v1/health; then
+  echo "bin/seed-demo: the API is not answering on :8000. Start it with bin/dev first." >&2
+  exit 1
+fi
+
+cd backend && exec uv run python -m app.dev.seed_demo "$@"

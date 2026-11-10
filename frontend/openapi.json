@@ -414,6 +414,199 @@
         "title": "AssessmentSummaryOut",
         "type": "object"
       },
+      "AuditActionOut": {
+        "properties": {
+          "action": {
+            "title": "Action",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "action",
+          "label"
+        ],
+        "title": "AuditActionOut",
+        "type": "object"
+      },
+      "AuditActorOut": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "AuditActorOut",
+        "type": "object"
+      },
+      "AuditEventOut": {
+        "properties": {
+          "action": {
+            "title": "Action",
+            "type": "string"
+          },
+          "action_label": {
+            "title": "Action Label",
+            "type": "string"
+          },
+          "actor_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Id"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "ai_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ai Model"
+          },
+          "at": {
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "question_set_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Question Set Version"
+          },
+          "subject": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject"
+          }
+        },
+        "required": [
+          "id",
+          "at",
+          "action",
+          "action_label",
+          "actor_id",
+          "actor_name",
+          "subject",
+          "detail",
+          "question_set_version",
+          "ai_model"
+        ],
+        "title": "AuditEventOut",
+        "type": "object"
+      },
+      "AuditFiltersOut": {
+        "description": "What the log can be filtered by: the actions and the people that appear in it.",
+        "properties": {
+          "actions": {
+            "items": {
+              "$ref": "#/components/schemas/AuditActionOut"
+            },
+            "title": "Actions",
+            "type": "array"
+          },
+          "actors": {
+            "items": {
+              "$ref": "#/components/schemas/AuditActorOut"
+            },
+            "title": "Actors",
+            "type": "array"
+          }
+        },
+        "required": [
+          "actions",
+          "actors"
+        ],
+        "title": "AuditFiltersOut",
+        "type": "object"
+      },
+      "AuditPageOut": {
+        "properties": {
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/AuditEventOut"
+            },
+            "title": "Events",
+            "type": "array"
+          },
+          "next_before": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Before"
+          }
+        },
+        "required": [
+          "events",
+          "next_before"
+        ],
+        "title": "AuditPageOut",
+        "type": "object"
+      },
       "BandOut": {
         "properties": {
           "key": {
@@ -509,6 +702,228 @@
           "new_password"
         ],
         "title": "ChangePasswordIn",
+        "type": "object"
+      },
+      "CompassCategoryOut": {
+        "properties": {
+          "dimension_keys": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Dimension Keys",
+            "type": "array"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "maximum": {
+            "title": "Maximum",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "order": {
+            "title": "Order",
+            "type": "integer"
+          },
+          "score": {
+            "title": "Score",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "name",
+          "order",
+          "score",
+          "maximum",
+          "dimension_keys"
+        ],
+        "title": "CompassCategoryOut",
+        "type": "object"
+      },
+      "CompassLevelOut": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "max": {
+            "title": "Max",
+            "type": "integer"
+          },
+          "min": {
+            "title": "Min",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "order": {
+            "title": "Order",
+            "type": "integer"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "name",
+          "order",
+          "min",
+          "max",
+          "text"
+        ],
+        "title": "CompassLevelOut",
+        "type": "object"
+      },
+      "CompassOut": {
+        "description": "Everything the 12-segment compass draws, for one result on one scale.",
+        "properties": {
+          "categories": {
+            "items": {
+              "$ref": "#/components/schemas/CompassCategoryOut"
+            },
+            "title": "Categories",
+            "type": "array"
+          },
+          "levels": {
+            "items": {
+              "$ref": "#/components/schemas/CompassLevelOut"
+            },
+            "title": "Levels",
+            "type": "array"
+          },
+          "maximum": {
+            "title": "Maximum",
+            "type": "integer"
+          },
+          "minimum": {
+            "title": "Minimum",
+            "type": "integer"
+          },
+          "question_set_version": {
+            "title": "Question Set Version",
+            "type": "integer"
+          },
+          "scale": {
+            "enum": [
+              "readiness",
+              "iq"
+            ],
+            "title": "Scale",
+            "type": "string"
+          },
+          "segments": {
+            "items": {
+              "$ref": "#/components/schemas/CompassSegmentOut"
+            },
+            "title": "Segments",
+            "type": "array"
+          }
+        },
+        "required": [
+          "scale",
+          "question_set_version",
+          "minimum",
+          "maximum",
+          "segments",
+          "categories",
+          "levels"
+        ],
+        "title": "CompassOut",
+        "type": "object"
+      },
+      "CompassSegmentOut": {
+        "description": "One dimension of the compass, in book order.",
+        "properties": {
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "gap": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gap"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "level": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SegmentLevelOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "maximum": {
+            "title": "Maximum",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "order": {
+            "title": "Order",
+            "type": "integer"
+          },
+          "priority_rank": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Priority Rank"
+          },
+          "score": {
+            "title": "Score",
+            "type": "integer"
+          },
+          "target": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target"
+          }
+        },
+        "required": [
+          "key",
+          "name",
+          "order",
+          "category",
+          "score",
+          "maximum",
+          "level",
+          "priority_rank",
+          "target",
+          "gap"
+        ],
+        "title": "CompassSegmentOut",
         "type": "object"
       },
       "ConsensusIn": {
@@ -761,6 +1176,274 @@
         "title": "ConsultantOrganisationOut",
         "type": "object"
       },
+      "DashboardOut": {
+        "description": "The two headline scores side by side, never combined (spec 4).",
+        "properties": {
+          "ideas": {
+            "items": {
+              "$ref": "#/components/schemas/IdeaChoiceOut"
+            },
+            "title": "Ideas",
+            "type": "array"
+          },
+          "iq": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IqHeadlineOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "readiness": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReadinessHeadlineOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "readiness",
+          "ideas",
+          "iq"
+        ],
+        "title": "DashboardOut",
+        "type": "object"
+      },
+      "DimensionDetailOut": {
+        "description": "One dimension: the book's text, and its score on each scale, kept apart.",
+        "properties": {
+          "category": {
+            "$ref": "#/components/schemas/CategoryOut"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "ideas": {
+            "items": {
+              "$ref": "#/components/schemas/IdeaChoiceOut"
+            },
+            "title": "Ideas",
+            "type": "array"
+          },
+          "iq": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DimensionIqOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "next": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DimensionRefOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "next_steps": {
+            "title": "Next Steps",
+            "type": "string"
+          },
+          "order": {
+            "title": "Order",
+            "type": "integer"
+          },
+          "previous": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DimensionRefOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "readiness": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DimensionReadinessOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "sub_aspects": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Sub Aspects",
+            "type": "array"
+          }
+        },
+        "required": [
+          "key",
+          "name",
+          "order",
+          "category",
+          "description",
+          "sub_aspects",
+          "next_steps",
+          "previous",
+          "next",
+          "readiness",
+          "ideas",
+          "iq"
+        ],
+        "title": "DimensionDetailOut",
+        "type": "object"
+      },
+      "DimensionIqOut": {
+        "properties": {
+          "assessment_id": {
+            "format": "uuid",
+            "title": "Assessment Id",
+            "type": "string"
+          },
+          "changed": {
+            "title": "Changed",
+            "type": "boolean"
+          },
+          "confirmed_at": {
+            "format": "date-time",
+            "title": "Confirmed At",
+            "type": "string"
+          },
+          "gap": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gap"
+          },
+          "history": {
+            "items": {
+              "$ref": "#/components/schemas/TrendPointOut"
+            },
+            "title": "History",
+            "type": "array"
+          },
+          "idea_id": {
+            "format": "uuid",
+            "title": "Idea Id",
+            "type": "string"
+          },
+          "idea_title": {
+            "title": "Idea Title",
+            "type": "string"
+          },
+          "level": {
+            "$ref": "#/components/schemas/LevelOut"
+          },
+          "maximum": {
+            "title": "Maximum",
+            "type": "integer"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "priority_rank": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Priority Rank"
+          },
+          "proposed_score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proposed Score"
+          },
+          "question_set_version": {
+            "title": "Question Set Version",
+            "type": "integer"
+          },
+          "rationale": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Rationale",
+            "type": "array"
+          },
+          "score": {
+            "title": "Score",
+            "type": "integer"
+          },
+          "target": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target"
+          }
+        },
+        "required": [
+          "idea_id",
+          "idea_title",
+          "assessment_id",
+          "confirmed_at",
+          "question_set_version",
+          "score",
+          "maximum",
+          "level",
+          "proposed_score",
+          "changed",
+          "rationale",
+          "note",
+          "priority_rank",
+          "target",
+          "gap",
+          "history"
+        ],
+        "title": "DimensionIqOut",
+        "type": "object"
+      },
       "DimensionOut": {
         "properties": {
           "category": {
@@ -800,6 +1483,120 @@
           "questions"
         ],
         "title": "DimensionOut",
+        "type": "object"
+      },
+      "DimensionReadinessOut": {
+        "properties": {
+          "answer_scale": {
+            "$ref": "#/components/schemas/ScaleOut"
+          },
+          "assessment_id": {
+            "format": "uuid",
+            "title": "Assessment Id",
+            "type": "string"
+          },
+          "finalised_at": {
+            "format": "date-time",
+            "title": "Finalised At",
+            "type": "string"
+          },
+          "gap": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gap"
+          },
+          "history": {
+            "items": {
+              "$ref": "#/components/schemas/TrendPointOut"
+            },
+            "title": "History",
+            "type": "array"
+          },
+          "maximum": {
+            "title": "Maximum",
+            "type": "integer"
+          },
+          "priority_rank": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Priority Rank"
+          },
+          "question_set_version": {
+            "title": "Question Set Version",
+            "type": "integer"
+          },
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/QuestionAnswerOut"
+            },
+            "title": "Questions",
+            "type": "array"
+          },
+          "score": {
+            "title": "Score",
+            "type": "integer"
+          },
+          "target": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target"
+          }
+        },
+        "required": [
+          "assessment_id",
+          "finalised_at",
+          "question_set_version",
+          "score",
+          "maximum",
+          "priority_rank",
+          "target",
+          "gap",
+          "answer_scale",
+          "questions",
+          "history"
+        ],
+        "title": "DimensionReadinessOut",
+        "type": "object"
+      },
+      "DimensionRefOut": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "order": {
+            "title": "Order",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "key",
+          "name",
+          "order"
+        ],
+        "title": "DimensionRefOut",
         "type": "object"
       },
       "DimensionReviewOut": {
@@ -1097,6 +1894,129 @@
         "title": "HealthOut",
         "type": "object"
       },
+      "HistoryDimensionOut": {
+        "properties": {
+          "change": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Change"
+          },
+          "direction": {
+            "anyOf": [
+              {
+                "enum": [
+                  "up",
+                  "down",
+                  "same"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Direction"
+          },
+          "gap": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gap"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "maximum": {
+            "title": "Maximum",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "order": {
+            "title": "Order",
+            "type": "integer"
+          },
+          "score": {
+            "title": "Score",
+            "type": "integer"
+          },
+          "target": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target"
+          }
+        },
+        "required": [
+          "key",
+          "name",
+          "order",
+          "score",
+          "maximum",
+          "change",
+          "direction",
+          "target",
+          "gap"
+        ],
+        "title": "HistoryDimensionOut",
+        "type": "object"
+      },
+      "IdeaChoiceOut": {
+        "description": "An idea with a confirmed IQ assessment, for the idea picker.",
+        "properties": {
+          "assessment_id": {
+            "format": "uuid",
+            "title": "Assessment Id",
+            "type": "string"
+          },
+          "confirmed_at": {
+            "format": "date-time",
+            "title": "Confirmed At",
+            "type": "string"
+          },
+          "idea_id": {
+            "format": "uuid",
+            "title": "Idea Id",
+            "type": "string"
+          },
+          "iq": {
+            "title": "Iq",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "idea_id",
+          "title",
+          "assessment_id",
+          "iq",
+          "confirmed_at"
+        ],
+        "title": "IdeaChoiceOut",
+        "type": "object"
+      },
       "IdeaCreateIn": {
         "additionalProperties": false,
         "description": "A new idea: a title and summary are required; the currency defaults to the\norganisation's.",
@@ -1227,6 +2147,33 @@
           "summary"
         ],
         "title": "IdeaCreateIn",
+        "type": "object"
+      },
+      "IdeaHistoryOut": {
+        "properties": {
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/IqHistoryEntryOut"
+            },
+            "title": "Entries",
+            "type": "array"
+          },
+          "idea_id": {
+            "format": "uuid",
+            "title": "Idea Id",
+            "type": "string"
+          },
+          "idea_title": {
+            "title": "Idea Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "idea_id",
+          "idea_title",
+          "entries"
+        ],
+        "title": "IdeaHistoryOut",
         "type": "object"
       },
       "IdeaOut": {
@@ -1803,6 +2750,16 @@
             "title": "Categories",
             "type": "array"
           },
+          "compass": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CompassOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "confirmed_at": {
             "anyOf": [
               {
@@ -1926,6 +2883,13 @@
           "status": {
             "$ref": "#/components/schemas/IqAssessmentStatus"
           },
+          "strengths": {
+            "items": {
+              "$ref": "#/components/schemas/IqStrengthOut"
+            },
+            "title": "Strengths",
+            "type": "array"
+          },
           "vfm": {
             "anyOf": [
               {
@@ -1953,6 +2917,8 @@
           "iq_maximum",
           "categories",
           "priorities",
+          "strengths",
+          "compass",
           "custom_weights",
           "vfm",
           "can_review",
@@ -2009,6 +2975,206 @@
         "title": "IqCategoryOut",
         "type": "object"
       },
+      "IqHeadlineOut": {
+        "description": "The selected idea's latest confirmed IQ assessment.",
+        "properties": {
+          "assessment_id": {
+            "format": "uuid",
+            "title": "Assessment Id",
+            "type": "string"
+          },
+          "compass": {
+            "$ref": "#/components/schemas/CompassOut"
+          },
+          "confirmed_at": {
+            "format": "date-time",
+            "title": "Confirmed At",
+            "type": "string"
+          },
+          "custom_weights": {
+            "title": "Custom Weights",
+            "type": "boolean"
+          },
+          "idea_id": {
+            "format": "uuid",
+            "title": "Idea Id",
+            "type": "string"
+          },
+          "idea_title": {
+            "title": "Idea Title",
+            "type": "string"
+          },
+          "iq": {
+            "title": "Iq",
+            "type": "string"
+          },
+          "iq_maximum": {
+            "title": "Iq Maximum",
+            "type": "string"
+          },
+          "priorities": {
+            "items": {
+              "$ref": "#/components/schemas/PriorityItemOut"
+            },
+            "title": "Priorities",
+            "type": "array"
+          },
+          "question_set_version": {
+            "title": "Question Set Version",
+            "type": "integer"
+          },
+          "vfm": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VfmOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "idea_id",
+          "idea_title",
+          "assessment_id",
+          "confirmed_at",
+          "question_set_version",
+          "iq",
+          "iq_maximum",
+          "vfm",
+          "custom_weights",
+          "compass",
+          "priorities"
+        ],
+        "title": "IqHeadlineOut",
+        "type": "object"
+      },
+      "IqHistoryEntryOut": {
+        "properties": {
+          "assessment_id": {
+            "format": "uuid",
+            "title": "Assessment Id",
+            "type": "string"
+          },
+          "compared_with": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Compared With"
+          },
+          "confirmed_at": {
+            "format": "date-time",
+            "title": "Confirmed At",
+            "type": "string"
+          },
+          "dimensions": {
+            "items": {
+              "$ref": "#/components/schemas/HistoryDimensionOut"
+            },
+            "title": "Dimensions",
+            "type": "array"
+          },
+          "iq": {
+            "title": "Iq",
+            "type": "string"
+          },
+          "iq_change": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Iq Change"
+          },
+          "iq_direction": {
+            "anyOf": [
+              {
+                "enum": [
+                  "up",
+                  "down",
+                  "same"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Iq Direction"
+          },
+          "iq_maximum": {
+            "title": "Iq Maximum",
+            "type": "string"
+          },
+          "question_set_version": {
+            "title": "Question Set Version",
+            "type": "integer"
+          },
+          "vfm": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VfmOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "vfm_change": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vfm Change"
+          },
+          "vfm_direction": {
+            "anyOf": [
+              {
+                "enum": [
+                  "up",
+                  "down",
+                  "same"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vfm Direction"
+          }
+        },
+        "required": [
+          "assessment_id",
+          "confirmed_at",
+          "question_set_version",
+          "iq",
+          "iq_maximum",
+          "compared_with",
+          "iq_change",
+          "iq_direction",
+          "vfm",
+          "vfm_change",
+          "vfm_direction",
+          "dimensions"
+        ],
+        "title": "IqHistoryEntryOut",
+        "type": "object"
+      },
       "IqPriorityOut": {
         "properties": {
           "key": {
@@ -2063,6 +3229,44 @@
           "max"
         ],
         "title": "IqScaleOut",
+        "type": "object"
+      },
+      "IqStrengthOut": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "level_name": {
+            "title": "Level Name",
+            "type": "string"
+          },
+          "maximum": {
+            "title": "Maximum",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "order": {
+            "title": "Order",
+            "type": "integer"
+          },
+          "score": {
+            "title": "Score",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "key",
+          "name",
+          "order",
+          "score",
+          "maximum",
+          "level_name"
+        ],
+        "title": "IqStrengthOut",
         "type": "object"
       },
       "LevelOut": {
@@ -2777,6 +3981,56 @@
         "title": "PersonAnswerOut",
         "type": "object"
       },
+      "PriorityItemOut": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "level_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Level Name"
+          },
+          "maximum": {
+            "title": "Maximum",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "next_steps": {
+            "title": "Next Steps",
+            "type": "string"
+          },
+          "rank": {
+            "title": "Rank",
+            "type": "integer"
+          },
+          "score": {
+            "title": "Score",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "rank",
+          "key",
+          "name",
+          "score",
+          "maximum",
+          "level_name",
+          "next_steps"
+        ],
+        "title": "PriorityItemOut",
+        "type": "object"
+      },
       "PriorityOut": {
         "properties": {
           "key": {
@@ -2813,6 +4067,36 @@
           "next_steps"
         ],
         "title": "PriorityOut",
+        "type": "object"
+      },
+      "QuestionAnswerOut": {
+        "properties": {
+          "answer": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Answer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "text",
+          "answer"
+        ],
+        "title": "QuestionAnswerOut",
         "type": "object"
       },
       "QuestionConsensusOut": {
@@ -2945,6 +4229,164 @@
         "title": "QuestionSetOut",
         "type": "object"
       },
+      "ReadinessHeadlineOut": {
+        "description": "The organisation's latest final readiness result.",
+        "properties": {
+          "assessment_id": {
+            "format": "uuid",
+            "title": "Assessment Id",
+            "type": "string"
+          },
+          "band": {
+            "$ref": "#/components/schemas/BandOut"
+          },
+          "compass": {
+            "$ref": "#/components/schemas/CompassOut"
+          },
+          "finalised_at": {
+            "format": "date-time",
+            "title": "Finalised At",
+            "type": "string"
+          },
+          "priorities": {
+            "items": {
+              "$ref": "#/components/schemas/PriorityItemOut"
+            },
+            "title": "Priorities",
+            "type": "array"
+          },
+          "question_set_version": {
+            "title": "Question Set Version",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          },
+          "total_maximum": {
+            "title": "Total Maximum",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "assessment_id",
+          "finalised_at",
+          "question_set_version",
+          "total",
+          "total_maximum",
+          "band",
+          "compass",
+          "priorities"
+        ],
+        "title": "ReadinessHeadlineOut",
+        "type": "object"
+      },
+      "ReadinessHistoryEntryOut": {
+        "properties": {
+          "assessment_id": {
+            "format": "uuid",
+            "title": "Assessment Id",
+            "type": "string"
+          },
+          "band_name": {
+            "title": "Band Name",
+            "type": "string"
+          },
+          "compared_with": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Compared With"
+          },
+          "dimensions": {
+            "items": {
+              "$ref": "#/components/schemas/HistoryDimensionOut"
+            },
+            "title": "Dimensions",
+            "type": "array"
+          },
+          "finalised_at": {
+            "format": "date-time",
+            "title": "Finalised At",
+            "type": "string"
+          },
+          "question_set_version": {
+            "title": "Question Set Version",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          },
+          "total_change": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Change"
+          },
+          "total_direction": {
+            "anyOf": [
+              {
+                "enum": [
+                  "up",
+                  "down",
+                  "same"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Direction"
+          },
+          "total_maximum": {
+            "title": "Total Maximum",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "assessment_id",
+          "finalised_at",
+          "question_set_version",
+          "total",
+          "total_maximum",
+          "band_name",
+          "compared_with",
+          "total_change",
+          "total_direction",
+          "dimensions"
+        ],
+        "title": "ReadinessHistoryEntryOut",
+        "type": "object"
+      },
+      "ReadinessHistoryOut": {
+        "properties": {
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/ReadinessHistoryEntryOut"
+            },
+            "title": "Entries",
+            "type": "array"
+          }
+        },
+        "required": [
+          "entries"
+        ],
+        "title": "ReadinessHistoryOut",
+        "type": "object"
+      },
       "ReadinessStatus": {
         "description": "The life of a readiness assessment, left to right. It never moves backwards.\n\n``draft`` is just created; ``collecting`` takes each person's answers; ``consensus``\nis the facilitator setting the agreed answers (Amy Q5); ``final`` is scored and\nimmutable.",
         "enum": [
@@ -2995,6 +4437,16 @@
             },
             "title": "Categories",
             "type": "array"
+          },
+          "compass": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CompassOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "dimensions": {
             "items": {
@@ -3049,6 +4501,7 @@
           "categories",
           "priorities",
           "strengths",
+          "compass",
           "submitted_count",
           "finalised_at"
         ],
@@ -3120,6 +4573,30 @@
         "title": "ScaleOut",
         "type": "object"
       },
+      "SegmentLevelOut": {
+        "description": "The book's level of one IQ dimension score (spec 3.1). ``order`` is its place among\nthe levels, lowest first, so the compass can colour segments without knowing a level.",
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "order": {
+            "title": "Order",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "key",
+          "name",
+          "order"
+        ],
+        "title": "SegmentLevelOut",
+        "type": "object"
+      },
       "SignInIn": {
         "additionalProperties": false,
         "properties": {
@@ -3177,6 +4654,275 @@
           "accepted_terms"
         ],
         "title": "SignUpIn",
+        "type": "object"
+      },
+      "TargetOut": {
+        "properties": {
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "order": {
+            "title": "Order",
+            "type": "integer"
+          },
+          "target": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target"
+          }
+        },
+        "required": [
+          "key",
+          "name",
+          "order",
+          "category",
+          "target"
+        ],
+        "title": "TargetOut",
+        "type": "object"
+      },
+      "TargetScale": {
+        "description": "Which of the two scores a target is set on. They are never mixed (spec 4).",
+        "enum": [
+          "readiness",
+          "iq"
+        ],
+        "title": "TargetScale",
+        "type": "string"
+      },
+      "TargetScaleOut": {
+        "description": "One scale's targets. Readiness and IQ targets are separate and never mixed.",
+        "properties": {
+          "maximum": {
+            "title": "Maximum",
+            "type": "integer"
+          },
+          "minimum": {
+            "title": "Minimum",
+            "type": "integer"
+          },
+          "scale": {
+            "$ref": "#/components/schemas/TargetScale"
+          },
+          "set_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Set At"
+          },
+          "set_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Set By Name"
+          },
+          "targets": {
+            "items": {
+              "$ref": "#/components/schemas/TargetOut"
+            },
+            "title": "Targets",
+            "type": "array"
+          }
+        },
+        "required": [
+          "scale",
+          "minimum",
+          "maximum",
+          "targets",
+          "set_at",
+          "set_by_name"
+        ],
+        "title": "TargetScaleOut",
+        "type": "object"
+      },
+      "TargetsChangeOut": {
+        "properties": {
+          "changed": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Changed",
+            "type": "array"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "scale": {
+            "$ref": "#/components/schemas/TargetScale"
+          },
+          "set_at": {
+            "format": "date-time",
+            "title": "Set At",
+            "type": "string"
+          },
+          "set_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Set By Name"
+          },
+          "targets": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Targets",
+            "type": "object"
+          }
+        },
+        "required": [
+          "id",
+          "scale",
+          "set_at",
+          "set_by_name",
+          "targets",
+          "changed"
+        ],
+        "title": "TargetsChangeOut",
+        "type": "object"
+      },
+      "TargetsIn": {
+        "additionalProperties": false,
+        "description": "Every target of one scale: a dimension left out (or null) has no target.",
+        "properties": {
+          "targets": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "maxProperties": 20,
+            "title": "Targets",
+            "type": "object"
+          }
+        },
+        "required": [
+          "targets"
+        ],
+        "title": "TargetsIn",
+        "type": "object"
+      },
+      "TargetsOut": {
+        "properties": {
+          "can_change": {
+            "title": "Can Change",
+            "type": "boolean"
+          },
+          "iq": {
+            "$ref": "#/components/schemas/TargetScaleOut"
+          },
+          "question_set_version": {
+            "title": "Question Set Version",
+            "type": "integer"
+          },
+          "readiness": {
+            "$ref": "#/components/schemas/TargetScaleOut"
+          }
+        },
+        "required": [
+          "question_set_version",
+          "readiness",
+          "iq",
+          "can_change"
+        ],
+        "title": "TargetsOut",
+        "type": "object"
+      },
+      "TrendPointOut": {
+        "description": "One earlier or current score of a dimension, with its change from the result before\nit on the same question set version (null when there is none to compare with).",
+        "properties": {
+          "assessment_id": {
+            "format": "uuid",
+            "title": "Assessment Id",
+            "type": "string"
+          },
+          "at": {
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "change": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Change"
+          },
+          "direction": {
+            "anyOf": [
+              {
+                "enum": [
+                  "up",
+                  "down",
+                  "same"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Direction"
+          },
+          "maximum": {
+            "title": "Maximum",
+            "type": "integer"
+          },
+          "score": {
+            "title": "Score",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "assessment_id",
+          "at",
+          "score",
+          "maximum",
+          "change",
+          "direction"
+        ],
+        "title": "TrendPointOut",
         "type": "object"
       },
       "ValidationError": {
@@ -3494,6 +5240,185 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/audit": {
+      "get": {
+        "description": "The organisation's recorded actions, newest first, optionally only one action or one\nperson. ``next_before`` is the cursor of the next page.",
+        "operationId": "list_events_api_v1_audit_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "action",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Action"
+            }
+          },
+          {
+            "in": "query",
+            "name": "actor_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Actor Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "before",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Before"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditPageOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Events",
+        "tags": [
+          "audit"
+        ]
+      }
+    },
+    "/api/v1/audit/export": {
+      "get": {
+        "description": "The same list as a CSV file (newest first, at most 5,000 rows), with the same\nfilters. Times are UTC.",
+        "operationId": "export_events_api_v1_audit_export_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "action",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Action"
+            }
+          },
+          {
+            "in": "query",
+            "name": "actor_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Actor Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Export Events",
+        "tags": [
+          "audit"
+        ]
+      }
+    },
+    "/api/v1/audit/filters": {
+      "get": {
+        "operationId": "get_filters_api_v1_audit_filters_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditFiltersOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Filters",
+        "tags": [
+          "audit"
+        ]
+      }
+    },
     "/api/v1/auth/password/forgot": {
       "post": {
         "operationId": "forgot_password_api_v1_auth_password_forgot_post",
@@ -3762,6 +5687,118 @@
         ]
       }
     },
+    "/api/v1/dashboard": {
+      "get": {
+        "description": "The two headline scores, kept apart: the latest final readiness result (out of 300,\nwith its band) and the IQ (out of 100) of the selected idea, each with its compass and\npriorities. Without ``idea_id`` the most recently confirmed idea is selected.",
+        "operationId": "get_dashboard_api_v1_dashboard_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "idea_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idea Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Dashboard",
+        "tags": [
+          "dashboard"
+        ]
+      }
+    },
+    "/api/v1/dashboard/dimensions/{key}": {
+      "get": {
+        "description": "One dimension: the book's description, sub-aspects and fixed next-step text, the\norganisation's readiness score for it and the selected idea's score for it (kept\napart), each with its target, gap and earlier scores.",
+        "operationId": "get_dimension_api_v1_dashboard_dimensions__key__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "maxLength": 50,
+              "title": "Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "idea_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idea Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DimensionDetailOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Dimension",
+        "tags": [
+          "dashboard"
+        ]
+      }
+    },
     "/api/v1/health": {
       "get": {
         "operationId": "health_api_v1_health_get",
@@ -3780,6 +5817,72 @@
         "summary": "Health",
         "tags": [
           "health"
+        ]
+      }
+    },
+    "/api/v1/history/ideas/{idea_id}": {
+      "get": {
+        "description": "Every confirmed IQ assessment of one idea, newest first, each compared with the one\nbefore it on the same question set version: change in IQ, Value for Money (same\ncurrency only) and per dimension (spec 9).",
+        "operationId": "get_idea_history_api_v1_history_ideas__idea_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "idea_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Idea Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IdeaHistoryOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Idea History",
+        "tags": [
+          "dashboard"
+        ]
+      }
+    },
+    "/api/v1/history/readiness": {
+      "get": {
+        "description": "Every final readiness result, newest first, each compared with the one before it on\nthe same question set version: change on the total and per dimension (spec 9).",
+        "operationId": "get_readiness_history_api_v1_history_readiness_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadinessHistoryOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Readiness History",
+        "tags": [
+          "dashboard"
         ]
       }
     },
@@ -5627,6 +7730,106 @@
         "summary": "Explain Question",
         "tags": [
           "readiness"
+        ]
+      }
+    },
+    "/api/v1/targets": {
+      "get": {
+        "description": "The organisation's targets per dimension on both scales, kept apart.",
+        "operationId": "get_targets_api_v1_targets_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TargetsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Targets",
+        "tags": [
+          "targets"
+        ]
+      }
+    },
+    "/api/v1/targets/history": {
+      "get": {
+        "description": "Every change of the targets, newest first: earlier targets are kept.",
+        "operationId": "get_history_api_v1_targets_history_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TargetsChangeOut"
+                  },
+                  "title": "Response Get History Api V1 Targets History Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get History",
+        "tags": [
+          "targets"
+        ]
+      }
+    },
+    "/api/v1/targets/{scale}": {
+      "put": {
+        "description": "Replace one scale's targets. A dimension left out, or sent as null, has no target.",
+        "operationId": "set_targets_api_v1_targets__scale__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "scale",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/TargetScale"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TargetsIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TargetsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Set Targets",
+        "tags": [
+          "targets"
         ]
       }
     },

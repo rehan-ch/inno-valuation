@@ -1,12 +1,11 @@
 """Ideas of the active organisation and their IQ assessments (spec 3, 5, 7; Amy Q1, Q7)."""
 
 import uuid
-from decimal import Decimal
 
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
-from app.core.currencies import to_major_units
+from app.api import presenters
 from app.core.deps import get_db, require_permission
 from app.core.permissions import OrgContext, Permission
 from app.models import AiRun, Idea, IqAssessment
@@ -22,25 +21,21 @@ from app.schemas.ideas import (
     IqCategoryOut,
     IqPriorityOut,
     IqScaleOut,
-    LevelOut,
+    IqStrengthOut,
     ReviewIn,
-    VfmOut,
 )
 from app.scoring.iq import iq_level, iq_maximum
-from app.scoring.question_set import IqLevel, QuestionSet
-from app.services import ideas, weights
+from app.scoring.priorities import strengths
+from app.scoring.question_set import QuestionSet
+from app.services import ideas, insights, weights
 
 router = APIRouter(prefix="/ideas", tags=["ideas"])
 
 
-def _money(minor: int | None, currency: str | None) -> str | None:
-    if minor is None or currency is None:
-        return None
-    return str(to_major_units(minor, currency))
-
-
-def _text(value: Decimal | None) -> str | None:
-    return None if value is None else str(value)
+_money = presenters.money
+_text = presenters.decimal_text
+_level_out = presenters.level_out
+_vfm_out = presenters.vfm_out
 
 
 def _brief(db: Session, assessment: IqAssessment, run: AiRun | None) -> AssessmentBriefOut:
@@ -155,26 +150,6 @@ def restore_idea(
     return _detail(db, ctx, ideas.restore_idea(db, ctx, idea_id))
 
 
-def _level_out(level: IqLevel) -> LevelOut:
-    return LevelOut(key=level.key, name=level.name, min=level.min, max=level.max, text=level.text)
-
-
-def _vfm_out(assessment: IqAssessment) -> VfmOut | None:
-    if assessment.status is not IqAssessmentStatus.CONFIRMED or assessment.currency is None:
-        return None
-    reason = None
-    if assessment.investment_minor is None:
-        reason = "No investment was given for this idea."
-    elif assessment.vfm_per_point is None:
-        reason = "Value for Money cannot be worked out for this IQ."
-    return VfmOut(
-        investment=_money(assessment.investment_minor, assessment.currency),
-        currency=assessment.currency,
-        per_point=_text(assessment.vfm_per_point),
-        not_calculable_reason=reason,
-    )
-
-
 def _assessment_out(
     db: Session, ctx: OrgContext, idea: Idea, assessment: IqAssessment
 ) -> IqAssessmentOut:
@@ -227,6 +202,27 @@ def _assessment_out(
         },
     )
     category_scores = assessment.category_scores or {}
+    record = insights.iq_record(db, idea, assessment)
+    strongest: list[IqStrengthOut] = []
+    if record is not None:
+        reviewed = {d.key: d for d in dimensions}
+        # The engine picks the strengths (a display choice, not Amy's rule; see scoring.priorities).
+        for key in strengths(
+            record.scores, [int(p["score"]) for p in (assessment.priorities or [])], question_set
+        ):
+            shown = reviewed[key]
+            strongest.append(
+                IqStrengthOut(
+                    key=shown.key,
+                    name=shown.name,
+                    order=shown.order,
+                    score=record.scores[key],
+                    maximum=question_set.iq_scale.max,
+                    level_name=presenters.stored_level(
+                        question_set, record.rows[key].level_key, record.scores[key]
+                    ).name,
+                )
+            )
     return IqAssessmentOut(
         id=assessment.id,
         idea_id=idea.id,
@@ -261,6 +257,8 @@ def _assessment_out(
             )
             for p in (assessment.priorities or [])
         ],
+        strengths=strongest,
+        compass=presenters.iq_compass(record) if record is not None else None,
         custom_weights=weights.is_custom(assessment.weights_snapshot),
         vfm=_vfm_out(assessment),
         can_review=(

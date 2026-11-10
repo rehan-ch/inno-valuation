@@ -186,6 +186,19 @@ def test_changing_organizational_agility_to_5_gives_iq_70_and_vfm_714_29(
     assert levels["product_evolution"] == "Invention"
     assert result["confirmed_by_name"] == "Mia Member"
     assert result["can_review"] is False
+    # Strengths: the dimensions above every priority (the highest priority scores 7).
+    assert [(s["key"], s["score"], s["level_name"]) for s in result["strengths"]] == [
+        ("product_evolution", 9, "Invention"),
+        ("customer_journey", 8, "Invention"),
+        ("value_creation_engine", 8, "Invention"),
+    ]
+    # The compass draws the confirmed scores, in book order, with the engine's level each.
+    compass = result["compass"]
+    assert compass["scale"] == "iq"
+    assert [s["key"] for s in compass["segments"]] == list(QUESTION_SET.dimension_keys)
+    agility = next(s for s in compass["segments"] if s["key"] == "organizational_agility")
+    assert (agility["score"], agility["maximum"], agility["priority_rank"]) == (5, 10, 1)
+    assert agility["level"] == {"key": "innovation", "name": "Innovation", "order": 2}
 
     # The list shows the headline numbers to everyone in the organisation.
     _as(client, owner, org)
@@ -200,7 +213,21 @@ def test_changing_organizational_agility_to_5_gives_iq_70_and_vfm_714_29(
         select(AuditEvent).where(AuditEvent.action == AuditAction.IQ_CONFIRMED.value)
     )
     assert confirmed_event is not None
-    assert confirmed_event.details == {"changed": ["organizational_agility"]}
+    # Which scores changed, which carry a note, the method version and the model that
+    # answered; never a score or any text.
+    assert confirmed_event.details == {
+        "changed": ["organizational_agility"],
+        "with_note": [],
+        "question_set_version": QUESTION_SET.version,
+        "ai_model": GOLDEN["replies"][0]["model"],
+    }
+    requested_event = db.scalar(
+        select(AuditEvent).where(AuditEvent.action == AuditAction.IQ_REQUESTED.value)
+    )
+    assert requested_event is not None
+    assert requested_event.details["rerun"] is False
+    assert requested_event.details["question_set_version"] == QUESTION_SET.version
+    assert requested_event.details["ai_model"]
 
 
 def test_accepting_the_proposal_unchanged_gives_the_proposed_iq(

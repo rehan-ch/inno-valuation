@@ -54,6 +54,12 @@ class IqCategories:
     categories: tuple[IqCategoryScore, ...]
 
 
+def readiness_category_maximum(key: str, question_set: QuestionSet = QUESTION_SET) -> int:
+    """The highest possible readiness score of one category: every dimension in it at its
+    maximum (spec 2.6: 125, 50 and 125, derived)."""
+    return len(question_set.dimensions_in_category(key)) * question_set.dimension_max
+
+
 def readiness_categories(
     result: ReadinessResult, question_set: QuestionSet = QUESTION_SET
 ) -> ReadinessCategories:
@@ -80,7 +86,7 @@ def readiness_categories(
                 order=category.order,
                 dimension_keys=keys,
                 score=sum(present) if len(present) == len(scores) else None,
-                maximum=len(keys) * question_set.dimension_max,
+                maximum=readiness_category_maximum(category.key, question_set),
             )
         )
     return ReadinessCategories(

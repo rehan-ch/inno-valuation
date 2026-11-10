@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from fractions import Fraction
 
 from app.scoring._guards import require_complete, require_same_version
+from app.scoring.errors import ScoringError, describe
 from app.scoring.iq import IqResult
 from app.scoring.question_set import QUESTION_SET, QuestionSet
 from app.scoring.readiness import ReadinessResult
@@ -17,6 +18,12 @@ from app.scoring.weights import validate_weights
 
 # Spec 7: "Normally the lowest 5."
 PRIORITY_COUNT = 5  # PROVISIONAL: see open-questions Q21
+
+
+# Not from the method: a display choice of ours that changes no number. A result shows up to
+# this many of its highest dimensions as strengths. Amy has set the priorities list; she has
+# not set strengths, and no open question covers them yet (to be raised with her).
+STRENGTH_COUNT = 3
 
 
 @dataclass(frozen=True, slots=True)
@@ -131,3 +138,35 @@ def iq_priorities(
         question_set_version=result.question_set_version,
         items=_lowest_dimensions(rows, PRIORITY_COUNT),
     )
+
+
+def strengths(
+    scores: Mapping[str, object],
+    priority_scores: Sequence[int],
+    question_set: QuestionSet = QUESTION_SET,
+) -> tuple[str, ...]:
+    """Keys of the dimensions a result shows as strengths: the highest-scoring ones, highest
+    first and then in book order, up to ``STRENGTH_COUNT``, and only those that score above
+    every priority (``priority_scores``, the scores on the priorities list), so a dimension
+    is never both a strength and a priority. When everything ties, there are none.
+
+    Works on a stored result of either scale (readiness or IQ, never both at once): scores
+    are compared with each other only. A display choice, not Amy's rule; it changes no number.
+    """
+    if not isinstance(scores, Mapping) or set(scores) != set(question_set.dimension_keys):
+        raise ScoringError("Strengths need a score for every dimension exactly once")
+    rows = []
+    for dimension in question_set.dimensions:
+        score = scores[dimension.key]
+        if not isinstance(score, int) or isinstance(score, bool):
+            raise ScoringError(
+                f"Score for {dimension.key} must be a whole number, got {describe(score)}"
+            )
+        rows.append((-score, dimension.order, dimension.key, score))
+    for value in priority_scores:
+        if not isinstance(value, int) or isinstance(value, bool):
+            raise ScoringError(f"Priority score must be a whole number, got {describe(value)}")
+    bar = max(priority_scores, default=None)
+    return tuple(
+        key for _negative, _order, key, score in sorted(rows) if bar is None or score > bar
+    )[:STRENGTH_COUNT]

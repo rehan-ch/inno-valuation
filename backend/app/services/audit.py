@@ -2,6 +2,7 @@
 or company details: callers pass only ids, field names and short reason codes."""
 
 import uuid
+from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Any
 
@@ -43,6 +44,7 @@ class AuditAction(StrEnum):
     IQ_REQUESTED = "iq.requested"
     IQ_CONFIRMED = "iq.confirmed"
     WEIGHTS_CHANGED = "weights.changed"
+    TARGETS_CHANGED = "targets.changed"
 
 
 def record(
@@ -63,6 +65,9 @@ def record(
         target_type=target_type,
         target_id=target_id,
         details=details or {},
+        # Set here, not by the database: now() is the same for every row of a transaction,
+        # and the activity log shows events in the order they happened.
+        created_at=datetime.now(UTC),
     )
     db.add(event)
     db.flush()

@@ -12,7 +12,7 @@ export function Table({
   children: ReactNode;
 }) {
   return (
-    <div className="overflow-x-auto rounded-md border border-neutral-200">
+    <div className="relative overflow-x-auto rounded-md border border-neutral-200">
       <table className="w-full text-left text-sm">
         <caption className="sr-only">{caption}</caption>
         <thead className="bg-neutral-50">
@@ -24,17 +24,24 @@ export function Table({
   );
 }
 
-export function Th({ children, ...rest }: ThHTMLAttributes<HTMLTableCellElement>) {
+export function Th({ children, className, ...rest }: ThHTMLAttributes<HTMLTableCellElement>) {
   return (
-    <th scope="col" className="px-3 py-2 text-xs font-medium text-neutral-500" {...rest}>
+    <th
+      scope="col"
+      className={`px-3 py-2 text-xs font-medium text-neutral-500${className ? ` ${className}` : ""}`}
+      {...rest}
+    >
       {children}
     </th>
   );
 }
 
-export function Td({ children, ...rest }: TdHTMLAttributes<HTMLTableCellElement>) {
+export function Td({ children, className, ...rest }: TdHTMLAttributes<HTMLTableCellElement>) {
   return (
-    <td className="px-3 py-2.5 align-middle text-neutral-800" {...rest}>
+    <td
+      className={`px-3 py-2.5 align-middle text-neutral-800${className ? ` ${className}` : ""}`}
+      {...rest}
+    >
       {children}
     </td>
   );

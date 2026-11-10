@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.ai.client import OFFLINE_MODEL
 from app.ai.touchpoints import explain_question as explain_question_touchpoint
+from app.api import presenters
 from app.core.deps import get_db, require_permission
 from app.core.errors import AppError
 from app.core.permissions import OrgContext, Permission, has_permission
@@ -36,16 +37,13 @@ from app.schemas.readiness import (
     ResultOut,
     ScaleOut,
 )
+from app.scoring.categories import readiness_category_maximum
 from app.scoring.errors import ScoringError
+from app.scoring.priorities import strengths
 from app.scoring.question_set import QUESTION_SET, question_set_for
-from app.services import explanations, readiness
+from app.services import explanations, insights, readiness
 
 router = APIRouter(prefix="/readiness", tags=["readiness"])
-
-# PROVISIONAL (display only): the result calls up to this many top-scoring dimensions
-# strengths. Amy has set the priorities list (lowest 5); she has not set strengths. A
-# strength must score above every priority, so no dimension is ever both.
-STRENGTH_COUNT: Final = 3
 
 
 def _answers_by_role(ctx: OrgContext) -> bool:
@@ -319,12 +317,17 @@ def _result_out(db: Session, assessment: ReadinessAssessment) -> ResultOut:
         )
         for d in question_set.dimensions
     ]
-    highest_priority = max((int(p["score"]) for p in result.priorities), default=-1)
+    record = insights.readiness_record(db, assessment, result)
+    by_key = {d.key: d for d in dimensions}
+    # The engine picks the strengths (a display choice, not Amy's rule; see scoring.priorities).
     strongest = [
-        d
-        for d in sorted(dimensions, key=lambda d: (-d.score, d.order))
-        if d.score > highest_priority
-    ][:STRENGTH_COUNT]
+        by_key[key]
+        for key in strengths(
+            {d.key: d.score for d in dimensions},
+            [int(p["score"]) for p in result.priorities],
+            question_set,
+        )
+    ]
     return ResultOut(
         assessment_id=assessment.id,
         question_set_version=assessment.question_set_version,
@@ -337,7 +340,7 @@ def _result_out(db: Session, assessment: ReadinessAssessment) -> ResultOut:
                 key=c.key,
                 name=c.name,
                 score=int(result.category_scores[c.key]),
-                maximum=len(question_set.dimensions_in_category(c.key)) * dimension_max,
+                maximum=readiness_category_maximum(c.key, question_set),
             )
             for c in question_set.categories
         ],
@@ -353,6 +356,7 @@ def _result_out(db: Session, assessment: ReadinessAssessment) -> ResultOut:
             for p in result.priorities
         ],
         strengths=strongest,
+        compass=presenters.readiness_compass(record) if record is not None else None,
         submitted_count=result.participant_count,
         finalised_at=assessment.finalised_at,
     )

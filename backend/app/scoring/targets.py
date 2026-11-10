@@ -76,6 +76,26 @@ def _gaps(
 
 
 # PROVISIONAL: see open-questions Q8
+def validate_readiness_targets(
+    targets: Mapping[str, object], question_set: QuestionSet = QUESTION_SET
+) -> dict[str, int]:
+    """Readiness targets, checked: known dimensions, whole numbers 5 to 25 (derived)."""
+    return _validated_targets(
+        targets, question_set.dimension_min, question_set.dimension_max, question_set
+    )
+
+
+# PROVISIONAL: see open-questions Q8
+def validate_iq_targets(
+    targets: Mapping[str, object], question_set: QuestionSet = QUESTION_SET
+) -> dict[str, int]:
+    """IQ targets, checked: known dimensions, whole numbers 1 to 10."""
+    return _validated_targets(
+        targets, question_set.iq_scale.min, question_set.iq_scale.max, question_set
+    )
+
+
+# PROVISIONAL: see open-questions Q8
 def readiness_targets(
     result: ReadinessResult,
     targets: Mapping[str, object],
@@ -85,9 +105,7 @@ def readiness_targets(
     require_same_version(
         result.question_set_version, [d.key for d in result.dimensions], question_set
     )
-    valid = _validated_targets(
-        targets, question_set.dimension_min, question_set.dimension_max, question_set
-    )
+    valid = validate_readiness_targets(targets, question_set)
     current = {d.key: d.score for d in result.dimensions}
     return TargetsResult(
         question_set_version=result.question_set_version,
@@ -105,9 +123,7 @@ def iq_targets(
     require_same_version(
         result.question_set_version, [d.key for d in result.dimensions], question_set
     )
-    valid = _validated_targets(
-        targets, question_set.iq_scale.min, question_set.iq_scale.max, question_set
-    )
+    valid = validate_iq_targets(targets, question_set)
     current = {d.key: d.score for d in result.dimensions}
     return TargetsResult(
         question_set_version=result.question_set_version,
