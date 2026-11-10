@@ -15,6 +15,10 @@ Then open http://localhost:3000/health (the page calls `GET /api/v1/health`).
 
 Services from `docker-compose.yml`: Postgres on `localhost:5440`, Redis on `localhost:6390`, and Mailpit (the local mail catcher) with its inbox at http://localhost:8025.
 
+## Demo data
+
+With `bin/dev` running, `bin/seed-demo` fills the local stack with a demo company (Northwind Outfitters): five people with different roles, a consultant with access, two readiness results two months apart, four ideas at different stages, dimension importance and targets. It prints the accounts and their password. Accounts are written directly (no email is sent); everything else goes through the API, so every number on screen comes from the scoring engine. `bin/seed-demo --reset` removes the demo company and creates it again. Development only: it refuses to run in any other environment. A walk-through for a demo is in `docs/demo.md`.
+
 ## Emails in development
 
 Without `RESEND_API_KEY`, development never sends real email. Every email (sign-up confirmation, password reset, team invitation, consultant access) is delivered to Mailpit instead, and opens there in a new browser tab the moment it is sent, so you can click its link straight away. All of them stay in the inbox at http://localhost:8025. To stop the tabs, put `DEV_EMAIL_OPEN_BROWSER=false` in `.env`. The link is also printed in the worker log, so nothing is lost if Mailpit is stopped. Tests use an in-memory outbox, never touch Mailpit and never open a browser.
