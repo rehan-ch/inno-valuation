@@ -12,7 +12,7 @@ export function Table({
   children: ReactNode;
 }) {
   return (
-    <div className="overflow-x-auto rounded-md border border-neutral-200">
+    <div className="relative overflow-x-auto rounded-md border border-neutral-200">
       <table className="w-full text-left text-sm">
         <caption className="sr-only">{caption}</caption>
         <thead className="bg-neutral-50">

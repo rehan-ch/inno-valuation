@@ -288,7 +288,7 @@ export function Compass({ compass, headline, hrefFor, title }: CompassProps) {
       </div>
 
       <div className="min-w-0">
-        <div className="overflow-x-auto rounded-md border border-neutral-200">
+        <div className="relative overflow-x-auto rounded-md border border-neutral-200">
           <table className="w-full text-left text-sm">
             <caption className="sr-only">{title}: every dimension&apos;s score</caption>
             <thead className="bg-neutral-50">
