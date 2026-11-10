@@ -9,7 +9,12 @@ import pytest
 from app.scoring.errors import ScoringError
 from app.scoring.iq import score_iq
 from app.scoring.readiness import score_readiness
-from app.scoring.targets import iq_targets, readiness_targets
+from app.scoring.targets import (
+    iq_targets,
+    readiness_targets,
+    validate_iq_targets,
+    validate_readiness_targets,
+)
 from tests.scoring.support import KEYS, QS, all_answers, iq_scores
 
 
@@ -88,3 +93,14 @@ def test_other_question_set_version_is_rejected() -> None:
         readiness_targets(score_readiness(all_answers(3)), {}, other)
     with pytest.raises(ScoringError, match="question_set_version"):
         iq_targets(score_iq(iq_scores([5] * 12)), {}, other)
+
+
+def test_targets_can_be_checked_without_a_result() -> None:
+    assert validate_readiness_targets({KEYS[0]: 25, KEYS[1]: 5}) == {KEYS[0]: 25, KEYS[1]: 5}
+    assert validate_iq_targets({KEYS[0]: 10}) == {KEYS[0]: 10}
+    with pytest.raises(ScoringError, match="5 to 25"):
+        validate_readiness_targets({KEYS[0]: 10.5})
+    with pytest.raises(ScoringError, match="1 to 10"):
+        validate_iq_targets({KEYS[0]: True})
+    with pytest.raises(ScoringError, match="Unknown dimension"):
+        validate_iq_targets({"not_a_dimension": 5})
