@@ -73,6 +73,25 @@ describe("DashboardPage", () => {
     );
   });
 
+  it("leaves ideas out, and does not ask for them, while the AI is switched off", async () => {
+    // No "GET /api/v1/ideas" here: the stub fails the test if the page asks for it.
+    stubApi({
+      "GET /api/v1/organisation": fakeOrganisation(),
+      "GET /api/v1/organisation/members": [fakeMember()],
+      "GET /api/v1/organisation/invitations": [],
+      "GET /api/v1/organisation/consultants": [],
+      "GET /api/v1/readiness/assessments": [],
+      "GET /api/v1/dashboard": EMPTY_DASHBOARD,
+    });
+
+    renderWithMe(<DashboardPage />, fakeMe({ ai_enabled: false }));
+
+    expect(await screen.findByRole("heading", { name: "Getting started" })).toBeInTheDocument();
+    expect(screen.getByText("Run the readiness assessment")).toBeInTheDocument();
+    expect(screen.queryByText("Score your first idea")).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Add an idea" })).not.toBeInTheDocument();
+  });
+
   it("shows a plain member the team and the readiness card, without manager figures", async () => {
     stubApi({
       "GET /api/v1/organisation": fakeOrganisation({ role: "member" }),

@@ -40,7 +40,7 @@ export function ScoresPanel({
 
   return (
     <>
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className={`grid grid-cols-1 gap-6${iq || iqFallback ? " lg:grid-cols-2" : ""}`}>
         {readiness ? <ReadinessHeadline readiness={readiness} /> : readinessFallback}
         {iq ? (
           <IqHeadline

@@ -173,7 +173,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           {(membership || me.consultant_organisations.length > 0) && (
             <>
               <NavLink href="/readiness">Readiness</NavLink>
-              <NavLink href="/ideas">Ideas</NavLink>
+              {me.ai_enabled && <NavLink href="/ideas">Ideas</NavLink>}
               <NavLink href="/targets">Targets</NavLink>
               <NavLink href="/history">History</NavLink>
             </>

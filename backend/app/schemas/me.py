@@ -3,6 +3,7 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
+from app.core.settings import get_settings
 from app.models import ConsultantGrant, Membership, User
 from app.models.enums import MembershipRole, OrganisationStatus
 from app.schemas.common import PersonName, RequestModel
@@ -34,6 +35,9 @@ class MeOut(BaseModel):
     memberships: list[MembershipOut]
     # For the organisation switcher, next to the memberships. Read-only access.
     consultant_organisations: list[ConsultantOrganisationOut]
+    # False while the server has no AI key. The app then hides what needs the AI: the
+    # question explanations and everything about ideas and the IQ.
+    ai_enabled: bool
 
 
 class MeUpdateIn(RequestModel):
@@ -56,6 +60,7 @@ def me_out(
         name=user.name,
         email_verified=user.email_verified_at is not None,
         active_organisation_id=active_organisation_id,
+        ai_enabled=bool(get_settings().anthropic_api_key),
         memberships=[
             MembershipOut(
                 organisation_id=m.organisation_id,

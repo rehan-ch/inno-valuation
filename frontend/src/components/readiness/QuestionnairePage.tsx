@@ -22,6 +22,8 @@ import {
 import type { AssessmentOut, QuestionSetOut } from "@/lib/api/types";
 import { useSubmit } from "@/lib/forms";
 
+import { useMe } from "@/components/app/me-context";
+
 import { QuestionExplanation } from "./QuestionExplanation";
 import { ScaleChoice } from "./ScaleChoice";
 import { saveFailureMessage, STATUS_LABELS, STATUS_TONES } from "./status";
@@ -36,6 +38,7 @@ type SaveState = "idle" | "saving" | "saved" | "error";
 /** One person's own 60 answers, saved as they go (spec 2.9), then submitted (spec 2.8).
  * The facilitator also sees everyone's progress here and starts agreeing the answers. */
 export function QuestionnairePage({ assessmentId }: { assessmentId: string }) {
+  const { me } = useMe();
   const [state, setState] = useState<State>({ kind: "loading" });
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [save, setSave] = useState<SaveState>("idle");
@@ -266,7 +269,7 @@ export function QuestionnairePage({ assessmentId }: { assessmentId: string }) {
                   </div>
                 </fieldset>
                 {/* Outside the fieldset, so it still works once answers are locked. */}
-                {assessment.can_answer && (
+                {assessment.can_answer && me.ai_enabled && (
                   <QuestionExplanation questionId={question.id} version={questions.version} />
                 )}
               </li>

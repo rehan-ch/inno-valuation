@@ -136,6 +136,20 @@ describe("QuestionnairePage", () => {
     expect(screen.getByRole("button", { name: "Submit my answers" })).toBeDisabled();
   });
 
+  it("offers the AI explanation only while the server has the AI switched on", async () => {
+    stubApi({
+      [`GET ${A}`]: fakeAssessment(),
+      "GET /api/v1/readiness/question-set": fakeQuestionSet(),
+    });
+
+    const { setMe } = renderWithMe(<QuestionnairePage assessmentId={ID} />, fakeMe());
+    await screen.findByRole("group", { name: "Do you understand the end-to-end experience?" });
+    expect(screen.getAllByRole("button", { name: "What does this mean?" }).length).toBeGreaterThan(0);
+
+    setMe(fakeMe({ ai_enabled: false }));
+    expect(screen.queryByRole("button", { name: "What does this mean?" })).not.toBeInTheDocument();
+  });
+
   it("submits once every question is answered, after a confirmation", async () => {
     const calls = stubApi({
       [`GET ${A}`]: fakeAssessment({ my_answers: ALL, my_status: "in_progress" }),

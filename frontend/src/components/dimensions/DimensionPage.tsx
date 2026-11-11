@@ -128,12 +128,16 @@ export function DimensionPage({ dimensionKey }: { dimensionKey: string }) {
         )}
       </Card>
 
-      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
+      <div
+        className={`grid grid-cols-1 items-start gap-6${me.ai_enabled ? " lg:grid-cols-2" : ""}`}
+      >
         <ReadinessSide detail={detail} />
-        <IqSide
-          detail={detail}
-          onSelectIdea={(id) => router.replace(dimensionHref(detail.key, id))}
-        />
+        {me.ai_enabled && (
+          <IqSide
+            detail={detail}
+            onSelectIdea={(id) => router.replace(dimensionHref(detail.key, id))}
+          />
+        )}
       </div>
 
       <Card>
@@ -146,16 +150,18 @@ export function DimensionPage({ dimensionKey }: { dimensionKey: string }) {
         </p>
       </Card>
 
-      <Card>
-        <CardHeader
-          title="AI advice"
-          actions={<Badge dot={false}>Not available yet</Badge>}
-        />
-        <p className="mt-2 max-w-prose text-sm text-neutral-600">
-          Advice written for your organisation on how to close the gap on {detail.name} will
-          appear here. Until then, the next steps above are the method&apos;s own guidance.
-        </p>
-      </Card>
+      {me.ai_enabled && (
+        <Card>
+          <CardHeader
+            title="AI advice"
+            actions={<Badge dot={false}>Not available yet</Badge>}
+          />
+          <p className="mt-2 max-w-prose text-sm text-neutral-600">
+            Advice written for your organisation on how to close the gap on {detail.name} will
+            appear here. Until then, the next steps above are the method&apos;s own guidance.
+          </p>
+        </Card>
+      )}
     </div>
   );
 }
