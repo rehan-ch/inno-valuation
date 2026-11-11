@@ -3316,6 +3316,10 @@
             ],
             "title": "Active Organisation Id"
           },
+          "ai_enabled": {
+            "title": "Ai Enabled",
+            "type": "boolean"
+          },
           "consultant_organisations": {
             "items": {
               "$ref": "#/components/schemas/ConsultantOrganisationOut"
@@ -3355,7 +3359,8 @@
           "email_verified",
           "active_organisation_id",
           "memberships",
-          "consultant_organisations"
+          "consultant_organisations",
+          "ai_enabled"
         ],
         "title": "MeOut",
         "type": "object"

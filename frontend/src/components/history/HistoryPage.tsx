@@ -69,6 +69,7 @@ interface Column {
 export function HistoryPage() {
   const { me } = useMe();
   const activeOrgId = me.active_organisation_id;
+  const aiEnabled = me.ai_enabled;
   const params = useSearchParams();
   const router = useRouter();
   const ideaParam = params.get("idea");
@@ -84,7 +85,8 @@ export function HistoryPage() {
           dashboard.ideas.find((i) => i.idea_id === ideaParam)?.idea_id ??
           dashboard.ideas[0]?.idea_id ??
           null;
-        const idea = chosen ? await getIdeaHistory(chosen) : null;
+        // Ideas are hidden without the AI, so their history is not asked for.
+        const idea = chosen && aiEnabled ? await getIdeaHistory(chosen) : null;
         if (!cancelled) setState({ kind: "ready", readiness, ideas: dashboard.ideas, idea });
       } catch (err) {
         if (!cancelled) {
@@ -99,7 +101,7 @@ export function HistoryPage() {
     return () => {
       cancelled = true;
     };
-  }, [activeOrgId, ideaParam]);
+  }, [activeOrgId, ideaParam, aiEnabled]);
 
   if (!activeOrgId) {
     return (
@@ -219,58 +221,60 @@ export function HistoryPage() {
         </div>
       </Card>
 
-      <Card>
-        <CardHeader
-          title="An idea over time"
-          description={
-            idea
-              ? `Every confirmed scoring of "${idea.idea_title}", newest first.`
-              : "Every confirmed scoring of one idea."
-          }
-          actions={
-            <>
-              {ideas.length > 1 && idea && (
-                <div className="w-52">
-                  <SelectField
-                    label="Idea"
-                    labelHidden
-                    compact
-                    value={idea.idea_id}
-                    onChange={(event) => router.replace(`/history?idea=${event.target.value}`)}
+      {me.ai_enabled && (
+        <Card>
+          <CardHeader
+            title="An idea over time"
+            description={
+              idea
+                ? `Every confirmed scoring of "${idea.idea_title}", newest first.`
+                : "Every confirmed scoring of one idea."
+            }
+            actions={
+              <>
+                {ideas.length > 1 && idea && (
+                  <div className="w-52">
+                    <SelectField
+                      label="Idea"
+                      labelHidden
+                      compact
+                      value={idea.idea_id}
+                      onChange={(event) => router.replace(`/history?idea=${event.target.value}`)}
+                    >
+                      {ideas.map((choice) => (
+                        <option key={choice.idea_id} value={choice.idea_id}>
+                          {choice.title}
+                        </option>
+                      ))}
+                    </SelectField>
+                  </div>
+                )}
+                {ideaColumns.length > 0 && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() =>
+                      downloadCsv("innovaluation-idea-history.csv", csvRows("IQ", ideaColumns))
+                    }
                   >
-                    {ideas.map((choice) => (
-                      <option key={choice.idea_id} value={choice.idea_id}>
-                        {choice.title}
-                      </option>
-                    ))}
-                  </SelectField>
-                </div>
-              )}
-              {ideaColumns.length > 0 && (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() =>
-                    downloadCsv("innovaluation-idea-history.csv", csvRows("IQ", ideaColumns))
-                  }
-                >
-                  Export as CSV
-                </Button>
-              )}
-            </>
-          }
-        />
-        <div className="mt-4">
-          {ideaColumns.length === 0 ? (
-            <EmptyState title="No idea has confirmed scores yet">
-              Once an idea&apos;s scores are confirmed, its IQ appears here. Score it again
-              later to see what changed.
-            </EmptyState>
-          ) : (
-            <Comparison caption="Scorings of the idea over time" headlineLabel="IQ" columns={ideaColumns} />
-          )}
-        </div>
-      </Card>
+                    Export as CSV
+                  </Button>
+                )}
+              </>
+            }
+          />
+          <div className="mt-4">
+            {ideaColumns.length === 0 ? (
+              <EmptyState title="No idea has confirmed scores yet">
+                Once an idea&apos;s scores are confirmed, its IQ appears here. Score it again
+                later to see what changed.
+              </EmptyState>
+            ) : (
+              <Comparison caption="Scorings of the idea over time" headlineLabel="IQ" columns={ideaColumns} />
+            )}
+          </div>
+        </Card>
+      )}
     </div>
   );
 }

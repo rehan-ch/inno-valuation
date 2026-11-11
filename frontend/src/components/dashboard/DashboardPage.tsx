@@ -54,6 +54,8 @@ const TEAM_PREVIEW = 5;
 export function DashboardPage() {
   const { me } = useMe();
   const activeOrgId = me.active_organisation_id;
+  // Without the AI nothing about ideas or the IQ is shown, so it is not asked for either.
+  const aiEnabled = me.ai_enabled;
   const [state, setState] = useState<State>({ kind: "loading" });
   const [selecting, setSelecting] = useState(false);
   const [selectError, setSelectError] = useState<string | null>(null);
@@ -79,7 +81,7 @@ export function DashboardPage() {
           manage ? listInvitations() : Promise.resolve([]),
           manage ? listGrants() : Promise.resolve([]),
           listAssessments(),
-          listIdeas(),
+          aiEnabled ? listIdeas() : Promise.resolve([]),
           getDashboard(),
         ]);
         if (!cancelled) {
@@ -91,7 +93,7 @@ export function DashboardPage() {
             grants,
             assessments,
             ideas,
-            dashboard,
+            dashboard: aiEnabled ? dashboard : { ...dashboard, iq: null, ideas: [] },
           });
         }
       } catch (err) {
@@ -107,7 +109,7 @@ export function DashboardPage() {
     return () => {
       cancelled = true;
     };
-  }, [activeOrgId]);
+  }, [activeOrgId, aiEnabled]);
 
   const firstName = me.name.trim().split(/\s+/)[0] || me.name;
 
@@ -176,7 +178,7 @@ export function DashboardPage() {
           readinessFallback={
             <ReadinessCard latest={state.assessments[0]} manage={false} consultant />
           }
-          iqFallback={<IdeasCard ideas={state.ideas} canAdd={false} />}
+          iqFallback={aiEnabled ? <IdeasCard ideas={state.ideas} canAdd={false} /> : null}
         />
         <Card>
           <CardTitle>Your consulting access</CardTitle>
@@ -234,7 +236,7 @@ export function DashboardPage() {
         onSelectIdea={(id) => void selectIdea(id)}
         selecting={selecting}
         readinessFallback={<ReadinessCard latest={state.assessments[0]} manage={manage} />}
-        iqFallback={<IdeasCard ideas={state.ideas} canAdd={canAdd} />}
+        iqFallback={aiEnabled ? <IdeasCard ideas={state.ideas} canAdd={canAdd} /> : null}
       />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -272,12 +274,14 @@ export function DashboardPage() {
                   hint="Your team answers 60 questions and agrees a score out of 300."
                   href="/readiness"
                 />
-                <Step
-                  done={state.ideas.some((i) => i.status === "assessed")}
-                  label="Score your first idea"
-                  hint="The AI proposes a score per dimension; the idea's owner confirms. The IQ is out of 100."
-                  href="/ideas"
-                />
+                {aiEnabled && (
+                  <Step
+                    done={state.ideas.some((i) => i.status === "assessed")}
+                    label="Score your first idea"
+                    hint="The AI proposes a score per dimension; the idea's owner confirms. The IQ is out of 100."
+                    href="/ideas"
+                  />
+                )}
               </ol>
             </Card>
           )}

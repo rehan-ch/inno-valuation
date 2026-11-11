@@ -102,14 +102,16 @@ export function TargetsPage() {
   if (state.kind === "loading") return <Loading>Loading the targets...</Loading>;
   if (state.kind === "error") return <Alert tone="error">{state.message}</Alert>;
 
-  const { targets, history, dashboard } = state;
+  const { targets, dashboard, history: allHistory } = state;
+  // Idea targets are hidden without the AI, and so are their earlier changes.
+  const history = me.ai_enabled ? allHistory : allHistory.filter((c) => c.scale !== "iq");
   const names = new Map(targets.readiness.targets.map((t) => [t.key, t.name]));
 
   /** After a save: the new targets, and the gaps and history the server now reports. */
   async function saved(next: TargetsOut, message: string) {
     const savedFor = activeOrgId;
     const [freshHistory, freshDashboard] = await Promise.all([
-      getTargetsHistory().catch(() => history),
+      getTargetsHistory().catch(() => allHistory),
       getDashboard(dashboard.iq?.idea_id).catch(() => dashboard),
     ]);
     if (showing.current !== savedFor) return;
@@ -128,7 +130,9 @@ export function TargetsPage() {
         <Alert tone="info">Owners and admins set the targets. You can see them here.</Alert>
       )}
 
-      <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-2">
+      <div
+        className={`grid grid-cols-1 items-start gap-6${me.ai_enabled ? " xl:grid-cols-2" : ""}`}
+      >
         <ScaleForm
           key={`readiness-${targets.readiness.set_at ?? "none"}`}
           title="Readiness targets"
@@ -140,19 +144,21 @@ export function TargetsPage() {
           emptyCurrent="No final readiness result yet."
           onSaved={(next) => saved(next, "Readiness targets saved.")}
         />
-        <ScaleForm
-          key={`iq-${targets.iq.set_at ?? "none"}`}
-          title="Idea targets"
-          description={`What you want every idea to reach. Each dimension scores ${targets.iq.minimum} to ${targets.iq.maximum}.${
-            dashboard.iq ? ` Shown against "${dashboard.iq.idea_title}", the idea scored last.` : ""
-          }`}
-          scale={targets.iq}
-          canChange={targets.can_change}
-          compass={dashboard.iq?.compass ?? null}
-          currentLabel="Latest idea"
-          emptyCurrent="No idea has confirmed scores yet."
-          onSaved={(next) => saved(next, "Idea targets saved.")}
-        />
+        {me.ai_enabled && (
+          <ScaleForm
+            key={`iq-${targets.iq.set_at ?? "none"}`}
+            title="Idea targets"
+            description={`What you want every idea to reach. Each dimension scores ${targets.iq.minimum} to ${targets.iq.maximum}.${
+              dashboard.iq ? ` Shown against "${dashboard.iq.idea_title}", the idea scored last.` : ""
+            }`}
+            scale={targets.iq}
+            canChange={targets.can_change}
+            compass={dashboard.iq?.compass ?? null}
+            currentLabel="Latest idea"
+            emptyCurrent="No idea has confirmed scores yet."
+            onSaved={(next) => saved(next, "Idea targets saved.")}
+          />
+        )}
       </div>
 
       <Card>

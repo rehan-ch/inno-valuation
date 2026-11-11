@@ -2178,6 +2178,8 @@ export interface components {
         MeOut: {
             /** Active Organisation Id */
             active_organisation_id: string | null;
+            /** Ai Enabled */
+            ai_enabled: boolean;
             /** Consultant Organisations */
             consultant_organisations: components["schemas"]["ConsultantOrganisationOut"][];
             /** Email */

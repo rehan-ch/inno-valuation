@@ -92,6 +92,7 @@ export function fakeMe(overrides: Partial<MeOut> = {}): MeOut {
       },
     ],
     consultant_organisations: [],
+    ai_enabled: true,
     ...overrides,
   };
 }
