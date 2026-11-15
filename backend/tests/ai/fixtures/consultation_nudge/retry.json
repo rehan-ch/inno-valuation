@@ -1,0 +1,133 @@
+{
+  "about": "Retry: the first answer suggests a consultation without naming a dimension; the second names them.",
+  "subject": "readiness",
+  "organisation": {
+    "name": "Harbour Foods",
+    "industry": "Food retail",
+    "size_band": "51-200",
+    "country": "GB"
+  },
+  "answers": {
+    "customer_journey_1": 4,
+    "customer_journey_2": 4,
+    "customer_journey_3": 4,
+    "customer_journey_4": 4,
+    "customer_journey_5": 4,
+    "brand_magnetism_1": 4,
+    "brand_magnetism_2": 4,
+    "brand_magnetism_3": 4,
+    "brand_magnetism_4": 4,
+    "brand_magnetism_5": 4,
+    "channel_navigation_1": 3,
+    "channel_navigation_2": 3,
+    "channel_navigation_3": 3,
+    "channel_navigation_4": 3,
+    "channel_navigation_5": 3,
+    "service_excellence_1": 3,
+    "service_excellence_2": 3,
+    "service_excellence_3": 3,
+    "service_excellence_4": 3,
+    "service_excellence_5": 3,
+    "product_evolution_1": 3,
+    "product_evolution_2": 3,
+    "product_evolution_3": 3,
+    "product_evolution_4": 3,
+    "product_evolution_5": 3,
+    "operational_efficiency_1": 3,
+    "operational_efficiency_2": 3,
+    "operational_efficiency_3": 3,
+    "operational_efficiency_4": 3,
+    "operational_efficiency_5": 3,
+    "organizational_agility_1": 3,
+    "organizational_agility_2": 3,
+    "organizational_agility_3": 3,
+    "organizational_agility_4": 3,
+    "organizational_agility_5": 3,
+    "collaborative_synergy_1": 3,
+    "collaborative_synergy_2": 3,
+    "collaborative_synergy_3": 3,
+    "collaborative_synergy_4": 3,
+    "collaborative_synergy_5": 3,
+    "value_creation_engine_1": 3,
+    "value_creation_engine_2": 3,
+    "value_creation_engine_3": 3,
+    "value_creation_engine_4": 3,
+    "value_creation_engine_5": 3,
+    "sustainable_future_1": 3,
+    "sustainable_future_2": 3,
+    "sustainable_future_3": 3,
+    "sustainable_future_4": 3,
+    "sustainable_future_5": 3,
+    "data_intelligence_1": 3,
+    "data_intelligence_2": 3,
+    "data_intelligence_3": 3,
+    "data_intelligence_4": 3,
+    "data_intelligence_5": 3,
+    "financial_imperative_1": 3,
+    "financial_imperative_2": 3,
+    "financial_imperative_3": 3,
+    "financial_imperative_4": 3,
+    "financial_imperative_5": 3
+  },
+  "targets": {
+    "customer_journey": 23
+  },
+  "expect_keys": {
+    "priorities": [
+      "channel_navigation",
+      "service_excellence",
+      "product_evolution",
+      "operational_efficiency",
+      "organizational_agility"
+    ],
+    "focus": [
+      "channel_navigation",
+      "service_excellence",
+      "product_evolution",
+      "operational_efficiency",
+      "organizational_agility",
+      "customer_journey"
+    ]
+  },
+  "replies": [
+    {
+      "output": {
+        "suggest": true,
+        "message": [
+          "Several areas sit well below where you want them to be.",
+          "A consultation could help you decide where to start."
+        ],
+        "reasons": []
+      },
+      "request_id": "req_retry_1"
+    },
+    {
+      "output": {
+        "suggest": true,
+        "message": [
+          "Several areas sit well below where you want them to be.",
+          "A consultation could help you decide where to start."
+        ],
+        "reasons": [
+          {
+            "dimension_key": "channel_navigation",
+            "reason": "Channel Navigation is well short of where it needs to be."
+          },
+          {
+            "dimension_key": "service_excellence",
+            "reason": "Service Excellence is well short of where it needs to be."
+          },
+          {
+            "dimension_key": "product_evolution",
+            "reason": "Product Evolution is well short of where it needs to be."
+          }
+        ]
+      },
+      "request_id": "req_retry_2"
+    }
+  ],
+  "expect": {
+    "status": "succeeded",
+    "attempts": 2
+  }
+}

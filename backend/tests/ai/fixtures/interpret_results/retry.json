@@ -1,0 +1,304 @@
+{
+  "about": "Retry: the first answer leaves out one dimension; the second explains every dimension once.",
+  "subject": "readiness",
+  "organisation": {
+    "name": "Harbour Foods",
+    "industry": "Food retail",
+    "size_band": "51-200",
+    "country": "GB"
+  },
+  "answers": {
+    "customer_journey_1": 4,
+    "customer_journey_2": 4,
+    "customer_journey_3": 4,
+    "customer_journey_4": 4,
+    "customer_journey_5": 4,
+    "brand_magnetism_1": 4,
+    "brand_magnetism_2": 4,
+    "brand_magnetism_3": 4,
+    "brand_magnetism_4": 4,
+    "brand_magnetism_5": 4,
+    "channel_navigation_1": 3,
+    "channel_navigation_2": 3,
+    "channel_navigation_3": 3,
+    "channel_navigation_4": 3,
+    "channel_navigation_5": 3,
+    "service_excellence_1": 3,
+    "service_excellence_2": 3,
+    "service_excellence_3": 3,
+    "service_excellence_4": 3,
+    "service_excellence_5": 3,
+    "product_evolution_1": 3,
+    "product_evolution_2": 3,
+    "product_evolution_3": 3,
+    "product_evolution_4": 3,
+    "product_evolution_5": 3,
+    "operational_efficiency_1": 3,
+    "operational_efficiency_2": 3,
+    "operational_efficiency_3": 3,
+    "operational_efficiency_4": 3,
+    "operational_efficiency_5": 3,
+    "organizational_agility_1": 3,
+    "organizational_agility_2": 3,
+    "organizational_agility_3": 3,
+    "organizational_agility_4": 3,
+    "organizational_agility_5": 3,
+    "collaborative_synergy_1": 3,
+    "collaborative_synergy_2": 3,
+    "collaborative_synergy_3": 3,
+    "collaborative_synergy_4": 3,
+    "collaborative_synergy_5": 3,
+    "value_creation_engine_1": 3,
+    "value_creation_engine_2": 3,
+    "value_creation_engine_3": 3,
+    "value_creation_engine_4": 3,
+    "value_creation_engine_5": 3,
+    "sustainable_future_1": 3,
+    "sustainable_future_2": 3,
+    "sustainable_future_3": 3,
+    "sustainable_future_4": 3,
+    "sustainable_future_5": 3,
+    "data_intelligence_1": 3,
+    "data_intelligence_2": 3,
+    "data_intelligence_3": 3,
+    "data_intelligence_4": 3,
+    "data_intelligence_5": 3,
+    "financial_imperative_1": 3,
+    "financial_imperative_2": 3,
+    "financial_imperative_3": 3,
+    "financial_imperative_4": 3,
+    "financial_imperative_5": 3
+  },
+  "targets": {
+    "customer_journey": 23
+  },
+  "expect_keys": {
+    "priorities": [
+      "channel_navigation",
+      "service_excellence",
+      "product_evolution",
+      "operational_efficiency",
+      "organizational_agility"
+    ],
+    "focus": [
+      "channel_navigation",
+      "service_excellence",
+      "product_evolution",
+      "operational_efficiency",
+      "organizational_agility",
+      "customer_journey"
+    ]
+  },
+  "replies": [
+    {
+      "output": {
+        "summary": [
+          "The result shows a sound base with a few clear areas to work on.",
+          "The weaker dimensions sit close together, so steady work on them should lift the whole picture."
+        ],
+        "dimensions": [
+          {
+            "dimension_key": "customer_journey",
+            "meaning": "Customer Journey is in a workable place and can be built on.",
+            "strengths": [
+              "The basics of Customer Journey appear to be in place."
+            ],
+            "gaps": []
+          },
+          {
+            "dimension_key": "brand_magnetism",
+            "meaning": "Brand Magnetism is in a workable place and can be built on.",
+            "strengths": [
+              "The basics of Brand Magnetism appear to be in place."
+            ],
+            "gaps": []
+          },
+          {
+            "dimension_key": "channel_navigation",
+            "meaning": "Channel Navigation is among the lowest areas, so it deserves early attention.",
+            "strengths": [],
+            "gaps": [
+              "The parts of Channel Navigation are not yet handled in a consistent way."
+            ]
+          },
+          {
+            "dimension_key": "service_excellence",
+            "meaning": "Service Excellence is among the lowest areas, so it deserves early attention.",
+            "strengths": [],
+            "gaps": [
+              "The parts of Service Excellence are not yet handled in a consistent way."
+            ]
+          },
+          {
+            "dimension_key": "product_evolution",
+            "meaning": "Product Evolution is among the lowest areas, so it deserves early attention.",
+            "strengths": [],
+            "gaps": [
+              "The parts of Product Evolution are not yet handled in a consistent way."
+            ]
+          },
+          {
+            "dimension_key": "operational_efficiency",
+            "meaning": "Operational Efficiency is among the lowest areas, so it deserves early attention.",
+            "strengths": [],
+            "gaps": [
+              "The parts of Operational Efficiency are not yet handled in a consistent way."
+            ]
+          },
+          {
+            "dimension_key": "organizational_agility",
+            "meaning": "Organizational Agility is among the lowest areas, so it deserves early attention.",
+            "strengths": [],
+            "gaps": [
+              "The parts of Organizational Agility are not yet handled in a consistent way."
+            ]
+          },
+          {
+            "dimension_key": "collaborative_synergy",
+            "meaning": "Collaborative Synergy is in a workable place and can be built on.",
+            "strengths": [
+              "The basics of Collaborative Synergy appear to be in place."
+            ],
+            "gaps": []
+          },
+          {
+            "dimension_key": "value_creation_engine",
+            "meaning": "Value Creation Engine is in a workable place and can be built on.",
+            "strengths": [
+              "The basics of Value Creation Engine appear to be in place."
+            ],
+            "gaps": []
+          },
+          {
+            "dimension_key": "sustainable_future",
+            "meaning": "Sustainable Future is in a workable place and can be built on.",
+            "strengths": [
+              "The basics of Sustainable Future appear to be in place."
+            ],
+            "gaps": []
+          },
+          {
+            "dimension_key": "data_intelligence",
+            "meaning": "Data Intelligence is in a workable place and can be built on.",
+            "strengths": [
+              "The basics of Data Intelligence appear to be in place."
+            ],
+            "gaps": []
+          }
+        ]
+      },
+      "request_id": "req_retry_1"
+    },
+    {
+      "output": {
+        "summary": [
+          "The result shows a sound base with a few clear areas to work on.",
+          "The weaker dimensions sit close together, so steady work on them should lift the whole picture."
+        ],
+        "dimensions": [
+          {
+            "dimension_key": "customer_journey",
+            "meaning": "Customer Journey is in a workable place and can be built on.",
+            "strengths": [
+              "The basics of Customer Journey appear to be in place."
+            ],
+            "gaps": []
+          },
+          {
+            "dimension_key": "brand_magnetism",
+            "meaning": "Brand Magnetism is in a workable place and can be built on.",
+            "strengths": [
+              "The basics of Brand Magnetism appear to be in place."
+            ],
+            "gaps": []
+          },
+          {
+            "dimension_key": "channel_navigation",
+            "meaning": "Channel Navigation is among the lowest areas, so it deserves early attention.",
+            "strengths": [],
+            "gaps": [
+              "The parts of Channel Navigation are not yet handled in a consistent way."
+            ]
+          },
+          {
+            "dimension_key": "service_excellence",
+            "meaning": "Service Excellence is among the lowest areas, so it deserves early attention.",
+            "strengths": [],
+            "gaps": [
+              "The parts of Service Excellence are not yet handled in a consistent way."
+            ]
+          },
+          {
+            "dimension_key": "product_evolution",
+            "meaning": "Product Evolution is among the lowest areas, so it deserves early attention.",
+            "strengths": [],
+            "gaps": [
+              "The parts of Product Evolution are not yet handled in a consistent way."
+            ]
+          },
+          {
+            "dimension_key": "operational_efficiency",
+            "meaning": "Operational Efficiency is among the lowest areas, so it deserves early attention.",
+            "strengths": [],
+            "gaps": [
+              "The parts of Operational Efficiency are not yet handled in a consistent way."
+            ]
+          },
+          {
+            "dimension_key": "organizational_agility",
+            "meaning": "Organizational Agility is among the lowest areas, so it deserves early attention.",
+            "strengths": [],
+            "gaps": [
+              "The parts of Organizational Agility are not yet handled in a consistent way."
+            ]
+          },
+          {
+            "dimension_key": "collaborative_synergy",
+            "meaning": "Collaborative Synergy is in a workable place and can be built on.",
+            "strengths": [
+              "The basics of Collaborative Synergy appear to be in place."
+            ],
+            "gaps": []
+          },
+          {
+            "dimension_key": "value_creation_engine",
+            "meaning": "Value Creation Engine is in a workable place and can be built on.",
+            "strengths": [
+              "The basics of Value Creation Engine appear to be in place."
+            ],
+            "gaps": []
+          },
+          {
+            "dimension_key": "sustainable_future",
+            "meaning": "Sustainable Future is in a workable place and can be built on.",
+            "strengths": [
+              "The basics of Sustainable Future appear to be in place."
+            ],
+            "gaps": []
+          },
+          {
+            "dimension_key": "data_intelligence",
+            "meaning": "Data Intelligence is in a workable place and can be built on.",
+            "strengths": [
+              "The basics of Data Intelligence appear to be in place."
+            ],
+            "gaps": []
+          },
+          {
+            "dimension_key": "financial_imperative",
+            "meaning": "Financial Imperative is in a workable place and can be built on.",
+            "strengths": [
+              "The basics of Financial Imperative appear to be in place."
+            ],
+            "gaps": []
+          }
+        ]
+      },
+      "request_id": "req_retry_2"
+    }
+  ],
+  "expect": {
+    "status": "succeeded",
+    "attempts": 2
+  }
+}

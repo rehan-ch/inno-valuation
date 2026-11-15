@@ -45,6 +45,7 @@ class AuditAction(StrEnum):
     IQ_CONFIRMED = "iq.confirmed"
     WEIGHTS_CHANGED = "weights.changed"
     TARGETS_CHANGED = "targets.changed"
+    ADVICE_REQUESTED = "advice.requested"
 
 
 def record(

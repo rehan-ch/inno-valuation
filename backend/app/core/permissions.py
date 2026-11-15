@@ -47,6 +47,7 @@ class Permission(StrEnum):
     MANAGE_IDEAS = "ideas.manage"  # edit, submit, confirm or archive anyone's idea
     MANAGE_WEIGHTS = "weights.manage"  # dimension importance (orders tied priorities only)
     MANAGE_TARGETS = "targets.manage"  # target scores per dimension (change no score)
+    REQUEST_ADVICE = "advice.request"  # ask the AI for advice on a result one may see
     VIEW_AUDIT = "audit.view"  # the organisation's activity log, read-only
 
 
@@ -59,7 +60,11 @@ _VIEW: Final = frozenset(
         Permission.VIEW_IDEAS,
     }
 )
-_PARTICIPATE: Final = _VIEW | {Permission.ANSWER_ASSESSMENT, Permission.CREATE_IDEAS}
+_PARTICIPATE: Final = _VIEW | {
+    Permission.ANSWER_ASSESSMENT,
+    Permission.CREATE_IDEAS,
+    Permission.REQUEST_ADVICE,
+}
 
 # What anyone may still do in an archived organisation (view-only until the archive
 # feature exists; see docs/decisions.md 2026-10-13).

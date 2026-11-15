@@ -1,0 +1,185 @@
+{
+  "about": "Typical: one recommendation per priority, the method's next steps returned unchanged.",
+  "subject": "readiness",
+  "organisation": {
+    "name": "Harbour Foods",
+    "industry": "Food retail",
+    "size_band": "51-200",
+    "country": "GB"
+  },
+  "answers": {
+    "customer_journey_1": 4,
+    "customer_journey_2": 4,
+    "customer_journey_3": 4,
+    "customer_journey_4": 4,
+    "customer_journey_5": 4,
+    "brand_magnetism_1": 4,
+    "brand_magnetism_2": 4,
+    "brand_magnetism_3": 4,
+    "brand_magnetism_4": 4,
+    "brand_magnetism_5": 4,
+    "channel_navigation_1": 3,
+    "channel_navigation_2": 3,
+    "channel_navigation_3": 3,
+    "channel_navigation_4": 3,
+    "channel_navigation_5": 3,
+    "service_excellence_1": 3,
+    "service_excellence_2": 3,
+    "service_excellence_3": 3,
+    "service_excellence_4": 3,
+    "service_excellence_5": 3,
+    "product_evolution_1": 3,
+    "product_evolution_2": 3,
+    "product_evolution_3": 3,
+    "product_evolution_4": 3,
+    "product_evolution_5": 3,
+    "operational_efficiency_1": 3,
+    "operational_efficiency_2": 3,
+    "operational_efficiency_3": 3,
+    "operational_efficiency_4": 3,
+    "operational_efficiency_5": 3,
+    "organizational_agility_1": 3,
+    "organizational_agility_2": 3,
+    "organizational_agility_3": 3,
+    "organizational_agility_4": 3,
+    "organizational_agility_5": 3,
+    "collaborative_synergy_1": 3,
+    "collaborative_synergy_2": 3,
+    "collaborative_synergy_3": 3,
+    "collaborative_synergy_4": 3,
+    "collaborative_synergy_5": 3,
+    "value_creation_engine_1": 3,
+    "value_creation_engine_2": 3,
+    "value_creation_engine_3": 3,
+    "value_creation_engine_4": 3,
+    "value_creation_engine_5": 3,
+    "sustainable_future_1": 3,
+    "sustainable_future_2": 3,
+    "sustainable_future_3": 3,
+    "sustainable_future_4": 3,
+    "sustainable_future_5": 3,
+    "data_intelligence_1": 3,
+    "data_intelligence_2": 3,
+    "data_intelligence_3": 3,
+    "data_intelligence_4": 3,
+    "data_intelligence_5": 3,
+    "financial_imperative_1": 3,
+    "financial_imperative_2": 3,
+    "financial_imperative_3": 3,
+    "financial_imperative_4": 3,
+    "financial_imperative_5": 3
+  },
+  "targets": {
+    "customer_journey": 23
+  },
+  "expect_keys": {
+    "priorities": [
+      "channel_navigation",
+      "service_excellence",
+      "product_evolution",
+      "operational_efficiency",
+      "organizational_agility"
+    ],
+    "focus": [
+      "channel_navigation",
+      "service_excellence",
+      "product_evolution",
+      "operational_efficiency",
+      "organizational_agility",
+      "customer_journey"
+    ]
+  },
+  "replies": [
+    {
+      "output": {
+        "recommendations": [
+          {
+            "dimension_key": "channel_navigation",
+            "fixed_text": "Map out and optimize key touchpoints, and integrate data platforms for a seamless omnichannel experience.",
+            "initiatives": [
+              "Run a short review of Channel Navigation with the teams involved.",
+              "Start one pilot that improves the weakest part of Channel Navigation."
+            ],
+            "kpis": [
+              "Share of planned Channel Navigation improvements that are finished each quarter.",
+              "Feedback from staff and customers on Channel Navigation, gathered the same way each time."
+            ],
+            "timeline": "Review in the first month, pilot in the next two, then decide what to roll out.",
+            "resources": [
+              "One owner for Channel Navigation and a few hours a week from each team involved."
+            ]
+          },
+          {
+            "dimension_key": "service_excellence",
+            "fixed_text": "Focus on expanding service accessibility, integrating customer data, and adopting technologies like AI for better speed and reliability.",
+            "initiatives": [
+              "Run a short review of Service Excellence with the teams involved.",
+              "Start one pilot that improves the weakest part of Service Excellence."
+            ],
+            "kpis": [
+              "Share of planned Service Excellence improvements that are finished each quarter.",
+              "Feedback from staff and customers on Service Excellence, gathered the same way each time."
+            ],
+            "timeline": "Review in the first month, pilot in the next two, then decide what to roll out.",
+            "resources": [
+              "One owner for Service Excellence and a few hours a week from each team involved."
+            ]
+          },
+          {
+            "dimension_key": "product_evolution",
+            "fixed_text": "Conduct customer-focused R&D and adopt agile development practices to innovate products faster and effectively.",
+            "initiatives": [
+              "Run a short review of Product Evolution with the teams involved.",
+              "Start one pilot that improves the weakest part of Product Evolution."
+            ],
+            "kpis": [
+              "Share of planned Product Evolution improvements that are finished each quarter.",
+              "Feedback from staff and customers on Product Evolution, gathered the same way each time."
+            ],
+            "timeline": "Review in the first month, pilot in the next two, then decide what to roll out.",
+            "resources": [
+              "One owner for Product Evolution and a few hours a week from each team involved."
+            ]
+          },
+          {
+            "dimension_key": "operational_efficiency",
+            "fixed_text": "Automate repetitive processes and strengthen flexibility and quality control for operational consistency.",
+            "initiatives": [
+              "Run a short review of Operational Efficiency with the teams involved.",
+              "Start one pilot that improves the weakest part of Operational Efficiency."
+            ],
+            "kpis": [
+              "Share of planned Operational Efficiency improvements that are finished each quarter.",
+              "Feedback from staff and customers on Operational Efficiency, gathered the same way each time."
+            ],
+            "timeline": "Review in the first month, pilot in the next two, then decide what to roll out.",
+            "resources": [
+              "One owner for Operational Efficiency and a few hours a week from each team involved."
+            ]
+          },
+          {
+            "dimension_key": "organizational_agility",
+            "fixed_text": "Empower decision-making at all levels and develop an agile-focused culture backed by tools and training.",
+            "initiatives": [
+              "Run a short review of Organizational Agility with the teams involved.",
+              "Start one pilot that improves the weakest part of Organizational Agility."
+            ],
+            "kpis": [
+              "Share of planned Organizational Agility improvements that are finished each quarter.",
+              "Feedback from staff and customers on Organizational Agility, gathered the same way each time."
+            ],
+            "timeline": "Review in the first month, pilot in the next two, then decide what to roll out.",
+            "resources": [
+              "One owner for Organizational Agility and a few hours a week from each team involved."
+            ]
+          }
+        ]
+      },
+      "request_id": "req_typical_1"
+    }
+  ],
+  "expect": {
+    "status": "succeeded",
+    "attempts": 1
+  }
+}
