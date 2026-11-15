@@ -110,6 +110,14 @@ class AiTouchpoint(StrEnum):
     CONSULTATION_NUDGE = "consultation_nudge"
 
 
+class AdviceSubject(StrEnum):
+    """What a piece of AI advice is about: one final readiness result or one confirmed IQ
+    assessment. The two scores are never mixed (spec 4), so advice is always about one."""
+
+    READINESS_RESULT = "readiness_result"  # subject id: the readiness assessment
+    IQ_ASSESSMENT = "iq_assessment"  # subject id: the IQ assessment
+
+
 class AiRunStatus(StrEnum):
     """One AI run, left to right: queued, running, then succeeded or failed for good."""
 

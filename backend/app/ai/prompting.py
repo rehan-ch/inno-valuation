@@ -21,6 +21,7 @@ from jinja2 import Environment, FileSystemLoader, StrictUndefined
 
 PROMPTS_DIR: Final = Path(__file__).resolve().parent / "prompts"
 
+_INCLUDE: Final = re.compile(r"""\{%-?\s*include\s+["']([^"']+)["']""")
 _VERSION: Final = re.compile(r"\A\{#-?\s*prompt_version:\s*(\S+)")
 _DATA_NAME: Final = re.compile(r"\A[a-z][a-z0-9_]*\Z")
 
@@ -62,10 +63,14 @@ def prompt_version(key: str) -> str:
 
 
 def template_digest(key: str) -> str:
-    """SHA-256 of the template and every shared partial (``_*.md``) it may include."""
-    digest = hashlib.sha256(_source(key).encode())
+    """SHA-256 of the template, every shared partial (``_*.md``) it may include, and each
+    file under ``partials/`` it names in an ``include``."""
+    source = _source(key)
+    digest = hashlib.sha256(source.encode())
     for partial in sorted(PROMPTS_DIR.glob("_*.md")):
         digest.update(partial.read_bytes())
+    for name in sorted({n for n in _INCLUDE.findall(source) if n.startswith("partials/")}):
+        digest.update((PROMPTS_DIR / name).read_bytes())
     return digest.hexdigest()
 
 

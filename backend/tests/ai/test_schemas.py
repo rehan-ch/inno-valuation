@@ -10,11 +10,22 @@ import pytest
 from pydantic import BaseModel, ValidationError
 
 import app.ai.schemas
-from app.ai.runner import OutputRejectedError
+from app.ai.runner import OutputRejectedError, parse_output
+from app.ai.schemas.bridge_gaps import BridgeGapsOutput
 from app.ai.schemas.common import AiOutput
+from app.ai.schemas.consultation_nudge import ConsultationNudgeOutput
 from app.ai.schemas.explain_question import ExplainQuestionOutput
+from app.ai.schemas.interpret_results import InterpretResultsOutput
 from app.ai.schemas.propose_iq_scores import ProposeIqScoresOutput
-from app.ai.touchpoints import propose_iq_scores
+from app.ai.schemas.recommendations import RecommendationsOutput
+from app.ai.touchpoints import (
+    bridge_gaps,
+    consultation_nudge,
+    interpret_results,
+    propose_iq_scores,
+    recommendations,
+    results,
+)
 from app.models import AiRun
 from app.scoring.question_set import QUESTION_SET
 
@@ -173,3 +184,228 @@ def test_the_touchpoint_wants_every_dimension_of_its_question_set() -> None:
         spec.check(ProposeIqScoresOutput.model_validate(data))
     scores = spec.output_schema["properties"]["scores"]
     assert (scores["minItems"], scores["maxItems"]) == (12, 12)
+
+
+# Touchpoints 4, 5, 6 and 8: advice
+
+
+def _run(keys: list[str]) -> AiRun:
+    return AiRun(
+        subject_id=results.subject_id(QUESTION_SET.version, uuid.uuid4()), params={"keys": keys}
+    )
+
+
+KEYS = list(QUESTION_SET.dimension_keys)
+FIVE = KEYS[:5]
+
+
+def _interpretation() -> dict[str, Any]:
+    return {
+        "summary": ["The result shows a sound base.", "A few areas need steady work."],
+        "dimensions": [
+            {
+                "dimension_key": key,
+                "meaning": "This area is in a workable place.",
+                "strengths": ["The basics are in place."],
+                "gaps": [],
+            }
+            for key in KEYS
+        ],
+    }
+
+
+def _actions() -> dict[str, Any]:
+    return {
+        "dimensions": [
+            {"dimension_key": key, "actions": ["Name one owner for this area."] * 3} for key in FIVE
+        ]
+    }
+
+
+def _recommendations() -> dict[str, Any]:
+    return {
+        "recommendations": [
+            {
+                "dimension_key": key,
+                "fixed_text": QUESTION_SET.dimension(key).next_steps,
+                "initiatives": ["Run a short review.", "Start one small pilot."],
+                "kpis": ["Share of planned work finished.", "Feedback gathered each quarter."],
+                "timeline": "Review first, then pilot, then decide.",
+                "resources": ["One owner and a few hours a week."],
+            }
+            for key in FIVE
+        ]
+    }
+
+
+def _nudge() -> dict[str, Any]:
+    return {
+        "suggest": True,
+        "message": ["Several areas sit well below where you want them."],
+        "reasons": [{"dimension_key": FIVE[0], "reason": "This area is well short of its target."}],
+    }
+
+
+def test_every_advice_schema_is_found() -> None:
+    assert {
+        InterpretResultsOutput,
+        BridgeGapsOutput,
+        RecommendationsOutput,
+        ConsultationNudgeOutput,
+    } <= set(_output_models())
+
+
+@pytest.mark.parametrize(
+    ("model", "valid"),
+    [
+        (InterpretResultsOutput, _interpretation),
+        (BridgeGapsOutput, _actions),
+        (RecommendationsOutput, _recommendations),
+        (ConsultationNudgeOutput, _nudge),
+    ],
+    ids=lambda v: getattr(v, "__name__", ""),
+)
+def test_valid_advice_passes_and_a_total_is_refused(model: type[BaseModel], valid: Any) -> None:
+    model.model_validate(valid())
+    with pytest.raises(ValidationError, match="Extra inputs"):
+        model.model_validate({**valid(), "total": 190})
+
+
+@pytest.mark.parametrize(
+    ("change", "message"),
+    [
+        (lambda o: o["summary"].__setitem__(0, "The total is 190 out of 300."), "number"),
+        (lambda o: o["dimensions"][0].update(meaning="This scores 15 out of 25."), "number"),
+        (lambda o: o["dimensions"][0].update(gaps=["Only 2 of the parts are covered."]), "number"),
+        (lambda o: o["dimensions"][0].update(strengths=["Good."] * 1), "at least 10"),
+        (lambda o: o["dimensions"][0].update(gaps=["A gap that is real."] * 4), "at most 3"),
+        (lambda o: o["dimensions"][1].update(dimension_key=KEYS[0]), "only once"),
+        (lambda o: o["dimensions"][0].update(dimension_key="made_up"), "not a dimension key"),
+        (lambda o: o["dimensions"][0].update(score=15), "Extra inputs"),
+        (lambda o: o["summary"].__setitem__(0, "We guarantee a strong result."), "guarantee"),
+        (lambda o: o.update(summary=["Only one sentence here."]), "at least 2"),
+    ],
+)
+def test_bad_interpretations_are_refused(change: Any, message: str) -> None:
+    data = _interpretation()
+    change(data)
+    with pytest.raises(ValidationError, match=message):
+        InterpretResultsOutput.model_validate(data)
+
+
+@pytest.mark.parametrize(
+    ("change", "message"),
+    [
+        (lambda o: o["dimensions"][0].update(actions=["Name one owner."] * 2), "at least 3"),
+        (lambda o: o["dimensions"][0].update(actions=["Name one owner."] * 6), "at most 5"),
+        (lambda o: o["dimensions"][1].update(dimension_key=FIVE[0]), "only once"),
+        (lambda o: o["dimensions"][0]["actions"].__setitem__(0, "Do this — at once."), "em dash"),
+        (
+            lambda o: o["dimensions"][0]["actions"].__setitem__(0, "This is guaranteed to work."),
+            "guarantee",
+        ),
+        (lambda o: o["dimensions"][0].update(target=20), "Extra inputs"),
+    ],
+)
+def test_bad_gap_actions_are_refused(change: Any, message: str) -> None:
+    data = _actions()
+    change(data)
+    with pytest.raises(ValidationError, match=message):
+        BridgeGapsOutput.model_validate(data)
+
+
+@pytest.mark.parametrize(
+    ("change", "message"),
+    [
+        (lambda o: o["recommendations"][0].update(initiatives=["Run a review."]), "at least 2"),
+        (lambda o: o["recommendations"][0].update(resources=[]), "at least 1"),
+        (lambda o: o["recommendations"][0].update(fixed_text=""), "at least 1"),
+        (lambda o: o["recommendations"][0].update(timeline="A guaranteed quick win."), "guarantee"),
+        (lambda o: o["recommendations"][1].update(dimension_key=FIVE[0]), "only once"),
+        (lambda o: o["recommendations"][0].update(priority=1), "Extra inputs"),
+    ],
+)
+def test_bad_recommendations_are_refused(change: Any, message: str) -> None:
+    data = _recommendations()
+    change(data)
+    with pytest.raises(ValidationError, match=message):
+        RecommendationsOutput.model_validate(data)
+
+
+@pytest.mark.parametrize(
+    ("change", "message"),
+    [
+        (lambda o: o.update(reasons=[]), "needs a message and at least one reason"),
+        (lambda o: o.update(message=[]), "needs a message and at least one reason"),
+        (lambda o: o.update(suggest=False), "no message and no reason"),
+        (lambda o: o.update(message=["We guarantee results if you book today."]), "guarantee"),
+        (lambda o: o["reasons"].append(dict(o["reasons"][0])), "only once"),
+        (lambda o: o.update(threshold=5), "Extra inputs"),
+    ],
+)
+def test_bad_consultation_suggestions_are_refused(change: Any, message: str) -> None:
+    data = _nudge()
+    change(data)
+    with pytest.raises(ValidationError, match=message):
+        ConsultationNudgeOutput.model_validate(data)
+
+
+def test_no_suggestion_is_a_valid_answer() -> None:
+    output = ConsultationNudgeOutput.model_validate(
+        {"suggest": False, "message": [], "reasons": []}
+    )
+    assert output.suggest is False
+
+
+def test_advice_is_checked_against_exactly_the_dimensions_asked_about() -> None:
+    spec = bridge_gaps.spec_for(_run(FIVE))
+    spec.check(BridgeGapsOutput.model_validate(_actions()))
+    short = _actions()
+    short["dimensions"].pop()
+    with pytest.raises(OutputRejectedError, match="exactly the dimensions asked about"):
+        spec.check(BridgeGapsOutput.model_validate(short))
+    other = _actions()
+    other["dimensions"][0]["dimension_key"] = KEYS[-1]
+    with pytest.raises(OutputRejectedError, match="exactly the dimensions asked about"):
+        spec.check(BridgeGapsOutput.model_validate(other))
+    listed = spec.output_schema["properties"]["dimensions"]
+    assert (listed["minItems"], listed["maxItems"]) == (5, 5)
+
+    every = interpret_results.spec_for(_run(KEYS))
+    every.check(InterpretResultsOutput.model_validate(_interpretation()))
+    with pytest.raises(OutputRejectedError, match="does not say which dimensions"):
+        interpret_results.spec_for(_run([]))
+    with pytest.raises(OutputRejectedError, match="does not say which dimensions"):
+        interpret_results.spec_for(_run(["made_up"]))
+
+
+def test_the_fixed_text_must_come_back_unchanged() -> None:
+    spec = recommendations.spec_for(_run(FIVE))
+    spec.check(RecommendationsOutput.model_validate(_recommendations()))
+    for changed in (lambda t: t + " ", lambda t: t.lower(), lambda t: t[:-1], lambda t: "Do more."):
+        data = _recommendations()
+        data["recommendations"][2]["fixed_text"] = changed(data["recommendations"][2]["fixed_text"])
+        with pytest.raises(OutputRejectedError, match="character for character") as raised:
+            spec.check(RecommendationsOutput.model_validate(data))
+        # The message is stored with the run: it names the dimension, never the text.
+        assert FIVE[2] in str(raised.value)
+        assert "Do more." not in str(raised.value)
+
+
+def test_a_consultation_reason_must_name_a_dimension_that_was_asked_about() -> None:
+    spec = consultation_nudge.spec_for(_run(FIVE))
+    spec.check(ConsultationNudgeOutput.model_validate(_nudge()))
+    data = _nudge()
+    data["reasons"][0]["dimension_key"] = KEYS[-1]
+    with pytest.raises(OutputRejectedError, match="one of the dimensions asked about"):
+        spec.check(ConsultationNudgeOutput.model_validate(data))
+
+
+@pytest.mark.parametrize(
+    "touchpoint",
+    [interpret_results, bridge_gaps, recommendations, consultation_nudge],
+    ids=lambda m: m.KEY.value,
+)
+def test_the_offline_sample_is_a_valid_answer(touchpoint: Any) -> None:
+    spec = touchpoint.spec_for(_run(KEYS if touchpoint is interpret_results else FIVE))
+    parse_output(spec, spec.offline_reply)

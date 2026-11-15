@@ -63,6 +63,9 @@ class AiRun(UuidPrimaryKey, CreatedAt, Base):
     prompt_version: Mapped[str] = mapped_column(String(50))
     system_prompt: Mapped[str] = mapped_column(Text)
     user_prompt: Mapped[str] = mapped_column(Text)
+    # What the touchpoint's check needs beyond the subject, fixed when the run is queued:
+    # for advice, the dimensions the prompt asked about. Never user text.
+    params: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
 
     # What came back. ``response_model`` is the model that answered, as the API reports
     # it (a refusal fallback can change it); "offline" for the development stand-in.

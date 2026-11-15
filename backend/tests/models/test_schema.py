@@ -20,6 +20,8 @@ CLIENT_TABLES = {
     "iq_dimension_scores",
     "dimension_weights",
     "dimension_targets",
+    "interpretations",
+    "recommendations",
 }
 
 
