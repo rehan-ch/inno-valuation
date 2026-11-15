@@ -94,3 +94,10 @@ export type TargetScale = Schemas["TargetScale"];
 export type AuditPageOut = Schemas["AuditPageOut"];
 export type AuditEventOut = Schemas["AuditEventOut"];
 export type AuditFiltersOut = Schemas["AuditFiltersOut"];
+
+export type AdviceOut = Schemas["AdviceOut"];
+export type AdviceRequestIn = Schemas["AdviceRequestIn"];
+export type AdvicePartName = NonNullable<AdviceRequestIn["parts"]>[number];
+export type AdvicePartStatus = AdviceOut["interpretation"]["status"];
+export type AdviceUsageOut = Schemas["UsageOut"];
+export type RecommendationOut = Schemas["RecommendationOut"];

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
+import { AdvicePanel } from "@/components/advice/AdvicePanel";
 import { Compass } from "@/components/compass/Compass";
 import { ScaleChoice } from "@/components/readiness/ScaleChoice";
 import { Alert } from "@/components/ui/Alert";
@@ -155,6 +156,7 @@ export function AssessmentPage({
       <div className="space-y-6">
         {header}
         <ResultView assessment={assessment} />
+        <AdvicePanel adviceRef={{ kind: "idea", ideaId, assessmentId: assessment.id }} />
       </div>
     );
   }
