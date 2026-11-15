@@ -5,7 +5,21 @@
 - Work happens on short-lived branches merged through pull requests; the pre-push hook refuses a direct push to `main`. The code is mirrored into Haroon's repository, which starts from one fresh commit; this repository keeps the full history. Personal files (`.claude/`, `CLAUDE.md`, agent notes) are excluded per clone by `bin/setup`; working material (`planning/`, `ask-amy/`, `reference/`, `files3/`, client documents) is in `.gitignore`.
 
 ## In progress
-Phase 5, dashboard and compass (branch `phase-5-dashboard`, PR 11 against `main`)
+Phase 6, AI advice (branch `phase-6-advice`, not pushed yet)
+- Done (P6.01): tables and reversible migration `0013_advice`: `interpretations` and `recommendations`, every row linked to the AI run that produced it and numbered by version; `ai_runs.params` records which dimensions a prompt asked about.
+- Done (P6.02): touchpoint 4 `interpret_results`: an overall summary and, for each of the 12 dimensions, its meaning, strengths and gaps. Words only: a check refuses any digit.
+- Done (P6.03): touchpoint 5 `bridge_gaps`: 3 to 5 actions for each of the engine's five priorities and for every other dimension whose target is above its score.
+- Done (P6.04): touchpoint 6 `recommendations`: one per priority dimension; Amy's next-step text comes back unchanged (checked character for character, proven by tests) and is stored and shown apart from the AI's initiatives, measures, timeline and resources. Each set is stored with a version. No advice may promise or guarantee a result.
+- Done (P6.05): touchpoint 8 `consultation_nudge`, switched on in `config/ai.yml`: the AI judges, with no threshold (Amy Q11), and names the dimensions behind a suggestion.
+- Done (P6.06): the advice panel on the readiness result and on an idea's confirmed scores, and each dimension's own advice on the dimension page. Every block is marked "Proposed by AI" and names its dimension; "Ask again" per part; out-of-date and failed states in words; usage figures (model, tokens, cost) for platform admins only. API: `GET` and `POST /api/v1/readiness/assessments/{id}/advice` and `/api/v1/ideas/{idea}/assessments/{id}/advice`. New permission `advice.request` (owner, admin, member, committee). Asking is recorded in the activity log.
+- Recorded cases for each of the four touchpoints: typical, sparse, adversarial, adversarial-obeyed and retry. They are hand-written in the model's output format until a key arrives.
+- Checks: backend 1,544 tests, ruff, mypy strict; frontend 192 tests, lint, typecheck, build.
+- Tried in the browser on the local stack with the demo company (signed in as the owner): reading advice on a readiness result, "Ask again" on one part, "Get AI advice" for an idea from a dimension page, and the failed state. The AI itself was not called: there is no key, so the finished advice on screen was test text put in for the check and removed afterwards, and every ask ended in the "could not write this" state. One fault found and fixed: the dimension page said "no advice about this dimension yet" when every part had failed. Phone and tablet widths were not checked in the browser this time.
+- Not built: comments on a recommendation (P6.04 "allow authorised comments"); the company context questions (P4.03), so recommendations use the general company details only.
+- Still to do for P6.07: methodology check and code review, push, pull request, merge. With a key: record real cases and read the advice for tone.
+- Details per decision in `docs/decisions.md` (2026-11-15).
+
+Phase 5, dashboard and compass (merged, PR 11; "hide what needs the AI while no key is set" merged, PR 12)
 - Done (P5.01): dashboard data API. `GET /api/v1/dashboard` returns the latest final readiness result (out of 300, with its band) and the selected idea's IQ (out of 100) as separate values, each with its compass and priorities; `?idea_id=` selects the idea, otherwise the most recently confirmed. Only final results and confirmed assessments are ever loaded. A request test proves no field combines the two scores.
 - Done (P5.02): two headline cards on the dashboard, Innovation Readiness and Innovation Quotient, with an idea picker; a side without a result keeps its "what to do next" card.
 - Done (P5.03): the 12-segment compass (`components/compass/Compass.tsx`): segments in book order grouped into the 3 categories with category scores, a legend, keyboard access (each segment is a link; the focused one shows in the middle), a table of the same numbers, targets as dashed marks, click-through to the dimension page. Idea segments take one of three steps of a single blue ramp by the level the server sent; readiness segments have one colour because the method has no per-dimension label (Q4). A test checks the component names no dimension, category, level or formula. It is on the dashboard, the readiness result and the idea result.
@@ -20,7 +34,7 @@ Phase 5, dashboard and compass (branch `phase-5-dashboard`, PR 11 against `main`
 - Done (P5.08, review): methodology check 0 BLOCK, 4 WARN; code review 8 findings, none on tenancy or permissions; all applied. The strengths choice and the readiness category maximum moved into the engine; the history table matches cells by dimension key; the dimension page reloads on an organisation switch; late answers after a switch are dropped; the dashboard loads only the latest readiness results; the activity log stays readable in an archived organisation, its export says when it was cut at 5,000 rows, and its name lookups are scoped to the organisation; `bin/seed-demo` no longer assumes development and refuses a database that is not on this machine.
 - Checks: backend 1,426 tests, ruff, mypy strict; frontend 181 tests, lint, typecheck, build.
 - Phone and tablet widths checked in the browser (390 and 768 wide, signed in as the demo owner): dashboard, compass, dimension page, targets, history, activity log, importance, readiness result, ideas list, idea, idea result, compare and team. One fault found and fixed: the ideas list made the whole page scroll sideways on a phone, because a hidden screen-reader label in the last column escaped the table's own scroll area; the shared table now contains it.
-- Still to do for P5.08: merge, and Amy tries the compass and dashboard. Not built: "send gaps to AI advice and reports" (Phases 6 and 7), the same compass in the PDF (Phase 7), checks in Safari and Firefox by hand. On a phone the header and navigation take three rows and stay at the top; a compact menu is a design choice to agree with the sign-in restyle.
+- Still to do for P5.08: Amy tries the compass and dashboard. Not built: gaps in the PDF report and the same compass in the PDF (Phase 7), checks in Safari and Firefox by hand. On a phone the header and navigation take three rows and stay at the top; a compact menu is a design choice to agree with the sign-in restyle.
 - Details per decision in `docs/decisions.md` (2026-11-10).
 
 Phase 4, ideas and IQ (merged, PR 8; review fixes merged, PR 9)
@@ -93,7 +107,8 @@ Phase 1
 - Q8: `backend/app/scoring/targets.py` (per dimension, both scales).
 - Q10: `backend/app/ai/touchpoints/explain_question.py` `COMPANY_FIELDS` (only industry, size and country go to the AI provider).
 - Q17: `frontend/src/app/globals.css` (the compass blue and emerald as the brand hues, pending Amy's approval; the rest of the design system is settled, see decisions 2026-10-27).
-- Q11: `backend/config/ai.yml` (consultation nudge off until touchpoint 8 is built; Q11 itself is decided).
+- Consultation suggestion without a target, no question yet: `backend/app/ai/touchpoints/consultation_nudge.py` and its prompt (where no target is set, the AI judges from the score against its scale).
+- Q10: `backend/app/ai/touchpoints/results.py` `ResultFacts.company` and `idea` (the same company details and idea text as touchpoints 1 and 3 go to the AI provider for advice).
 - Q10: `backend/app/ai/touchpoints/propose_iq_scores.py` `IDEA_FIELDS` (the idea's text fields go to the AI provider; the money never does).
 - Q23: `backend/app/services/ideas.py` `confirm` (no organisation weights until P4.08; tied IQ priorities go by book order).
 - Q18: `backend/app/scoring/_rounding.py` (half up), `vfm.py` (uses the rounded IQ), `categories.py` (category IQ 1 decimal).
@@ -103,11 +118,15 @@ Phase 1
 - Q23: `backend/app/scoring/priorities.py` (weight breaks ties after score, before book order; IQ list only for now).
 
 ## Open questions
+- To raise with Amy (no question number yet): what the consultation suggestion should go by when a company has set no target. Today the AI judges from the score against its scale.
+- To raise with Haroon: advice is written when someone asks for it, not automatically when a result becomes final (cost). Confirm or change.
+- `docs/methodology/ai-touchpoints.md` still lists "interpretation, next steps, priority" as outputs of touchpoint 6 and says touchpoint 8 is off; both need `/decision` to correct (see decisions 2026-11-15).
 - To raise with Amy (no question number yet): "strengths" on a result are our display choice (up to 3 dimensions scoring above every priority; `STRENGTH_COUNT` in `backend/app/scoring/priorities.py`). And Q8 should say that an idea target is the organisation's and applies to every idea. Both need `/decision` to enter `open-questions.md`.
 - Still OPEN in `docs/methodology/open-questions.md`: Q3, Q4, Q6, Q8, Q10, Q13 to Q15, Q17 to Q19, Q21 to Q23. Q3, Q4 and Q6 are settled informally (see above) and should be closed with `/decision` when convenient.
 - Q23 is the only new methodology question for Amy: how weights reorder priorities, and whether readiness priorities use them too. Ask it together with Q19 if needed.
 
 ## Known gaps
+- No AI key yet, so everything that needs the AI is hidden in the app, AI advice included (PR 12). Nobody has seen real advice text; the prompts for touchpoints 4, 5, 6 and 8 have never met the live model.
 - No AI key yet: idea proposals come from the offline stand-in (every dimension proposed at the middle of the scale, marked as sample). The demo data sets realistic scores through the owner's review, so the pages have shape, but the AI's reasons are placeholder text until the key arrives.
 - The sign-in limit (30 requests per address per 15 minutes) is easy to reach when several demo accounts sign in from one machine; `bin/seed-demo` clears it locally. Behind a proxy it needs the forwarded address (see below).
 - The activity log shows events from Phase 2 onwards, but events written before this branch carry no method version or AI model.

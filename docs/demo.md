@@ -1,6 +1,6 @@
 # Demo walk-through
 
-A 15 minute tour of what is built through Phase 5, on the local stack with the demo company.
+A 15 minute tour of what is built through Phase 6, on the local stack with the demo company.
 
 ## Before the demo
 
@@ -41,5 +41,6 @@ Things to know before you start:
 
 ## Not built yet
 
-- AI advice on results and dimensions (Phase 6), PDF reports (Phase 7), going live (Phase 8).
+- PDF reports (Phase 7), going live (Phase 8).
+- AI advice (Phase 6) is built but, like everything that needs the AI, stays hidden until the server has an AI key. With a key: open a readiness result or an idea's confirmed scores, "Get AI advice", and after about a minute the page shows what the result means, a consultation suggestion, recommendations for the priorities (the method's next steps as written, beside the AI's advice) and actions to close the gaps; each dimension page shows its own part.
 - The AI's questions about the company before scoring (waits for Amy's answer on sending company details to the AI provider, and the AI key).
