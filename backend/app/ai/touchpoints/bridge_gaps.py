@@ -60,6 +60,7 @@ def spec_for(run: AiRun) -> Touchpoint[BridgeGapsOutput]:
     constrain_dimensions(schema, "dimensions", keys)
 
     def check(output: BridgeGapsOutput) -> None:
+        results.require_one_scale(run, output)
         results.require_exactly([d.dimension_key for d in output.dimensions], keys, "The actions")
 
     return Touchpoint(

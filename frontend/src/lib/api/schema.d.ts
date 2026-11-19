@@ -2951,8 +2951,8 @@ export interface components {
          * @description What the shown answer cost. Platform admins only.
          */
         UsageOut: {
-            /** Cost Micro Usd */
-            cost_micro_usd: number;
+            /** Cost Usd */
+            cost_usd: string;
             /** Input Tokens */
             input_tokens: number;
             /** Model */

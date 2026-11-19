@@ -27,8 +27,8 @@ class UsageOut(BaseModel):
     model: str | None
     input_tokens: int
     output_tokens: int
-    # Millionths of a US dollar at list prices.
-    cost_micro_usd: int
+    # US dollars at list prices, to four decimals, as text: the screen shows it as sent.
+    cost_usd: str
 
 
 class PartOut(BaseModel):

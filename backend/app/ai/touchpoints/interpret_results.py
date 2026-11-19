@@ -60,6 +60,7 @@ def spec_for(run: AiRun) -> Touchpoint[InterpretResultsOutput]:
     constrain_dimensions(schema, "dimensions", keys)
 
     def check(output: InterpretResultsOutput) -> None:
+        results.require_one_scale(run, output)
         results.require_exactly(
             [d.dimension_key for d in output.dimensions], keys, "The explanation"
         )

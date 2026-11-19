@@ -9,7 +9,7 @@ from typing import Final, Self
 
 from pydantic import Field, model_validator
 
-from app.ai.schemas.common import Advice, AiOutput, DimensionKey
+from app.ai.schemas.common import AiOutput, DimensionKey, Words
 
 MAX_DIMENSIONS: Final = 50
 MIN_ACTIONS: Final = 3
@@ -18,7 +18,7 @@ MAX_ACTIONS: Final = 5
 
 class DimensionActions(AiOutput):
     dimension_key: DimensionKey
-    actions: list[Advice] = Field(min_length=MIN_ACTIONS, max_length=MAX_ACTIONS)
+    actions: list[Words] = Field(min_length=MIN_ACTIONS, max_length=MAX_ACTIONS)
 
 
 class BridgeGapsOutput(AiOutput):

@@ -10,20 +10,20 @@ from typing import Final, Self
 
 from pydantic import Field, model_validator
 
-from app.ai.schemas.common import Advice, AiOutput, DimensionKey
+from app.ai.schemas.common import AiOutput, DimensionKey, Words
 
 MAX_REASONS: Final = 5
 
 
 class NudgeReason(AiOutput):
     dimension_key: DimensionKey
-    reason: Advice
+    reason: Words
 
 
 class ConsultationNudgeOutput(AiOutput):
     suggest: bool
     # One or two short sentences recommending a consultation; empty when ``suggest`` is false.
-    message: list[Advice] = Field(max_length=2)
+    message: list[Words] = Field(max_length=2)
     reasons: list[NudgeReason] = Field(max_length=MAX_REASONS)
 
     @model_validator(mode="after")

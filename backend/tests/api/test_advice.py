@@ -350,7 +350,7 @@ def test_usage_figures_are_for_platform_admins_only(client: TestClient, use_ai: 
         "model": "claude-sonnet-5-5",
         "input_tokens": 600,
         "output_tokens": 150,
-        "cost_micro_usd": 2700,
+        "cost_usd": "0.0027",
     }
 
 

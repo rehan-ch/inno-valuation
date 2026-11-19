@@ -6,6 +6,7 @@
 The result is the company's Innovation Readiness: how ready the company is to innovate, from the answers its team agreed on.
 Total: {{ facts.total }} out of {{ facts.total_maximum }}.
 Band: {{ facts.band.name }}. {{ facts.band.text }}
+How the scores are built: each dimension has {{ facts.question_set.questions_per_dimension }} questions, each answered from {{ facts.question_set.readiness_scale.min }} to {{ facts.question_set.readiness_scale.max }}{% if facts.question_set.readiness_scale.labels %} ({% for value, label in facts.question_set.readiness_scale.labels %}{{ value }} {{ label }}{% if not loop.last %}, {% endif %}{% endfor %}){% endif %}. So a dimension runs from {{ facts.question_set.dimension_min }} to {{ facts.question_set.dimension_max }}, and the total from {{ facts.question_set.total_min }} to {{ facts.question_set.total_max }}. The lowest possible score is not zero.
 {% else %}
 The result is the Innovation Quotient of one idea: how far the idea moves each dimension, from scores its owner confirmed.
 Innovation Quotient: {{ facts.total }} out of {{ facts.total_maximum }}.

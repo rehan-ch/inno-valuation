@@ -21,6 +21,7 @@ from app.ai.touchpoints.results import DimensionFact, ResultFacts
 from app.models import Idea, Organisation
 from app.models.enums import AdviceSubject, IdeaStage
 from app.scoring.question_set import QUESTION_SET
+from app.scoring.targets import _gaps
 
 # Each template's content, pinned to its version. A failure here means a prompt changed:
 # bump its prompt_version, then update the pin (the digest is in the failure message).
@@ -34,20 +35,20 @@ PINNED = {
         "770bc4d596f43bf550acc9da85cba9135bcfcb08bf972b5ec8270cc18af63817",
     ),
     "interpret_results": (
-        "1",
-        "f78102d3dddcea0576792a227e8438ba3a3baf77602c48fcdc58656a58ecda41",
+        "2",
+        "0422f1dac34de2bb341afd2cfb1e454af89486776e07fdf5f80d9f82c41592d6",
     ),
     "bridge_gaps": (
-        "1",
-        "cbf8489d92433d73acd0a201514ca9edc736623912baaf9eb94e0fb6ff47c8b3",
+        "2",
+        "69768a84f952f7e4af8f558e39953acd866f3aa28feb479a3c215ed22a706680",
     ),
     "recommendations": (
-        "1",
-        "e1b05133f82572219aa77320c21c67e72b8f545a6e8d18f90549c7a2b92d68f7",
+        "2",
+        "a89239fd3d405005fdbfdd15e576ce7fbaf78bd80689c92775d1c025d1990049",
     ),
     "consultation_nudge": (
-        "1",
-        "e995a32fd59dcdb4616e87cf1fc8c811082c2e65dc7972f4b512e5e2dce7d420",
+        "2",
+        "f78196510fb081870e5f356c51beb8938e1821a8ce695c7d7db2a35c7aac4d71",
     ),
 }
 
@@ -223,6 +224,8 @@ def _facts(
     keys = list(QUESTION_SET.dimension_keys)
     scores = dict.fromkeys(keys, 15) | dict.fromkeys(keys[:5], 10) | {keys[-1]: 22}
     wanted = targets or {}
+    # The engine's gaps, as the service passes them on: the prompt never works one out.
+    gaps = {item.key: item for item in _gaps({k: scores[k] for k in wanted}, wanted, QUESTION_SET)}
     return ResultFacts(
         subject=AdviceSubject.READINESS_RESULT,
         subject_id=uuid.uuid4(),
@@ -238,7 +241,7 @@ def _facts(
                 level=None,
                 rank=keys.index(d.key) + 1 if d.key in keys[:5] else None,
                 target=wanted.get(d.key),
-                gap=wanted[d.key] - scores[d.key] if d.key in wanted else None,
+                gap=gaps[d.key].gap if d.key in gaps else None,
             )
             for d in QUESTION_SET.dimensions
         ),
@@ -284,8 +287,59 @@ def test_the_fixed_next_steps_and_targets_are_passed_in_verbatim(touchpoint: Any
     assert [d.key for d in asked] == expected
 
 
-def test_the_interpretation_is_told_to_write_no_number() -> None:
-    assert "Write no number at all" in interpret_results.render_prompt(_facts()).system
+@pytest.mark.parametrize("touchpoint", ADVICE[1:], ids=lambda m: m.KEY.value)
+def test_the_gap_is_the_engines_and_the_prompt_never_asks_for_a_subtraction(
+    touchpoint: Any,
+) -> None:
+    """Spec 10: the AI reads gaps computed by the scoring engine."""
+    keys = list(QUESTION_SET.dimension_keys)
+    # Priorities score 10: one target above the score, one met, one below it.
+    facts = _facts(targets={keys[0]: 20, keys[1]: 10, keys[2]: 8})
+    prompt = touchpoint.render_prompt(facts)
+    for key in keys[:3]:
+        fact = facts.fact(key)
+        assert (
+            f"Target the company set: {fact.target} out of 25. "
+            f"Gap to the target, as the app worked it out: {fact.gap}."
+        ) in prompt.user
+    assert prompt.user.count("Gap to the target, as the app worked it out: 10.") == 1
+    assert prompt.user.count("The target is already reached.") == 2
+    assert "the gap is from the score to" not in prompt.system
+
+
+@pytest.mark.parametrize("touchpoint", ADVICE, ids=lambda m: m.KEY.value)
+def test_every_advice_prompt_asks_for_words_only_and_one_score_only(touchpoint: Any) -> None:
+    system = touchpoint.render_prompt(_facts()).system
+    assert "write no number at all" in system.lower()
+    assert "Never bring in another score" in system
+
+
+def test_the_interpretation_grades_nothing_with_labels_the_method_does_not_have() -> None:
+    """Q4: the method has no per-dimension readiness label, so the AI is given none."""
+    system = interpret_results.render_prompt(_facts()).system
+    assert "Do not grade a dimension with a label of your own" in system
+    assert 'Say "low"' not in system
+
+
+def test_the_consultation_prompt_adds_no_criteria_of_its_own() -> None:
+    """Q11: the AI judges whether the gap is significant; the prompt sets no other test."""
+    system = consultation_nudge.render_prompt(_facts()).system
+    for invented in ("be sparing", "small gaps", "spread over several"):
+        assert invented not in system
+
+
+@pytest.mark.parametrize("touchpoint", ADVICE, ids=lambda m: m.KEY.value)
+def test_a_readiness_prompt_states_the_scale_from_the_question_set(touchpoint: Any) -> None:
+    """A dimension runs from 5, not from 0: the prompt says so instead of leaving a guess."""
+    user = touchpoint.render_prompt(_facts()).user
+    scale = QUESTION_SET.readiness_scale
+    assert f"each answered from {scale.min} to {scale.max}" in user
+    for value, label in scale.labels:
+        assert f"{value} {label}" in user
+    assert (
+        f"a dimension runs from {QUESTION_SET.dimension_min} to {QUESTION_SET.dimension_max}, "
+        f"and the total from {QUESTION_SET.total_min} to {QUESTION_SET.total_max}"
+    ) in user
 
 
 def test_advice_prompts_wrap_what_people_typed_as_data() -> None:

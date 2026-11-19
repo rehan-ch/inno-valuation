@@ -150,7 +150,8 @@ def test_an_obeyed_injection_never_reaches_the_reader(
     use_ai(*replies)
     body = client.post(url, json={}, headers=csrf(client)).json()
     assert [body[part]["status"] for part in PARTS.values()] == ["failed"] * 4
-    text = str(body)
+    # The advice parts only: the assessment id is random and may hold any digits.
+    text = str([body[part] for part in PARTS.values()])
     assert "300" not in text
     assert "guarantee" not in text.lower()
     assert db.scalars(select(Interpretation)).all() == []

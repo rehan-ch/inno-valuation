@@ -11,9 +11,13 @@ against exactly what was asked, whatever has changed since.
 """
 
 import json
+import re
 import uuid
+from collections.abc import Iterator
 from dataclasses import dataclass
 from typing import Any, Final
+
+from pydantic import BaseModel
 
 from app.ai.runner import OutputRejectedError
 from app.models import AiRun
@@ -117,6 +121,38 @@ def require_exactly(found: list[str], keys: list[str], what: str) -> None:
     if sorted(found) != sorted(keys):
         raise OutputRejectedError(
             f"{what} must cover exactly the dimensions asked about, once each: {', '.join(keys)}."
+        )
+
+
+# Advice is about one result on one scale (spec 4: the two are never added, blended or set
+# against each other). Advice on a readiness result may not bring in the Innovation
+# Quotient, and advice on an idea may not bring in Innovation Readiness.
+_OTHER_SCALE: Final = {
+    AdviceSubject.READINESS_RESULT: re.compile(r"innovation\s+quotient|\bIQ\b", re.IGNORECASE),
+    AdviceSubject.IQ_ASSESSMENT: re.compile(r"innovation\s+readiness", re.IGNORECASE),
+}
+# Copied or fixed values, not the AI's own words.
+_NOT_WORDS: Final = frozenset({"dimension_key", "fixed_text"})
+
+
+def _words(value: object) -> Iterator[str]:
+    if isinstance(value, str):
+        yield value
+    elif isinstance(value, dict):
+        for name, inner in value.items():
+            if name not in _NOT_WORDS:
+                yield from _words(inner)
+    elif isinstance(value, list):
+        for inner in value:
+            yield from _words(inner)
+
+
+def require_one_scale(run: AiRun, output: BaseModel) -> None:
+    """Refuse advice whose words bring in the other score."""
+    pattern = _OTHER_SCALE[AdviceSubject(run.subject_type)]
+    if any(pattern.search(text) for text in _words(output.model_dump())):
+        raise OutputRejectedError(
+            "The advice is about this result only. Do not mention the other score."
         )
 
 

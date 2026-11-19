@@ -128,7 +128,6 @@ def upgrade() -> None:
             name=op.f("uq_recommendations_subject_version_dimension_key"),
         ),
     )
-    op.create_index("ix_recommendations_ai_run_id", "recommendations", ["ai_run_id"], unique=False)
     op.create_index(
         "ix_recommendations_organisation_id_subject",
         "recommendations",
@@ -143,7 +142,6 @@ def upgrade() -> None:
 def downgrade() -> None:
     op.drop_column("ai_runs", "params")
     op.drop_index("ix_recommendations_organisation_id_subject", table_name="recommendations")
-    op.drop_index("ix_recommendations_ai_run_id", table_name="recommendations")
     op.drop_table("recommendations")
     op.drop_index("ix_interpretations_organisation_id_subject", table_name="interpretations")
     op.drop_table("interpretations")

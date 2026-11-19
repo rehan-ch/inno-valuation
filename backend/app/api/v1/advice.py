@@ -5,6 +5,7 @@ consultant never has. Asking returns at once with the parts "pending"; poll the 
 """
 
 import uuid
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Any, Final
 
 from fastapi import APIRouter, Depends, status
@@ -40,6 +41,11 @@ _PARTS: Final[dict[PartName, AiTouchpoint]] = {
 }
 
 
+def _dollars(micro_usd: int) -> str:
+    """Millionths of a US dollar as dollars with four decimals, rounded half up."""
+    return str((Decimal(micro_usd) / 1_000_000).quantize(Decimal("0.0001"), ROUND_HALF_UP))
+
+
 def _meta(ctx: OrgContext, part: advice.Part) -> dict[str, Any]:
     run = part.run
     usage = None
@@ -48,7 +54,7 @@ def _meta(ctx: OrgContext, part: advice.Part) -> dict[str, Any]:
             model=run.response_model,
             input_tokens=run.input_tokens,
             output_tokens=run.output_tokens,
-            cost_micro_usd=run.cost_micro_usd,
+            cost_usd=_dollars(run.cost_micro_usd),
         )
     return {
         "status": part.status,

@@ -30,21 +30,31 @@ def _plain(text: str) -> str:
     return text
 
 
-_DIGIT: Final = re.compile(r"\d")
-_GUARANTEE: Final = re.compile(r"guarantee", re.IGNORECASE)
+# Any numeral: digits of every script, and signs such as a superscript two or a half.
+_DIGIT: Final = re.compile(
+    r"[\d\u00b2\u00b3\u00b9\u00bc-\u00be\u2070-\u2079\u2080-\u2089\u2150-\u218b]"
+)
+# Words that promise an outcome ("guaranteed", "promises", "assured"). Not "promising" or
+# "assurance", which advice may fairly use.
+_PROMISE: Final = re.compile(r"guarantee|\bpromise[sd]?\b|\bassured?\b", re.IGNORECASE)
+# Signs that only come with a figure or a price, and links: advice sends nobody anywhere.
+_FIGURE_SIGN: Final = re.compile(r"[%$\u20ac\u00a3\u00a5]")
+_LINK: Final = re.compile(r"https?://|www\.", re.IGNORECASE)
 
 
 def _no_numbers(text: str) -> str:
     # The app shows every number beside the AI's words; the AI writes none of its own.
-    if _DIGIT.search(text):
+    if _DIGIT.search(text) or _FIGURE_SIGN.search(text):
         raise ValueError("must not contain a number; describe it in words")
     return text
 
 
 def _no_guarantee(text: str) -> str:
     # Advice is a suggestion. It never promises a return or a result.
-    if _GUARANTEE.search(text):
+    if _PROMISE.search(text):
         raise ValueError("must not promise or guarantee a result")
+    if _LINK.search(text):
+        raise ValueError("must not contain a link")
     return text
 
 
@@ -58,11 +68,13 @@ Sentence = Annotated[
 ]
 
 
-# One sentence of advice: plain, and never a promise.
-Advice = Annotated[Sentence, AfterValidator(_no_guarantee)]
-
-# One sentence that explains a result in words only: the numbers stay with the engine.
-Words = Annotated[Advice, AfterValidator(_no_numbers)]
+# One sentence of AI advice, in words only. It is never a promise and never a link, and it
+# holds no numeral: the app shows every number beside the text, so a score the AI restated
+# could contradict the engine's, at once or after a target changes. Every advice text of
+# touchpoints 4, 5, 6 and 8 has this type. Not caught here, left to the prompt: numbers
+# spelled out in words, and a band or level name (the level "Innovation" is also an
+# ordinary word in this method).
+Words = Annotated[Sentence, AfterValidator(_no_guarantee), AfterValidator(_no_numbers)]
 
 
 def item_schema(schema: dict[str, Any], prop: str) -> dict[str, Any]:

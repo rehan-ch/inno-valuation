@@ -293,6 +293,9 @@ def _part(db: Session, ctx: OrgContext, facts: ResultFacts, touchpoint: AiTouchp
     shown: AiRun | None = None
     for run in _runs(db, ctx, facts, touchpoint):
         if run.status in _PENDING and now - run.created_at > stale_after:
+            # The advisory lock first, then the run's row: the order an ask takes them in.
+            # A read that took the row first could deadlock with an ask.
+            _lock(db, ctx)
             # A no-op if a worker finished it meanwhile; the run is re-read either way.
             runner.mark_failed(db, run, "The run did not finish in time.")
         # Sample text from the offline stand-in is never shown once the AI is connected.
@@ -466,7 +469,8 @@ def request(
         AiRun.created_at,
         AiRun.organisation_id == ctx.organisation_id,
         AiRun.touchpoint.in_(list(PARTS)),
-        limit=DAILY_LIMIT,
+        # One ask queues up to four runs: refuse it unless all of them fit under the limit.
+        limit=DAILY_LIMIT - len(to_run) + 1,
         period=DAILY_LIMIT_PERIOD,
         rule="Your organisation has asked for AI advice as often as is allowed in one day.",
     )

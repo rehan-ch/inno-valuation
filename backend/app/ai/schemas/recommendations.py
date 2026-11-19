@@ -11,7 +11,7 @@ from typing import Annotated, Final, Self
 
 from pydantic import Field, StringConstraints, model_validator
 
-from app.ai.schemas.common import Advice, AiOutput, DimensionKey
+from app.ai.schemas.common import AiOutput, DimensionKey, Words
 
 MAX_DIMENSIONS: Final = 50
 FIXED_TEXT_MAX: Final = 2000
@@ -22,13 +22,13 @@ class DimensionRecommendation(AiOutput):
     # The book's next steps, returned exactly as given. Not trimmed, not checked for style.
     fixed_text: Annotated[str, StringConstraints(min_length=1, max_length=FIXED_TEXT_MAX)]
     # Pieces of work the company could start.
-    initiatives: list[Advice] = Field(min_length=2, max_length=4)
+    initiatives: list[Words] = Field(min_length=2, max_length=4)
     # What to measure to see whether it works. Names of measures, not invented figures.
-    kpis: list[Advice] = Field(min_length=2, max_length=4)
-    # A realistic order and pace, in one sentence.
-    timeline: Advice
+    kpis: list[Words] = Field(min_length=2, max_length=4)
+    # A realistic order and pace, in one sentence. Lengths of time in words, like all advice.
+    timeline: Words
     # People, skills or tools it needs.
-    resources: list[Advice] = Field(min_length=1, max_length=4)
+    resources: list[Words] = Field(min_length=1, max_length=4)
 
 
 class RecommendationsOutput(AiOutput):

@@ -60,6 +60,7 @@ class Recommendation(UuidPrimaryKey, CreatedAt, Base):
 
     __tablename__ = "recommendations"
     __table_args__ = (
+        # Also the ai_run_id index.
         UniqueConstraint("ai_run_id", "dimension_key"),
         UniqueConstraint(
             "subject_type",
@@ -72,7 +73,6 @@ class Recommendation(UuidPrimaryKey, CreatedAt, Base):
         CheckConstraint("priority_rank >= 1", name="priority_rank_positive"),
         # Also the organisation_id index.
         Index("ix_recommendations_organisation_id_subject", "organisation_id", "subject_id"),
-        Index("ix_recommendations_ai_run_id", "ai_run_id"),
     )
 
     organisation_id: Mapped[uuid.UUID] = mapped_column(

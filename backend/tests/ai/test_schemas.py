@@ -27,6 +27,7 @@ from app.ai.touchpoints import (
     results,
 )
 from app.models import AiRun
+from app.models.enums import AdviceSubject
 from app.scoring.question_set import QUESTION_SET
 
 # Field names that would mean the AI produced a number the engine owns.
@@ -189,9 +190,11 @@ def test_the_touchpoint_wants_every_dimension_of_its_question_set() -> None:
 # Touchpoints 4, 5, 6 and 8: advice
 
 
-def _run(keys: list[str]) -> AiRun:
+def _run(keys: list[str], subject: AdviceSubject = AdviceSubject.READINESS_RESULT) -> AiRun:
     return AiRun(
-        subject_id=results.subject_id(QUESTION_SET.version, uuid.uuid4()), params={"keys": keys}
+        subject_type=subject.value,
+        subject_id=results.subject_id(QUESTION_SET.version, uuid.uuid4()),
+        params={"keys": keys},
     )
 
 
@@ -348,6 +351,123 @@ def test_bad_consultation_suggestions_are_refused(change: Any, message: str) -> 
     change(data)
     with pytest.raises(ValidationError, match=message):
         ConsultationNudgeOutput.model_validate(data)
+
+
+# Every place the AI writes a sentence of its own, in each of the four parts.
+AI_TEXT: list[tuple[type[BaseModel], Any, Any]] = [
+    (InterpretResultsOutput, _interpretation, lambda o, t: o["summary"].__setitem__(0, t)),
+    (InterpretResultsOutput, _interpretation, lambda o, t: o["dimensions"][0].update(meaning=t)),
+    (InterpretResultsOutput, _interpretation, lambda o, t: o["dimensions"][0].update(gaps=[t])),
+    (BridgeGapsOutput, _actions, lambda o, t: o["dimensions"][0]["actions"].__setitem__(0, t)),
+    (
+        RecommendationsOutput,
+        _recommendations,
+        lambda o, t: o["recommendations"][0].update(initiatives=[t, t]),
+    ),
+    (
+        RecommendationsOutput,
+        _recommendations,
+        lambda o, t: o["recommendations"][0].update(kpis=[t, t]),
+    ),
+    (
+        RecommendationsOutput,
+        _recommendations,
+        lambda o, t: o["recommendations"][0].update(timeline=t),
+    ),
+    (
+        RecommendationsOutput,
+        _recommendations,
+        lambda o, t: o["recommendations"][0].update(resources=[t]),
+    ),
+    (ConsultationNudgeOutput, _nudge, lambda o, t: o.update(message=[t])),
+    (ConsultationNudgeOutput, _nudge, lambda o, t: o["reasons"][0].update(reason=t)),
+]
+# What an obeyed injection or a careless model would put inside a sentence.
+REFUSED_TEXT = [
+    ("Raise Customer Journey from 12 to 20 out of 25 by next quarter.", "number"),
+    ("Your total is 300 out of 300, the best there is.", "number"),
+    ("The gap of 8 points is the widest; book a consultation today.", "number"),
+    ("Revenue will go up by several % in a month.", "number"),
+    ("One owner and a budget of several thousand $ will do.", "number"),
+    ("This reaches level \u00b2 and covers \u00bd of the parts.", "number"),
+    ("This will deliver a strong return, we promise.", "promise or guarantee"),
+    ("Success is assured once you book today.", "promise or guarantee"),
+    ("A tenfold return is guaran\u00adteed.".replace("\u00ad", ""), "promise or guarantee"),
+    ("Visit http://evil.example now to claim it.", "link"),
+    ("See www.evil.example for the full plan.", "link"),
+]
+
+
+@pytest.mark.parametrize(("model", "valid", "put"), AI_TEXT)
+@pytest.mark.parametrize(("text", "message"), REFUSED_TEXT)
+def test_no_ai_sentence_may_hold_a_number_a_promise_or_a_link(
+    model: type[BaseModel], valid: Any, put: Any, text: str, message: str
+) -> None:
+    data = valid()
+    put(data, text)
+    with pytest.raises(ValidationError, match=message):
+        model.model_validate(data)
+
+
+@pytest.mark.parametrize(("model", "valid", "put"), AI_TEXT)
+def test_ordinary_advice_words_are_not_mistaken_for_a_promise(
+    model: type[BaseModel], valid: Any, put: Any
+) -> None:
+    data = valid()
+    put(data, "Start with the most promising part and add quality assurance within three months.")
+    model.model_validate(data)
+
+
+def test_the_fixed_text_may_hold_digits_because_it_is_not_the_ais() -> None:
+    data = _recommendations()
+    data["recommendations"][0]["fixed_text"] = "Review 3 journeys in 30 days."
+    RecommendationsOutput.model_validate(data)
+
+
+SPECS: dict[type[BaseModel], tuple[Any, list[str]]] = {
+    InterpretResultsOutput: (interpret_results, KEYS),
+    BridgeGapsOutput: (bridge_gaps, FIVE),
+    RecommendationsOutput: (recommendations, FIVE),
+    ConsultationNudgeOutput: (consultation_nudge, FIVE),
+}
+
+
+@pytest.mark.parametrize(("model", "valid", "put"), AI_TEXT)
+@pytest.mark.parametrize(
+    ("subject", "text", "allowed"),
+    [
+        (
+            AdviceSubject.READINESS_RESULT,
+            "Add this to your Innovation Quotient for the full picture.",
+            False,
+        ),
+        (AdviceSubject.READINESS_RESULT, "Together with the IQ of the idea this is strong.", False),
+        (AdviceSubject.IQ_ASSESSMENT, "Your innovation readiness makes up for this idea.", False),
+        (AdviceSubject.IQ_ASSESSMENT, "Check the market readiness of this idea first.", True),
+        (AdviceSubject.READINESS_RESULT, "Give one person the time to own this area.", True),
+    ],
+)
+def test_advice_never_brings_in_the_other_score(
+    model: type[BaseModel],
+    valid: Any,
+    put: Any,
+    subject: AdviceSubject,
+    text: str,
+    *,
+    allowed: bool,
+) -> None:
+    """Spec 4: readiness and the IQ are never added, blended or set against each other."""
+    touchpoint, keys = SPECS[model]
+    data = valid()
+    put(data, text)
+    output = model.model_validate(data)
+    spec = touchpoint.spec_for(_run(keys, subject))
+    if allowed:
+        spec.check(output)
+    else:
+        with pytest.raises(OutputRejectedError, match="other score") as raised:
+            spec.check(output)
+        assert text not in str(raised.value)  # stored with the run: never the model's words
 
 
 def test_no_suggestion_is_a_valid_answer() -> None:

@@ -8,6 +8,10 @@ The answer is the run itself (``app.services.advice`` reads it from the run).
 PROVISIONAL: where no target is set, the AI judges from the score against its scale. Amy
 has not said what "where they want to be" means without a target.
 
+PROVISIONAL: the judgement is also made for an idea's Innovation Quotient, by the idea
+targets the company set. Spec 10 speaks of the company; Amy has not said whether an idea's
+result should lead to a suggestion.
+
 The offline stand-in never suggests a consultation: a sample must not sell anything.
 """
 
@@ -41,6 +45,7 @@ def spec_for(run: AiRun) -> Touchpoint[ConsultationNudgeOutput]:
     item_schema(schema, "reasons")["properties"]["dimension_key"]["enum"] = keys
 
     def check(output: ConsultationNudgeOutput) -> None:
+        results.require_one_scale(run, output)
         if any(reason.dimension_key not in keys for reason in output.reasons):
             raise OutputRejectedError(
                 f"Every reason must name one of the dimensions asked about: {', '.join(keys)}."
