@@ -48,7 +48,12 @@ describe("DimensionPage", () => {
     // The AI's advice about this dimension, for each result apart, marked as the AI's.
     const forReadiness = within(await screen.findByRole("region", { name: "For the readiness result" }));
     expect(await forReadiness.findByText("Agility is among the lowest areas.")).toBeInTheDocument();
-    expect(forReadiness.getByText("Proposed by AI")).toBeInTheDocument();
+    // Each of the AI's blocks carries the mark; the method's next steps beside them do not.
+    expect(forReadiness.getAllByText("Proposed by AI")).toHaveLength(3);
+    const fixed = forReadiness.getByText("TEST FIXTURE: the method's next steps would be here.");
+    expect(fixed.previousElementSibling).toHaveTextContent("Next steps from the method, as written");
+    expect(within(fixed.parentElement as HTMLElement).queryByText("Proposed by AI")).not.toBeInTheDocument();
+    expect(forReadiness.queryByText(/written before something it is based on changed/)).not.toBeInTheDocument();
     expect(forReadiness.getByText("Name one owner for agility.")).toBeInTheDocument();
     expect(forReadiness.getByText("Run a short review of how decisions are made.")).toBeInTheDocument();
     expect(forReadiness.getByText("Agility is well short of its target.")).toBeInTheDocument();
@@ -121,6 +126,27 @@ describe("DimensionPage", () => {
       "/readiness/55555555-5555-5555-5555-555555555555/result",
     );
     expect(advice.queryByRole("button", { name: "Get AI advice" })).not.toBeInTheDocument();
+  });
+
+  it("says when the advice shown for the dimension is out of date", async () => {
+    setLocation(`/dimensions/organizational_agility?idea=${IDEA_ID}`);
+    const advice = fakeAdvice();
+    advice.gap_actions = { ...advice.gap_actions, outdated: true };
+    stubApi({
+      [`GET ${PATH}`]: fakeDimensionDetail(),
+      ...ADVICE,
+      "GET /api/v1/readiness/assessments/55555555-5555-5555-5555-555555555555/advice": advice,
+    });
+    renderWithMe(<DimensionPage dimensionKey="organizational_agility" />, fakeMe());
+
+    const forReadiness = within(await screen.findByRole("region", { name: "For the readiness result" }));
+    expect(
+      await forReadiness.findByText(/This was written before something it is based on changed/),
+    ).toBeInTheDocument();
+    expect(forReadiness.getByRole("link", { name: "Open the result to ask again" })).toHaveAttribute(
+      "href",
+      "/readiness/55555555-5555-5555-5555-555555555555/result",
+    );
   });
 
   it("says what is missing when there is no result on either scale", async () => {

@@ -15,6 +15,7 @@ import {
   PartSection,
   RecommendationBody,
   Sentences,
+  StillWorking,
   type Ask,
 } from "./parts";
 import { useAdvice } from "./useAdvice";
@@ -24,7 +25,7 @@ import { useAdvice } from "./useAdvice";
  * marked as the AI's and names its dimension; the method's fixed next steps are shown
  * apart, as written. The only numbers here are the engine's priority ranks. */
 export function AdvicePanel({ adviceRef }: { adviceRef: AdviceRef }) {
-  const { state, ask, asking, askError } = useAdvice(adviceRef);
+  const { state, ask, asking, askError, stalled, arrived, checkAgain } = useAdvice(adviceRef);
   const ideaId = adviceRef.kind === "idea" ? adviceRef.ideaId : null;
 
   return (
@@ -33,6 +34,10 @@ export function AdvicePanel({ adviceRef }: { adviceRef: AdviceRef }) {
         title="AI advice"
         description="Written by AI from this result, to help you decide what to do next. It suggests; it never changes a score."
       />
+      {/* Tells a screen reader that the advice it was waiting for is now on the page. */}
+      <p role="status" aria-live="polite" className="sr-only">
+        {arrived ? "The AI has finished. Its advice is on the page." : ""}
+      </p>
       <div className="mt-4">
         {state.kind === "loading" && <Loading>Loading the advice...</Loading>}
         {state.kind === "error" && <Alert tone="error">{state.message}</Alert>}
@@ -43,6 +48,8 @@ export function AdvicePanel({ adviceRef }: { adviceRef: AdviceRef }) {
             onAsk={(options) => void ask(options)}
             asking={asking}
             askError={askError}
+            stalled={stalled}
+            onCheckAgain={checkAgain}
           />
         )}
       </div>
@@ -56,12 +63,16 @@ function AdviceBody({
   onAsk,
   asking,
   askError,
+  stalled,
+  onCheckAgain,
 }: {
   advice: AdviceOut;
   ideaId: string | null;
   onAsk: Ask;
   asking: boolean;
   askError: string | null;
+  stalled: boolean;
+  onCheckAgain: () => void;
 }) {
   const live = ADVICE_PARTS.filter((part) => advice[part].status !== "off");
   const untouched = live.every((part) => advice[part].status === "none");
@@ -96,10 +107,11 @@ function AdviceBody({
     );
   }
 
-  const section = { canRequest, busy: asking, onAsk };
+  const section = { canRequest, busy: asking, onAsk, stalled };
   return (
     <div className="space-y-5">
       {askError && <Alert tone="error">{askError}</Alert>}
+      {stalled && <StillWorking onCheckAgain={onCheckAgain} />}
 
       <PartSection
         title="Consultation"
@@ -165,6 +177,7 @@ function AdviceBody({
         meta={recommendations}
         hasContent={recommendations.items.length > 0}
         pendingText="Writing recommendations..."
+        mixed
         {...section}
       >
         <ol className="space-y-5">
@@ -176,7 +189,7 @@ function AdviceBody({
                   {item.name}
                 </Link>
               </p>
-              <RecommendationBody item={item} />
+              <RecommendationBody item={item} sample={recommendations.sample} />
             </li>
           ))}
         </ol>

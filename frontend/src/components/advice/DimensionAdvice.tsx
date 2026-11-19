@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { Loading } from "@/components/ui/Loading";
 import { ADVICE_PARTS, type AdviceRef } from "@/lib/api/advice";
 
-import { ProposedByAi, RecommendationBody, Sentences } from "./parts";
+import { OUTDATED_TEXT, ProposedByAi, RecommendationBody, Sentences, StillWorking } from "./parts";
 import { useAdvice } from "./useAdvice";
 
 /** The AI's advice about one dimension of one result, for the dimension page: what its
@@ -24,11 +24,15 @@ export function DimensionAdvice({
   heading: string;
   resultHref: string;
 }) {
-  const { state, ask, asking, askError } = useAdvice(adviceRef);
+  const { state, ask, asking, askError, stalled, arrived, checkAgain } = useAdvice(adviceRef);
 
   return (
     <section aria-label={heading} className="border-t border-neutral-200 pt-4 first:border-t-0 first:pt-0">
       <h3 className="text-sm font-semibold text-neutral-900">{heading}</h3>
+      {/* Tells a screen reader that the advice it was waiting for is now on the page. */}
+      <p role="status" aria-live="polite" className="sr-only">
+        {arrived ? "The AI has finished. Its advice is on the page." : ""}
+      </p>
       <div className="mt-2 space-y-3">
         {state.kind === "loading" && <Loading>Loading the advice...</Loading>}
         {state.kind === "error" && <Alert tone="error">{state.message}</Alert>}
@@ -42,8 +46,16 @@ export function DimensionAdvice({
             const actions = advice.gap_actions.dimensions.find((d) => d.key === dimensionKey);
             const recommendation = advice.recommendations.items.find((i) => i.key === dimensionKey);
             const reason = advice.consultation.reasons.find((r) => r.key === dimensionKey);
-            const sample =
-              advice.interpretation.sample || advice.gap_actions.sample || advice.recommendations.sample;
+            const suggestion = reason && advice.consultation.suggest ? reason : undefined;
+            // Only the parts with text on this page count: the others are not shown here.
+            const shown = [
+              ...(meaning ? [advice.interpretation] : []),
+              ...(actions ? [advice.gap_actions] : []),
+              ...(recommendation ? [advice.recommendations] : []),
+              ...(suggestion ? [advice.consultation] : []),
+            ];
+            const sample = shown.some((part) => part.sample);
+            const outdated = shown.some((part) => part.outdated);
             const nothing = !meaning && !actions && !recommendation;
             const failed = live.some((part) => advice[part].status === "failed");
             const asked = live.some((part) => advice[part].status !== "none");
@@ -52,7 +64,8 @@ export function DimensionAdvice({
             }
             return (
               <>
-                {pending && <Loading>The AI is writing its advice...</Loading>}
+                {pending && !stalled && <Loading>The AI is writing its advice...</Loading>}
+                {pending && stalled && <StillWorking onCheckAgain={checkAgain} />}
                 {!asked &&
                   (advice.can_request ? (
                     <>
@@ -86,9 +99,20 @@ export function DimensionAdvice({
                 )}
                 {!nothing && (
                   <div className="space-y-4">
-                    <ProposedByAi sample={sample} />
+                    {outdated && !pending && (
+                      <Alert tone="info">
+                        {OUTDATED_TEXT}{" "}
+                        <Link href={resultHref} className="font-medium text-primary hover:underline">
+                          {advice.can_request ? "Open the result to ask again" : "Open the result"}
+                        </Link>
+                      </Alert>
+                    )}
                     {meaning && (
                       <div className="space-y-1.5">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="text-xs font-medium text-neutral-500">What the result means here</p>
+                          <ProposedByAi sample={advice.interpretation.sample} />
+                        </div>
                         <p className="text-sm text-neutral-800">{meaning.meaning}</p>
                         {meaning.strengths.length > 0 && (
                           <div>
@@ -106,19 +130,24 @@ export function DimensionAdvice({
                     )}
                     {actions && (
                       <div>
-                        <p className="text-xs font-medium text-neutral-500">Actions to close the gap</p>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="text-xs font-medium text-neutral-500">Actions to close the gap</p>
+                          <ProposedByAi sample={advice.gap_actions.sample} />
+                        </div>
                         <div className="mt-1">
                           <Sentences items={actions.actions} />
                         </div>
                       </div>
                     )}
-                    {recommendation && <RecommendationBody item={recommendation} />}
-                    {reason && advice.consultation.suggest && (
+                    {recommendation && (
+                      <RecommendationBody item={recommendation} sample={advice.recommendations.sample} />
+                    )}
+                    {suggestion && (
                       <p className="text-sm text-neutral-700">
                         <span className="font-medium text-neutral-900">
                           The AI suggests a consultation:{" "}
                         </span>
-                        {reason.reason}
+                        {suggestion.reason}
                       </p>
                     )}
                     {!actions && !recommendation && (
@@ -130,7 +159,7 @@ export function DimensionAdvice({
                     <p className="text-xs text-neutral-500">
                       {sample
                         ? "Sample text: the AI is not connected yet. "
-                        : "Written by AI. It can be wrong, so use your own judgement. "}
+                        : 'The text marked "Proposed by AI" was written by AI. It can be wrong, so use your own judgement. '}
                       <Link href={resultHref} className="font-medium text-primary hover:underline">
                         Full advice, and ask again
                       </Link>

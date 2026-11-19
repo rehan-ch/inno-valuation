@@ -796,7 +796,8 @@ export function fakeAdvice(overrides: Partial<AdviceOut> = {}): AdviceOut {
           key: "organizational_agility",
           name: "Organizational Agility",
           rank: 1,
-          fixed_text: "Adopt agile ways of working.",
+          // Plainly not the method's wording, so no test reads as if it quoted the book.
+          fixed_text: "TEST FIXTURE: the method's next steps would be here.",
           initiatives: ["Run a short review of how decisions are made."],
           kpis: ["Time from decision to action."],
           timeline: "Review first, then pilot.",

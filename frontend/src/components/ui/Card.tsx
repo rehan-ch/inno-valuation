@@ -55,7 +55,11 @@ export function PageHeader({
         <h1 className="text-xl font-semibold text-neutral-900">{title}</h1>
         {description && <p className="mt-1 text-sm text-neutral-600">{description}</p>}
       </div>
-      {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
+      {/* max-w-full: without it shrink-0 keeps a long row of actions on one line, wider
+          than a phone screen, and the whole page scrolls sideways. */}
+      {actions && (
+        <div className="flex max-w-full shrink-0 flex-wrap items-center gap-2">{actions}</div>
+      )}
     </header>
   );
 }
