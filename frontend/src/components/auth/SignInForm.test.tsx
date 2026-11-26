@@ -11,9 +11,9 @@ vi.mock("next/navigation", async () => (await import("@/test/navigation")).navig
 
 async function fillAndSubmit() {
   const user = userEvent.setup();
-  await user.type(screen.getByLabelText("Email"), "owner@example.com");
-  await user.type(screen.getByLabelText("Password"), "a-long-password");
-  await user.click(screen.getByRole("button", { name: "Sign in" }));
+  await user.type(screen.getByRole("textbox", { name: "Email address" }), "owner@example.com");
+  await user.type(screen.getByLabelText("Password", { exact: true }), "a-long-password");
+  await user.click(screen.getByRole("button", { name: "Sign in to workspace" }));
 }
 
 describe("SignInForm", () => {

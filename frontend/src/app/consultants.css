@@ -1,0 +1,900 @@
+/* ===========================================
+   InnoValuation — Premium Consultant Workspace
+   =========================================== */
+
+@keyframes iv-consultants-fade {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes iv-consultants-float {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-7px);
+    }
+}
+
+.iv-consultants {
+    width: 100%;
+    min-width: 0;
+    padding: 34px 0 60px;
+    color: #10233d;
+    font-family: var(--font-sans);
+}
+
+.iv-consultants *,
+.iv-consultants *::before,
+.iv-consultants *::after {
+    box-sizing: border-box;
+}
+
+.iv-consultants-shell {
+    width: min(100%, 1360px);
+    min-width: 0;
+    margin: 0 auto;
+    padding: 0 24px;
+}
+
+.iv-consultants-enter {
+    animation: iv-consultants-fade 480ms ease both;
+}
+
+/* Hero */
+
+.iv-consultants-hero {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    align-items: center;
+    min-height: 268px;
+    overflow: hidden;
+    padding: 38px 46px;
+    border: 1px solid #243b57;
+    border-radius: 26px;
+    background:
+        radial-gradient(circle at 91% 52%,
+            rgba(64, 96, 131, 0.29),
+            transparent 32%),
+        linear-gradient(115deg, #071529, #112640);
+    box-shadow: 0 18px 40px rgba(14, 32, 56, 0.12);
+}
+
+.iv-consultants-hero::before {
+    position: absolute;
+    top: 0;
+    left: 46px;
+    width: 110px;
+    height: 3px;
+    border-radius: 0 0 10px 10px;
+    background: #e7bd70;
+    content: "";
+}
+
+.iv-consultants-hero-copy {
+    position: relative;
+    z-index: 2;
+    width: min(100%, 760px);
+}
+
+.iv-consultants-eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #ecc477;
+    font-size: 11px;
+    font-weight: 750;
+    letter-spacing: 0.17em;
+}
+
+.iv-consultants-eyebrow-dot {
+    width: 7px;
+    height: 7px;
+    flex: 0 0 7px;
+    border-radius: 50%;
+    background: #e7bd70;
+}
+
+.iv-consultants-heading {
+    margin: 18px 0 12px;
+    color: #fff;
+    font-family: var(--font-sans);
+    font-size: clamp(30px, 3.4vw, 46px);
+    font-weight: 750;
+    letter-spacing: -0.05em;
+    line-height: 1.12;
+}
+
+.iv-consultants-heading span {
+    color: #e8bc6b;
+}
+
+.iv-consultants-subtitle {
+    max-width: 650px;
+    margin: 0;
+    color: #b8c8dc;
+    font-size: 14px;
+    line-height: 1.85;
+}
+
+.iv-consultants-hero-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 25px;
+}
+
+.iv-consultants-hero-meta span {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    min-height: 34px;
+    padding: 7px 12px;
+    border: 1px solid #314762;
+    border-radius: 9px;
+    background: rgba(255, 255, 255, 0.05);
+    color: #d4deec;
+    font-size: 12px;
+}
+
+.iv-consultants-hero-meta svg {
+    color: #e5ba70;
+}
+
+/* Hero decoration */
+
+.iv-consultants-hero-art {
+    position: absolute;
+    top: 50%;
+    right: 8%;
+    width: 190px;
+    height: 190px;
+    transform: translateY(-50%);
+}
+
+.iv-consultants-orbit {
+    position: absolute;
+    border: 1px solid rgba(230, 184, 105, 0.25);
+    border-radius: 50%;
+}
+
+.iv-consultants-orbit.outer {
+    inset: 0;
+}
+
+.iv-consultants-orbit.inner {
+    inset: 28px;
+    border-color: rgba(229, 186, 112, 0.4);
+}
+
+.iv-consultants-shield {
+    position: absolute;
+    inset: 57px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #d5a958;
+    border-radius: 50%;
+    color: #ebbf70;
+    background: #152b46;
+    animation: iv-consultants-float 5s ease-in-out infinite;
+}
+
+.iv-consultants-orbit-point {
+    position: absolute;
+    display: grid;
+    width: 31px;
+    height: 31px;
+    place-items: center;
+    border: 1px solid #705d42;
+    border-radius: 50%;
+    color: #e7bd70;
+    background: #10233b;
+}
+
+.iv-consultants-orbit-point.point-one {
+    top: -10px;
+    right: 72px;
+}
+
+.iv-consultants-orbit-point.point-two {
+    right: -10px;
+    bottom: 37px;
+}
+
+/* Overview cards */
+
+.iv-consultants-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+    margin: 22px 0 28px;
+    animation-delay: 70ms;
+}
+
+.iv-consultants-stat {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    min-width: 0;
+    padding: 22px;
+    border: 1px solid #dfe7f1;
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 5px 18px rgba(19, 42, 68, 0.035);
+    transition:
+        transform 220ms ease,
+        border-color 220ms ease,
+        box-shadow 220ms ease;
+}
+
+.iv-consultants-stat:hover {
+    transform: translateY(-3px);
+    border-color: #d4b477;
+    box-shadow: 0 12px 28px rgba(19, 42, 68, 0.08);
+}
+
+.iv-consultants-stat-icon,
+.iv-consultants-panel-icon {
+    display: grid;
+    width: 48px;
+    height: 48px;
+    flex: 0 0 48px;
+    place-items: center;
+    border: 1px solid #f0d9b3;
+    border-radius: 14px;
+    background: #fbf4e9;
+    color: #af7b2e;
+}
+
+.iv-consultants-stat-label {
+    margin: 0;
+    color: #526880;
+    font-size: 12px;
+    font-weight: 650;
+}
+
+.iv-consultants-stat-value {
+    display: block;
+    margin: 5px 0 2px;
+    color: #0b2039;
+    font-size: 30px;
+    font-weight: 750;
+    letter-spacing: -0.045em;
+    line-height: 1.15;
+}
+
+.iv-consultants-stat-description {
+    color: #8799b0;
+    font-size: 12px;
+}
+
+/* Main panels */
+
+.iv-consultants-content {
+    display: grid;
+    gap: 24px;
+}
+
+.iv-consultants-panel {
+    min-width: 0;
+    overflow: visible;
+    border: 1px solid #dbe5ef;
+    border-radius: 22px;
+    background: #fff;
+    box-shadow: 0 8px 26px rgba(18, 39, 66, 0.045);
+    animation-delay: 120ms;
+}
+
+.iv-consultants-panel-heading {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 25px 28px;
+    border-bottom: 1px solid #e7edf4;
+}
+
+.iv-consultants-panel-heading>div:nth-child(2) {
+    min-width: 0;
+    flex: 1;
+}
+
+.iv-consultants-small-label {
+    margin-bottom: 5px;
+    color: #ac7a32;
+    font-size: 10px;
+    font-weight: 750;
+    letter-spacing: 0.12em;
+}
+
+.iv-consultants-panel-heading h2 {
+    margin: 0;
+    color: #0b2039;
+    font-family: var(--font-sans);
+    font-size: 20px;
+    font-weight: 750;
+    letter-spacing: -0.035em;
+}
+
+.iv-consultants-panel-heading p {
+    margin-top: 5px;
+    color: #71859c;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.iv-consultants-count {
+    flex-shrink: 0;
+    padding: 9px 14px;
+    border: 1px solid #efd7ae;
+    border-radius: 999px;
+    background: #fcf5e9;
+    color: #a87630;
+    font-size: 12px;
+    font-weight: 650;
+}
+
+.iv-consultants-panel-body {
+    min-width: 0;
+    padding: 26px 28px 30px;
+}
+
+.iv-consultants-instruction {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 24px;
+    padding: 14px 16px;
+    border: 1px solid #e7ecf5;
+    border-radius: 13px;
+    background: #f8fafd;
+}
+
+.iv-consultants-instruction svg {
+    flex-shrink: 0;
+    margin-top: 2px;
+    color: #b78434;
+}
+
+.iv-consultants-instruction p {
+    color: #58718c;
+    font-size: 13px;
+    line-height: 1.7;
+}
+
+/* Form */
+
+.iv-consultants-invite-form {
+    display: grid;
+    grid-template-columns:
+        minmax(0, 1fr) minmax(190px, 260px) auto;
+    align-items: end;
+    gap: 16px;
+}
+
+.iv-consultants-field {
+    min-width: 0;
+}
+
+.iv-consultants-field input,
+.iv-consultants-modal-form input {
+    width: 100%;
+    min-width: 0;
+    min-height: 48px;
+    border: 1px solid #d7e2ee;
+    border-radius: 12px;
+    background: #fbfcff;
+    color: #10233d;
+    font-family: var(--font-sans);
+    font-size: 14px;
+    transition:
+        border-color 180ms ease,
+        box-shadow 180ms ease,
+        background 180ms ease;
+}
+
+.iv-consultants-field input:hover,
+.iv-consultants-modal-form input:hover {
+    border-color: #bfccd9;
+}
+
+.iv-consultants-field input:focus,
+.iv-consultants-modal-form input:focus {
+    border-color: #c89b50;
+    outline: none;
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(221, 177, 103, 0.16);
+}
+
+/* Styled native date picker: keyboard and mobile support remain intact */
+
+.iv-consultants-date input[type="date"] {
+    padding-right: 14px;
+    color-scheme: light;
+    accent-color: #b78434;
+    cursor: pointer;
+}
+
+.iv-consultants-date input[type="date"]::-webkit-calendar-picker-indicator {
+    width: 18px;
+    height: 18px;
+    margin-left: 8px;
+    cursor: pointer;
+    opacity: 0.75;
+    transition: opacity 180ms ease;
+}
+
+.iv-consultants-date input[type="date"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+}
+
+.iv-consultants-submit {
+    position: relative;
+    min-width: 150px;
+}
+
+.iv-consultants-submit button {
+    width: 100%;
+    min-height: 48px;
+    padding-right: 37px;
+    border: 1px solid #dbb46c;
+    border-radius: 12px;
+    background: #e6be76;
+    color: #08172a;
+    font-weight: 700;
+    box-shadow: 0 5px 15px rgba(184, 128, 45, 0.13);
+    transition:
+        background 200ms ease,
+        transform 200ms ease,
+        box-shadow 200ms ease;
+}
+
+.iv-consultants-submit button:hover:not(:disabled) {
+    transform: translateY(-2px);
+    background: #f0cb8b;
+    box-shadow: 0 8px 20px rgba(184, 128, 45, 0.2);
+}
+
+.iv-consultants-submit>svg {
+    position: absolute;
+    top: 50%;
+    right: 14px;
+    transform: translateY(-50%);
+    color: #08172a;
+    pointer-events: none;
+}
+
+/* Empty state */
+
+.iv-consultants-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 210px;
+    padding: 30px 18px;
+    border: 1px dashed #cad8e7;
+    border-radius: 16px;
+    background:
+        radial-gradient(circle at 50% 0,
+            #f5f8fe,
+            #fff 75%);
+    text-align: center;
+}
+
+.iv-consultants-empty-icon {
+    display: grid;
+    width: 68px;
+    height: 68px;
+    margin-bottom: 15px;
+    place-items: center;
+    border: 1px solid #efd9b7;
+    border-radius: 19px;
+    background: #fbf4e9;
+    color: #b48136;
+}
+
+.iv-consultants-empty h3 {
+    color: #10233d;
+    font-family: var(--font-sans);
+    font-size: 17px;
+    font-weight: 700;
+}
+
+.iv-consultants-empty p {
+    max-width: 440px;
+    margin-top: 8px;
+    color: #72869f;
+    font-size: 13px;
+    line-height: 1.7;
+}
+
+/* Consultant directory */
+
+.iv-consultants-grants {
+    display: grid;
+    gap: 12px;
+}
+
+.iv-consultants-grant {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 18px;
+    min-width: 0;
+    padding: 19px;
+    border: 1px solid #e4ebf3;
+    border-radius: 16px;
+    background: #fcfdff;
+    transition:
+        border-color 180ms ease,
+        background 180ms ease,
+        box-shadow 180ms ease;
+}
+
+.iv-consultants-grant:hover {
+    border-color: #d8bc88;
+    background: #fff;
+    box-shadow: 0 6px 18px rgba(19, 42, 68, 0.055);
+}
+
+.iv-consultants-grant-main {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex: 1 1 280px;
+    min-width: 0;
+}
+
+.iv-consultants-grant-avatar {
+    display: grid;
+    width: 47px;
+    height: 47px;
+    flex: 0 0 47px;
+    place-items: center;
+    border: 1px solid #e9d5b0;
+    border-radius: 14px;
+    background: #fcf4e8;
+    color: #b17b32;
+}
+
+.iv-consultants-grant-avatar.is-active {
+    border-color: #cce9dc;
+    background: #edf9f2;
+    color: #21946d;
+}
+
+.iv-consultants-grant-avatar.is-revoked {
+    border-color: #f2d1d1;
+    background: #fff2f2;
+    color: #d25b5b;
+}
+
+.iv-consultants-grant-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.iv-consultants-grant-details>strong {
+    display: block;
+    color: #122a47;
+    font-size: 14px;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
+.iv-consultants-grant-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 9px 13px;
+    margin-top: 8px;
+}
+
+.iv-consultants-grant-meta>span:last-child {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #7c8da5;
+    font-size: 12px;
+}
+
+.iv-consultants-grant-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 10px;
+    flex: 0 0 auto;
+}
+
+.iv-consultants-grant-actions button {
+    min-height: 39px;
+    border-radius: 10px;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.iv-consultants-access-note {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 290px;
+    color: #70839a;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.iv-consultants-access-note svg {
+    flex-shrink: 0;
+    color: #239b72;
+}
+
+.iv-consultants-modal-form {
+    display: grid;
+    gap: 18px;
+}
+
+/* Footer */
+
+.iv-consultants-footer {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 25px;
+    padding: 19px 22px;
+    border: 1px solid #dde7f2;
+    border-radius: 15px;
+    background: rgba(255, 255, 255, 0.8);
+    color: #6f839b;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.iv-consultants-footer>svg {
+    flex-shrink: 0;
+    color: #ad7b35;
+}
+
+.iv-consultants-footer-end {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+    color: #17365b;
+    font-weight: 700;
+}
+
+/* Tablet */
+
+@media (max-width: 1024px) {
+    .iv-consultants-hero-art {
+        right: 3%;
+        opacity: 0.5;
+    }
+
+    .iv-consultants-hero-copy {
+        max-width: 80%;
+    }
+
+    .iv-consultants-invite-form {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+
+    .iv-consultants-invite-form .iv-consultants-submit {
+        grid-column: 1 / -1;
+        justify-self: start;
+    }
+
+    .iv-consultants-stats {
+        gap: 12px;
+    }
+
+    .iv-consultants-stat {
+        gap: 11px;
+        padding: 17px;
+    }
+}
+
+/* Mobile */
+
+@media (max-width: 767px) {
+    .iv-consultants {
+        padding: 12px 0 36px;
+    }
+
+    .iv-consultants-shell {
+        width: 100%;
+        padding: 0;
+    }
+
+    .iv-consultants-hero {
+        min-height: 0;
+        padding: 29px 23px;
+        border-radius: 19px;
+    }
+
+    .iv-consultants-hero::before {
+        left: 23px;
+        width: 85px;
+    }
+
+    .iv-consultants-hero-copy {
+        max-width: 100%;
+    }
+
+    .iv-consultants-hero-art {
+        display: none;
+    }
+
+    .iv-consultants-heading {
+        margin-top: 15px;
+        font-size: clamp(27px, 7vw, 36px);
+    }
+
+    .iv-consultants-subtitle {
+        font-size: 13px;
+        line-height: 1.7;
+    }
+
+    .iv-consultants-hero-meta {
+        gap: 8px;
+        margin-top: 18px;
+    }
+
+    .iv-consultants-hero-meta span {
+        font-size: 11px;
+    }
+
+    .iv-consultants-stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        margin: 15px 0 20px;
+    }
+
+    .iv-consultants-stat {
+        gap: 10px;
+        padding: 15px;
+        border-radius: 14px;
+    }
+
+    .iv-consultants-stat:last-child {
+        grid-column: 1 / -1;
+    }
+
+    .iv-consultants-stat-icon {
+        width: 37px;
+        height: 37px;
+        flex-basis: 37px;
+        border-radius: 10px;
+    }
+
+    .iv-consultants-stat-value {
+        font-size: 25px;
+    }
+
+    .iv-consultants-stat-description {
+        font-size: 11px;
+    }
+
+    .iv-consultants-content {
+        gap: 18px;
+    }
+
+    .iv-consultants-panel {
+        border-radius: 18px;
+    }
+
+    .iv-consultants-panel-heading {
+        gap: 12px;
+        padding: 20px 17px;
+    }
+
+    .iv-consultants-panel-icon {
+        width: 42px;
+        height: 42px;
+        flex-basis: 42px;
+    }
+
+    .iv-consultants-panel-heading h2 {
+        font-size: 18px;
+    }
+
+    .iv-consultants-panel-heading p {
+        font-size: 12px;
+    }
+
+    .iv-consultants-panel-body {
+        padding: 18px 16px 21px;
+    }
+
+    .iv-consultants-count {
+        padding: 7px 10px;
+        font-size: 11px;
+    }
+
+    .iv-consultants-instruction {
+        padding: 12px;
+    }
+
+    .iv-consultants-invite-form {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 16px;
+    }
+
+    .iv-consultants-invite-form .iv-consultants-submit {
+        grid-column: auto;
+        width: 100%;
+    }
+
+    .iv-consultants-grant {
+        padding: 15px;
+    }
+
+    .iv-consultants-grant-main,
+    .iv-consultants-grant-actions {
+        width: 100%;
+    }
+
+    .iv-consultants-grant-actions {
+        justify-content: flex-start;
+    }
+
+    .iv-consultants-grant-actions button {
+        max-width: 100%;
+    }
+
+    .iv-consultants-footer {
+        padding: 14px;
+    }
+
+    .iv-consultants-footer-end {
+        width: 100%;
+        margin-left: 0;
+    }
+}
+
+@media (max-width: 390px) {
+    .iv-consultants-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .iv-consultants-stat:last-child {
+        grid-column: auto;
+    }
+
+    .iv-consultants-panel-heading {
+        flex-wrap: wrap;
+    }
+
+    .iv-consultants-count {
+        margin-left: 54px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .iv-consultants-enter,
+    .iv-consultants-shield {
+        animation: none !important;
+    }
+
+    .iv-consultants-stat,
+    .iv-consultants-grant,
+    .iv-consultants-submit button {
+        transition: none !important;
+    }
+}

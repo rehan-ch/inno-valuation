@@ -102,6 +102,13 @@ describe("ConsultantsPage", () => {
       "The end date must be in the future.",
     );
     expect(dialog).toBeInTheDocument();
+
+    // Opened again, the dialog starts clean rather than with the last error.
+    await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    await user.click(screen.getByRole("button", { name: "Change end date" }));
+    expect(
+      within(screen.getByRole("dialog", { name: "Change end date" })).queryByRole("alert"),
+    ).not.toBeInTheDocument();
   });
 
   it("holds the other rows' actions while one is running", async () => {

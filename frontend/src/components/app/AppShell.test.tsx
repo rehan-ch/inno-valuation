@@ -29,7 +29,11 @@ describe("AppShell", () => {
     expect(await screen.findByText("Page content")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Team" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Consultants" })).toBeInTheDocument();
-    expect(screen.getByLabelText("Organisation")).toHaveDisplayValue("Acme");
+    expect(
+      screen.getByRole("button", {
+        name: "Organisation: Acme",
+      })
+    ).toBeInTheDocument();
   });
 
   it("marks the page the visitor is on in the navigation", async () => {
@@ -45,7 +49,9 @@ describe("AppShell", () => {
       "aria-current",
       "page",
     );
-    expect(screen.getByRole("link", { name: "Account" })).not.toHaveAttribute("aria-current");
+    expect(screen.getByRole("link", { name: "Account settings" })).not.toHaveAttribute(
+      "aria-current",
+    );
   });
 
   it("hides the manage links from a plain member", async () => {
@@ -134,9 +140,16 @@ describe("AppShell", () => {
         <p>Page content</p>
       </AppShell>,
     );
-    await user.selectOptions(
-      await screen.findByLabelText("Organisation"),
-      "99999999-9999-9999-9999-999999999999",
+    await user.click(
+      await screen.findByRole("button", {
+        name: "Organisation: Acme",
+      })
+    );
+
+    await user.click(
+      screen.getByRole("button", {
+        name: /Beta Ltd/,
+      })
     );
 
     expect(calls.at(-1)).toMatchObject({
@@ -144,7 +157,11 @@ describe("AppShell", () => {
       path: "/api/v1/me/active-organisation",
       body: { organisation_id: "99999999-9999-9999-9999-999999999999" },
     });
-    expect(await screen.findByLabelText("Organisation")).toHaveDisplayValue("Beta Ltd");
+    const trigger = await screen.findByRole("button", {
+      name: "Organisation: Beta Ltd",
+    });
+    // Focus goes back to the switcher, not to the page body.
+    await vi.waitFor(() => expect(trigger).toHaveFocus());
   });
 
   it("signs out and goes to the sign-in page", async () => {

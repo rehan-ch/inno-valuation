@@ -18,5 +18,6 @@ export default defineConfig({
     restoreMocks: true,
     unstubEnvs: true,
     unstubGlobals: true,
+    maxWorkers: 1,
   },
 });

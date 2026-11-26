@@ -1,0 +1,2364 @@
+/*
+ * InnoValuation — Premium Workspace
+ * Midnight Navy / Champagne Gold
+ * Scoped to authenticated application pages.
+ */
+
+.iv-workspace {
+    --iv-navy: #081425;
+    --iv-navy-mid: #10243b;
+    --iv-navy-raised: #152b46;
+    --iv-gold: #ddb66c;
+    --iv-gold-light: #f4e4c1;
+    --iv-ink: #14243a;
+    --iv-muted: #687990;
+    --iv-line: #e1e7ef;
+    --iv-surface: #ffffff;
+
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    background: #f5f7fb;
+    color: var(--iv-ink);
+    font-family: var(--font-sans);
+}
+
+.iv-workspace *,
+.iv-workspace *::before,
+.iv-workspace *::after {
+    box-sizing: border-box;
+}
+
+/* ==============================
+   APPLICATION NAVIGATION
+   ============================== */
+
+.iv-app-header {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    width: 100%;
+    background: var(--iv-navy);
+    border-bottom: 1px solid #243650;
+}
+
+.iv-header-inner {
+    width: min(100% - 48px, 1440px);
+    min-height: 76px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+.iv-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    flex-shrink: 0;
+    text-decoration: none;
+}
+
+.iv-brand-mark {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+}
+
+.iv-brand-name {
+    color: #fff;
+    font-size: 19px;
+    font-weight: 750;
+    letter-spacing: -0.055em;
+    white-space: nowrap;
+}
+
+.iv-brand-name span {
+    color: var(--iv-gold);
+}
+
+.iv-desktop-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    min-width: 0;
+    flex: 1;
+}
+
+.iv-nav-link {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-height: 43px;
+    padding: 0 11px;
+    border-radius: 9px;
+    color: #aebcd0;
+    font-size: 12.5px;
+    font-weight: 550;
+    text-decoration: none;
+    white-space: nowrap;
+    transition:
+        color 200ms ease,
+        background-color 200ms ease;
+}
+
+.iv-nav-link:hover {
+    color: #fff;
+    background: #162840;
+}
+
+.iv-nav-active {
+    color: var(--iv-gold);
+    background: #1c2b3e;
+}
+
+.iv-nav-active::after {
+    content: "";
+    position: absolute;
+    bottom: 1px;
+    left: 14px;
+    right: 14px;
+    height: 2px;
+    border-radius: 999px;
+    background: var(--iv-gold);
+}
+
+.iv-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+.iv-desktop-org {
+    max-width: 190px;
+    min-width: 0;
+}
+
+.iv-desktop-org select,
+.iv-mobile-org select {
+    max-width: 100%;
+    min-height: 39px;
+    border: 1px solid #394c65;
+    border-radius: 10px;
+    background: #14253b;
+    color: #fff;
+    padding: 0 10px;
+    font-size: 12px;
+}
+
+.iv-account-avatar,
+.iv-mobile-profile-avatar {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+    background: #d8b16a;
+    border: 1px solid #f1d6a1;
+    color: #091528;
+    font-size: 14px;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.iv-account-avatar {
+    transition:
+        transform 180ms ease,
+        background-color 180ms ease;
+}
+
+.iv-account-avatar:hover {
+    transform: translateY(-2px);
+    background: #f0ca86;
+}
+
+.iv-avatar-active {
+    outline: 2px solid #fff;
+    outline-offset: 3px;
+}
+
+.iv-mobile-toggle {
+    display: none;
+    place-items: center;
+    width: 41px;
+    height: 41px;
+    border: 1px solid #34455b;
+    border-radius: 10px;
+    background: #15263c;
+    color: var(--iv-gold);
+    cursor: pointer;
+}
+
+.iv-mobile-menu {
+    display: none;
+}
+
+.iv-main {
+    width: min(100% - 48px, 1280px);
+    margin: 0 auto;
+    flex: 1;
+    padding: 34px 0 70px;
+    min-width: 0;
+}
+
+.iv-workspace a:focus-visible,
+.iv-workspace button:focus-visible {
+    outline: 2px solid var(--iv-gold);
+    outline-offset: 3px;
+}
+
+/* ==============================
+   DASHBOARD FOUNDATION
+   ============================== */
+
+.iv-dashboard {
+    display: flex;
+    flex-direction: column;
+    gap: 29px;
+    min-width: 0;
+}
+
+.iv-dashboard h1,
+.iv-dashboard h2,
+.iv-dashboard h3 {
+    font-family: var(--font-sans);
+}
+
+.iv-eyebrow {
+    color: #8b6a32;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .17em;
+}
+
+.iv-section-heading {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-bottom: 19px;
+}
+
+.iv-section-heading h2 {
+    margin-top: 6px;
+    color: var(--iv-ink);
+    font-size: clamp(21px, 2vw, 26px);
+    font-weight: 750;
+    letter-spacing: -.045em;
+}
+
+.iv-section-description {
+    margin-top: 4px;
+    color: var(--iv-muted);
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+/* ==============================
+   WELCOME HERO
+   ============================== */
+
+.iv-welcome {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 223px;
+    padding: 35px 42px;
+    border: 1px solid #1d3551;
+    border-radius: 22px;
+    background: var(--iv-navy);
+    box-shadow: 0 14px 32px rgba(12, 28, 49, .10);
+}
+
+.iv-welcome::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 42px;
+    width: 80px;
+    height: 3px;
+    background: var(--iv-gold);
+    border-radius: 0 0 5px 5px;
+}
+
+.iv-welcome-copy {
+    position: relative;
+    z-index: 2;
+    max-width: 760px;
+}
+
+.iv-welcome-eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    color: var(--iv-gold);
+    font-size: 10px;
+    font-weight: 750;
+    letter-spacing: .19em;
+}
+
+.iv-gold-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--iv-gold);
+}
+
+.iv-welcome h1 {
+    margin-top: 19px;
+    color: #f7f8fc;
+    font-size: clamp(28px, 3.2vw, 42px);
+    font-weight: 750;
+    letter-spacing: -.055em;
+    line-height: 1.15;
+}
+
+.iv-gold-period {
+    color: var(--iv-gold);
+}
+
+.iv-welcome-copy>p {
+    max-width: 570px;
+    margin-top: 11px;
+    color: #abbad0;
+    font-size: 14px;
+    line-height: 1.8;
+}
+
+.iv-welcome-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 9px;
+    margin-top: 20px;
+}
+
+.iv-welcome-tags span {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    max-width: 100%;
+    padding: 7px 11px;
+    border: 1px solid #35455d;
+    border-radius: 8px;
+    background: #14253b;
+    color: #dbe4ef;
+    font-size: 11px;
+    overflow-wrap: anywhere;
+}
+
+.iv-welcome-tags svg {
+    color: var(--iv-gold);
+    flex-shrink: 0;
+}
+
+.iv-welcome-decoration {
+    display: grid;
+    place-items: center;
+    position: relative;
+    flex-shrink: 0;
+    width: 185px;
+    height: 185px;
+    margin-right: 30px;
+}
+
+.iv-welcome-ring {
+    display: grid;
+    place-items: center;
+    width: 155px;
+    height: 155px;
+    border: 1px solid #45536a;
+    border-radius: 50%;
+    color: var(--iv-gold);
+    box-shadow:
+        0 0 0 17px rgba(255, 255, 255, .025),
+        0 0 0 35px rgba(255, 255, 255, .018),
+        inset 0 0 35px rgba(221, 182, 108, .04);
+    animation: iv-compass-float 7s ease-in-out infinite;
+}
+
+@keyframes iv-compass-float {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-7px);
+    }
+}
+
+/* ==============================
+   METRIC CARDS
+   ============================== */
+
+.iv-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.iv-metric-card {
+    min-width: 0;
+    min-height: 164px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 21px;
+    border: 1px solid var(--iv-line);
+    border-radius: 17px;
+    background: #fff;
+    text-decoration: none;
+    box-shadow: 0 4px 14px rgba(17, 36, 61, .035);
+    transition:
+        transform 240ms ease,
+        border-color 240ms ease,
+        box-shadow 240ms ease;
+}
+
+.iv-metric-clickable:hover {
+    transform: translateY(-4px);
+    border-color: #c4ac7b;
+    box-shadow: 0 15px 30px rgba(17, 36, 61, .09);
+}
+
+.iv-metric-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.iv-metric-icon,
+.iv-panel-icon,
+.iv-quick-icon {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border: 1px solid #e9dac0;
+    border-radius: 11px;
+    background: #fbf6eb;
+    color: #987039;
+}
+
+.iv-metric-arrow {
+    color: #9cacbf;
+}
+
+.iv-metric-label {
+    margin-top: 13px;
+    color: #6e7d90;
+    font-size: 11px;
+    font-weight: 650;
+}
+
+.iv-metric-value {
+    margin-top: 3px;
+    color: #10243b;
+    font-size: clamp(23px, 2.4vw, 32px);
+    font-weight: 800;
+    letter-spacing: -.055em;
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+}
+
+.iv-metric-hint {
+    margin-top: 4px;
+    color: #7d8ba0;
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+/* ==============================
+   READINESS PANEL
+   ============================== */
+
+.iv-readiness-panel {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 235px;
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    min-height: 247px;
+    padding: 29px 34px;
+    border: 1px solid #213b59;
+    border-radius: 19px;
+    background: var(--iv-navy-mid);
+    color: white;
+    box-shadow: 0 12px 32px rgba(16, 36, 59, .09);
+}
+
+.iv-readiness-content {
+    position: relative;
+    z-index: 2;
+    min-width: 0;
+}
+
+.iv-readiness-overline {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    color: #e3bf80;
+    font-size: 10px;
+    font-weight: 750;
+    letter-spacing: .14em;
+}
+
+.iv-readiness-symbol {
+    display: grid;
+    place-items: center;
+    width: 35px;
+    height: 35px;
+    border: 1px solid #6b5a3d;
+    border-radius: 9px;
+}
+
+.iv-readiness-main {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    margin-top: 18px;
+}
+
+.iv-readiness-main h3 {
+    color: #fff;
+    font-size: clamp(22px, 2.4vw, 29px);
+    font-weight: 750;
+    letter-spacing: -.04em;
+}
+
+.iv-readiness-main p {
+    max-width: 585px;
+    margin-top: 8px;
+    color: #b6c4d8;
+    font-size: 13px;
+    line-height: 1.7;
+}
+
+.iv-readiness-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin-top: 12px;
+    color: #ead0a0;
+    font-size: 11px;
+    font-weight: 650;
+}
+
+.iv-status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--iv-gold);
+}
+
+.iv-readiness-score {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.iv-readiness-score strong {
+    color: #fff;
+    font-size: 39px;
+    letter-spacing: -.05em;
+}
+
+.iv-readiness-score>span {
+    color: #b6c4d8;
+    font-size: 13px;
+}
+
+.iv-readiness-score .iv-score-band {
+    flex-basis: 100%;
+    color: var(--iv-gold);
+    font-weight: 700;
+}
+
+.iv-readiness-actions {
+    margin-top: 20px;
+}
+
+.iv-readiness-visual {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 215px;
+    height: 215px;
+}
+
+.iv-orbit {
+    position: absolute;
+    border: 1px solid rgba(221, 182, 108, .27);
+    border-radius: 50%;
+}
+
+.iv-orbit-one {
+    width: 202px;
+    height: 202px;
+}
+
+.iv-orbit-two {
+    width: 151px;
+    height: 151px;
+}
+
+.iv-orbit-three {
+    width: 98px;
+    height: 98px;
+}
+
+.iv-orbit-center {
+    display: grid;
+    place-items: center;
+    width: 76px;
+    height: 76px;
+    border: 1px solid #806d4c;
+    border-radius: 50%;
+    background: #162c48;
+    color: var(--iv-gold);
+}
+
+.iv-orbit-node {
+    position: absolute;
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border: 1px solid #897448;
+    border-radius: 50%;
+    background: #172b45;
+    color: var(--iv-gold);
+    box-shadow: 0 5px 12px rgba(0, 0, 0, .17);
+}
+
+.iv-orbit-node-one {
+    top: 0;
+    left: 92px;
+}
+
+.iv-orbit-node-two {
+    bottom: 18px;
+    right: 7px;
+}
+
+.iv-orbit-node-three {
+    bottom: 40px;
+    left: 11px;
+}
+
+/* ==============================
+   PRIMARY ACTIONS
+   ============================== */
+
+.iv-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    min-height: 43px;
+    padding: 11px 17px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 750;
+    text-align: center;
+    text-decoration: none;
+    transition:
+        background-color 200ms ease,
+        transform 200ms ease,
+        box-shadow 200ms ease;
+}
+
+.iv-action:hover {
+    transform: translateY(-2px);
+}
+
+.iv-action-primary {
+    background: var(--iv-gold);
+    color: #091528;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, .12);
+}
+
+.iv-action-primary:hover {
+    background: #efc985;
+    box-shadow: 0 9px 21px rgba(0, 0, 0, .17);
+}
+
+.iv-action-secondary {
+    border: 1px solid #d8dfeb;
+    background: #fff;
+    color: var(--iv-ink);
+}
+
+.iv-action-secondary:hover {
+    background: #f5f7fb;
+}
+
+.iv-text-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: #375a83;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+    text-decoration: none;
+}
+
+.iv-text-link:hover {
+    color: #172f50;
+}
+
+/* ==============================
+   CONTENT PANELS
+   ============================== */
+
+.iv-content-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+    align-items: stretch;
+}
+
+.iv-panel {
+    min-width: 0;
+    padding: 25px;
+    border: 1px solid var(--iv-line);
+    border-radius: 18px;
+    background: var(--iv-surface);
+    box-shadow: 0 4px 17px rgba(17, 36, 61, .035);
+}
+
+.iv-panel-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.iv-panel-kicker {
+    color: #9a8057;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .12em;
+}
+
+.iv-panel-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-top: 19px;
+}
+
+.iv-panel h3 {
+    color: var(--iv-ink);
+    font-size: 19px;
+    font-weight: 750;
+    letter-spacing: -.04em;
+}
+
+.iv-panel-title-row p,
+.iv-member-panel>p {
+    margin-top: 5px;
+    color: var(--iv-muted);
+    font-size: 12px;
+    line-height: 1.65;
+}
+
+.iv-progress-fraction {
+    padding: 7px 10px;
+    background: #f8f2e7;
+    border-radius: 8px;
+    color: #876333;
+    font-size: 12px;
+    font-weight: 750;
+    white-space: nowrap;
+}
+
+.iv-progress-track {
+    height: 7px;
+    margin-top: 20px;
+    overflow: hidden;
+    border-radius: 99px;
+    background: #e7ecf3;
+}
+
+.iv-progress-track>span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: #c49a56;
+    transition: width 450ms ease;
+}
+
+.iv-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    margin-top: 18px;
+    list-style: none;
+}
+
+.iv-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 11px 0;
+    border-bottom: 1px solid #eef1f5;
+}
+
+.iv-step:last-child {
+    border-bottom: 0;
+}
+
+.iv-step-indicator {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    border: 1px solid #dae2ec;
+    border-radius: 8px;
+    color: #97a5b8;
+}
+
+.iv-step-done .iv-step-indicator {
+    color: #2e6d56;
+    border-color: #d0e7db;
+    background: #e7f6ee;
+}
+
+.iv-step-copy {
+    flex: 1;
+    min-width: 0;
+}
+
+.iv-step-title {
+    color: #1c2f49;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.65;
+}
+
+.iv-step-title a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.iv-step-title a:hover {
+    color: #ad7e3a;
+}
+
+.iv-step-done .iv-step-title {
+    color: #8390a2;
+}
+
+.iv-step-hint {
+    margin-top: 2px;
+    color: #8390a2;
+    font-size: 11px;
+    line-height: 1.55;
+}
+
+.iv-step-go {
+    display: grid;
+    place-items: center;
+    width: 27px;
+    height: 27px;
+    border-radius: 8px;
+    color: #7c899d;
+    text-decoration: none;
+}
+
+.iv-step-go:hover {
+    background: #f8f2e7;
+    color: #987039;
+}
+
+/* ==============================
+   TEAM PANEL
+   ============================== */
+
+.iv-team-list {
+    margin-top: 20px;
+    list-style: none;
+}
+
+.iv-team-member {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 12px 0;
+    border-bottom: 1px solid #edf1f5;
+}
+
+.iv-team-avatar {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 39px;
+    height: 39px;
+    border: 1px solid #d7e1ed;
+    border-radius: 11px;
+    background: #eaf0f8;
+    color: #304b70;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.iv-team-member-copy {
+    flex: 1;
+    min-width: 0;
+}
+
+.iv-team-member-name {
+    display: block;
+    overflow: hidden;
+    color: var(--iv-ink);
+    font-size: 12px;
+    font-weight: 750;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.iv-you-label {
+    color: #8593a5;
+    font-weight: 500;
+}
+
+.iv-team-member-desc {
+    display: block;
+    margin-top: 3px;
+    color: #8493a7;
+    font-size: 11px;
+}
+
+.iv-role-pill {
+    flex-shrink: 0;
+    padding: 6px 9px;
+    border: 1px solid #e9dac0;
+    border-radius: 7px;
+    background: #fbf6eb;
+    color: #95703c;
+    font-size: 10px;
+    font-weight: 750;
+}
+
+.iv-team-extra {
+    margin-top: 12px;
+    color: #758398;
+    font-size: 11px;
+}
+
+.iv-panel-footer-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 24px;
+    padding: 15px 0 0;
+    border-top: 1px solid var(--iv-line);
+    color: #244a75;
+    font-size: 12px;
+    font-weight: 750;
+    text-decoration: none;
+}
+
+.iv-panel-footer-link:hover {
+    color: #a47737;
+}
+
+.iv-empty-team {
+    display: grid;
+    justify-items: center;
+    gap: 10px;
+    padding: 35px 15px;
+    color: #90a0b5;
+    font-size: 12px;
+    text-align: center;
+}
+
+/* ==============================
+   QUICK ACTIONS
+   ============================== */
+
+.iv-quick-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 15px;
+}
+
+.iv-quick-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    min-height: 88px;
+    padding: 16px;
+    border: 1px solid var(--iv-line);
+    border-radius: 15px;
+    background: white;
+    text-decoration: none;
+    transition:
+        transform 220ms ease,
+        border-color 220ms ease,
+        box-shadow 220ms ease;
+}
+
+.iv-quick-card:hover {
+    transform: translateY(-3px);
+    border-color: #d7bf92;
+    box-shadow: 0 12px 25px rgba(12, 28, 49, .07);
+}
+
+.iv-quick-icon {
+    width: 40px;
+    height: 40px;
+}
+
+.iv-quick-copy {
+    flex: 1;
+    min-width: 0;
+}
+
+.iv-quick-copy strong {
+    display: block;
+    color: #1a2c45;
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+.iv-quick-copy small {
+    display: block;
+    margin-top: 3px;
+    color: #8391a3;
+    font-size: 10px;
+    line-height: 1.5;
+}
+
+.iv-quick-arrow {
+    color: #8495a8;
+    flex-shrink: 0;
+}
+
+/* ==============================
+   MEMBER / EMPTY STATES
+   ============================== */
+
+.iv-member-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.iv-member-panel h3 {
+    margin-top: 4px;
+}
+
+.iv-member-panel .iv-action {
+    align-self: flex-start;
+    margin-top: auto;
+}
+
+.iv-member-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    padding: 12px 0;
+    border-bottom: 1px solid #edf1f5;
+    font-size: 12px;
+}
+
+.iv-member-info span {
+    color: var(--iv-muted);
+}
+
+.iv-member-info strong {
+    color: var(--iv-ink);
+    text-align: right;
+}
+
+.iv-no-org {
+    max-width: 720px;
+}
+
+.iv-no-org h2 {
+    margin-top: 18px;
+    font-size: 25px;
+    font-weight: 750;
+}
+
+.iv-no-org>p {
+    max-width: 500px;
+    margin-top: 8px;
+    color: var(--iv-muted);
+    font-size: 14px;
+    line-height: 1.75;
+}
+
+.iv-no-org-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 22px;
+}
+
+/* ==============================
+   RESPONSIVE DESIGN
+   ============================== */
+
+@media (max-width: 1279px) {
+    .iv-header-inner {
+        width: min(100% - 32px, 1440px);
+        gap: 14px;
+    }
+
+    .iv-nav-link {
+        padding-inline: 8px;
+    }
+
+    .iv-nav-link svg {
+        width: 15px;
+    }
+}
+
+@media (max-width: 1100px) {
+
+    .iv-desktop-nav,
+    .iv-desktop-org {
+        display: none;
+    }
+
+    .iv-header-inner {
+        min-height: 66px;
+    }
+
+    .iv-header-actions {
+        margin-left: auto;
+    }
+
+    .iv-mobile-toggle {
+        display: grid;
+    }
+
+    .iv-mobile-menu {
+        display: block;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        max-height: calc(100dvh - 66px);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        padding: 15px 24px 25px;
+        border-top: 1px solid #263950;
+        border-bottom: 1px solid #263950;
+        background: var(--iv-navy);
+        box-shadow: 0 18px 35px rgba(0, 0, 0, .24);
+    }
+
+    .iv-mobile-profile {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 6px 0 17px;
+        border-bottom: 1px solid #263950;
+    }
+
+    .iv-mobile-org {
+        display: flex;
+        flex-direction: column;
+        gap: 9px;
+        padding: 19px 0 15px;
+    }
+
+    .iv-mobile-caption {
+        color: #9cacca;
+        font-size: 10px;
+        font-weight: 750;
+        letter-spacing: .12em;
+    }
+
+    .iv-mobile-org select {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .iv-mobile-links {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .iv-nav-mobile-link {
+        justify-content: flex-start;
+        min-height: 46px;
+        padding: 0 15px;
+        font-size: 13px;
+    }
+
+    .iv-nav-mobile-link.iv-nav-active::after {
+        display: none;
+    }
+
+    .iv-nav-mobile-current {
+        width: 6px;
+        height: 6px;
+        margin-left: auto;
+        border-radius: 50%;
+        background: var(--iv-gold);
+    }
+
+    .iv-mobile-footer {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 1px solid #263950;
+    }
+
+    .iv-mobile-secondary {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+        min-height: 46px;
+        padding: 0 15px;
+        border: none;
+        border-radius: 9px;
+        background: transparent;
+        color: #c7d4e5;
+        font-size: 13px;
+        text-align: left;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    .iv-mobile-secondary:hover {
+        background: #182a42;
+        color: white;
+    }
+
+    .iv-main {
+        width: min(100% - 36px, 1280px);
+    }
+}
+
+@media (max-width: 900px) {
+    .iv-metrics-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .iv-content-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .iv-quick-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .iv-welcome-decoration {
+        margin-right: 0;
+    }
+}
+
+@media (max-width: 640px) {
+    .iv-main {
+        width: calc(100% - 28px);
+        padding-top: 20px;
+        padding-bottom: 45px;
+    }
+
+    .iv-dashboard {
+        gap: 24px;
+    }
+
+    .iv-header-inner {
+        width: calc(100% - 28px);
+    }
+
+    .iv-brand-name {
+        font-size: 17px;
+    }
+
+    .iv-brand-mark {
+        width: 31px;
+    }
+
+    .iv-brand-mark img {
+        width: 31px;
+        height: 31px;
+    }
+
+    .iv-account-avatar {
+        width: 34px;
+        height: 34px;
+    }
+
+    .iv-mobile-menu {
+        padding-inline: 14px;
+    }
+
+    .iv-welcome {
+        min-height: auto;
+        padding: 28px 22px;
+        border-radius: 17px;
+    }
+
+    .iv-welcome::before {
+        left: 22px;
+    }
+
+    .iv-welcome h1 {
+        margin-top: 16px;
+        font-size: clamp(27px, 7.5vw, 35px);
+    }
+
+    .iv-welcome-copy>p {
+        font-size: 13px;
+    }
+
+    .iv-welcome-eyebrow {
+        font-size: 9px;
+        letter-spacing: .11em;
+    }
+
+    .iv-welcome-decoration {
+        display: none;
+    }
+
+    .iv-metrics-grid {
+        gap: 10px;
+    }
+
+    .iv-metric-card {
+        min-height: 146px;
+        padding: 15px;
+        border-radius: 13px;
+    }
+
+    .iv-metric-icon {
+        width: 35px;
+        height: 35px;
+    }
+
+    .iv-metric-label {
+        font-size: 10px;
+    }
+
+    .iv-metric-value {
+        font-size: 25px;
+    }
+
+    .iv-readiness-panel {
+        grid-template-columns: 1fr;
+        padding: 25px 22px;
+        min-height: auto;
+    }
+
+    .iv-readiness-visual {
+        display: none;
+    }
+
+    .iv-readiness-main {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .iv-readiness-main h3 {
+        font-size: 24px;
+    }
+
+    .iv-readiness-actions .iv-action {
+        width: 100%;
+    }
+
+    .iv-panel {
+        padding: 19px;
+        border-radius: 15px;
+    }
+
+    .iv-panel-title-row {
+        align-items: flex-start;
+    }
+
+    .iv-panel h3 {
+        font-size: 18px;
+    }
+
+    .iv-quick-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .iv-quick-card {
+        min-height: 74px;
+    }
+
+    .iv-section-heading h2 {
+        font-size: 23px;
+    }
+}
+
+/* ==============================
+   ACCESSIBILITY
+   ============================== */
+
+@media (prefers-reduced-motion: reduce) {
+
+    .iv-workspace *,
+    .iv-workspace *::before,
+    .iv-workspace *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+.iv-desktop-signout {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 38px;
+    padding: 0 13px;
+    border: 1px solid #394c65;
+    border-radius: 10px;
+    background: transparent;
+    color: #dbe4ef;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 200ms, color 200ms;
+}
+
+.iv-desktop-signout:hover {
+    background: #182d47;
+    color: #ddb66c;
+}
+
+@media (max-width: 1100px) {
+    .iv-desktop-signout {
+        display: none;
+    }
+}
+
+/* ==========================================================
+   INNOVALUATION — ENTERPRISE WORKSPACE REFINEMENT
+   Midnight Navy / Champagne Gold / Porcelain
+   Append after the existing workspace CSS.
+   ========================================================== */
+
+.iv-workspace {
+    --iv-navy: #071323;
+    --iv-navy-mid: #10233b;
+    --iv-navy-raised: #192e49;
+    --iv-gold: #dfb86f;
+    --iv-gold-light: #f5e5c3;
+    --iv-ink: #142238;
+    --iv-muted: #64748b;
+    --iv-line: #e3e9f1;
+    --iv-surface: #ffffff;
+
+    background:
+        radial-gradient(ellipse at 50% 0%,
+            rgba(220, 232, 247, .40),
+            transparent 55%),
+        #f6f8fc;
+    color: var(--iv-ink);
+}
+
+/* ---------- Global focus and accessibility ---------- */
+
+.iv-workspace a:focus-visible,
+.iv-workspace button:focus-visible,
+.iv-workspace select:focus-visible {
+    outline: 2px solid var(--iv-gold);
+    outline-offset: 3px;
+}
+
+/* ---------- Header ---------- */
+
+.iv-app-header {
+    z-index: 50;
+    background:
+        linear-gradient(110deg,
+            #071323 0%,
+            #0b192d 60%,
+            #101f34 100%);
+    border-bottom: 1px solid rgba(223, 184, 111, .14);
+    box-shadow: 0 8px 24px rgba(7, 19, 35, .08);
+}
+
+.iv-header-inner {
+    width: min(100% - 48px, 1480px);
+    min-height: 78px;
+    gap: clamp(12px, 1.6vw, 27px);
+}
+
+.iv-brand {
+    gap: 10px;
+    outline-offset: 5px;
+}
+
+.iv-brand-mark {
+    width: 40px;
+    height: 40px;
+    transition: transform .3s ease;
+}
+
+.iv-brand:hover .iv-brand-mark {
+    transform: rotate(-7deg) scale(1.045);
+}
+
+.iv-brand-name {
+    font-size: 19px;
+    font-weight: 800;
+    letter-spacing: -.055em;
+}
+
+.iv-brand-name span {
+    color: var(--iv-gold);
+}
+
+/* ---------- Desktop navigation ---------- */
+
+.iv-desktop-nav {
+    gap: 4px;
+}
+
+.iv-nav-link {
+    min-height: 42px;
+    gap: 8px;
+    padding: 0 clamp(9px, .9vw, 14px);
+    border: 1px solid transparent;
+    border-radius: 10px;
+    color: #aebcd0;
+    font-size: 12.5px;
+    font-weight: 600;
+    transition:
+        background .22s ease,
+        border-color .22s ease,
+        color .22s ease,
+        transform .22s ease;
+}
+
+.iv-nav-link svg {
+    flex-shrink: 0;
+    transition: transform .22s ease;
+}
+
+.iv-nav-link:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, .055);
+    border-color: rgba(255, 255, 255, .065);
+}
+
+.iv-nav-link:hover svg {
+    transform: translateY(-1px);
+}
+
+.iv-nav-link.iv-nav-active {
+    color: #f1c77d;
+    background: rgba(223, 184, 111, .105);
+    border-color: rgba(223, 184, 111, .14);
+}
+
+.iv-nav-active::after {
+    left: 18px;
+    right: 18px;
+    bottom: -1px;
+    height: 2px;
+    background: var(--iv-gold);
+    box-shadow: 0 0 12px rgba(223, 184, 111, .4);
+}
+
+/* ---------- Organisation switcher ---------- */
+
+.iv-org-control {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-height: 42px;
+    padding: 0 11px;
+    border: 1px solid #354962;
+    border-radius: 11px;
+    background:
+        linear-gradient(145deg, #172b44, #112238);
+    color: #d4e0ef;
+    transition:
+        border-color .2s ease,
+        box-shadow .2s ease,
+        background .2s ease;
+}
+
+.iv-org-control:hover {
+    border-color: rgba(223, 184, 111, .65);
+    background: #192e49;
+}
+
+.iv-org-control:focus-within {
+    border-color: var(--iv-gold);
+    box-shadow: 0 0 0 3px rgba(223, 184, 111, .13);
+}
+
+.iv-org-control>svg:first-child {
+    color: var(--iv-gold);
+    flex-shrink: 0;
+}
+
+.iv-org-control-field {
+    min-width: 0;
+    flex: 1;
+}
+
+.iv-org-control select,
+.iv-desktop-org .iv-org-control select,
+.iv-mobile-org .iv-org-control select {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-height: 40px;
+    padding: 0 3px;
+    appearance: none;
+    -webkit-appearance: none;
+    border: 0;
+    outline: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+    color: #f5f7fc;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 650;
+    cursor: pointer;
+    text-overflow: ellipsis;
+}
+
+.iv-org-control select:focus-visible {
+    outline: none;
+}
+
+.iv-org-control select option,
+.iv-org-control select optgroup {
+    background: #14253b;
+    color: #fff;
+}
+
+.iv-org-chevron {
+    flex-shrink: 0;
+    color: #d6bd8a;
+    pointer-events: none;
+}
+
+.iv-desktop-org {
+    width: clamp(145px, 12vw, 195px);
+    max-width: 195px;
+}
+
+/* ---------- Header actions ---------- */
+
+.iv-header-actions {
+    gap: 9px;
+}
+
+.iv-header-create,
+.iv-desktop-signout,
+.iv-mobile-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
+    border: 1px solid #354962;
+    border-radius: 11px;
+    background: rgba(255, 255, 255, .025);
+    color: #d6e2ef;
+    text-decoration: none;
+    cursor: pointer;
+    transition:
+        background .2s ease,
+        color .2s ease,
+        border-color .2s ease,
+        transform .2s ease;
+}
+
+.iv-header-create {
+    width: 42px;
+    color: var(--iv-gold);
+}
+
+.iv-desktop-signout {
+    gap: 8px;
+    padding: 0 14px;
+    font-size: 12px;
+    font-weight: 650;
+}
+
+.iv-header-create:hover,
+.iv-desktop-signout:hover,
+.iv-mobile-toggle:hover {
+    background: #1b304a;
+    color: var(--iv-gold-light);
+    border-color: #8a714d;
+    transform: translateY(-1px);
+}
+
+.iv-account-avatar {
+    width: 41px;
+    height: 41px;
+    border-radius: 12px;
+    background: linear-gradient(145deg,
+            #efd090,
+            #c99a50);
+    border-color: #efd49d;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .4);
+    font-size: 14px;
+}
+
+.iv-account-avatar:hover {
+    transform: translateY(-2px);
+    background: #f3d493;
+}
+
+/* ---------- Main workspace ---------- */
+
+.iv-main {
+    width: min(100% - 48px, 1320px);
+    padding-top: 36px;
+    padding-bottom: 78px;
+}
+
+.iv-dashboard {
+    gap: 32px;
+}
+
+.iv-section-heading {
+    margin-bottom: 21px;
+}
+
+.iv-section-heading h2 {
+    color: #101f34;
+    letter-spacing: -.05em;
+}
+
+.iv-eyebrow {
+    color: #9a6b2c;
+    font-size: 10px;
+    letter-spacing: .18em;
+}
+
+/* ---------- Welcome panel ---------- */
+
+.iv-welcome {
+    min-height: 225px;
+    border: 1px solid #223a58;
+    border-radius: 23px;
+    background:
+        radial-gradient(circle at 86% 48%,
+            rgba(223, 184, 111, .10),
+            transparent 28%),
+        linear-gradient(120deg,
+            #071323,
+            #0e223b);
+    box-shadow:
+        0 18px 45px rgba(12, 28, 49, .11),
+        inset 0 1px 0 rgba(255, 255, 255, .035);
+}
+
+.iv-welcome::before {
+    width: 100px;
+    background: linear-gradient(90deg,
+            #c79549,
+            #f6d699);
+}
+
+.iv-welcome h1 {
+    font-size: clamp(30px, 3.1vw, 43px);
+    letter-spacing: -.055em;
+}
+
+.iv-welcome-copy>p {
+    color: #b9c7da;
+}
+
+.iv-welcome-tags span {
+    background: rgba(255, 255, 255, .055);
+    border-color: rgba(255, 255, 255, .13);
+    border-radius: 9px;
+}
+
+.iv-welcome-ring {
+    border-color: rgba(223, 184, 111, .36);
+    box-shadow:
+        0 0 0 20px rgba(255, 255, 255, .022),
+        0 0 0 42px rgba(255, 255, 255, .014),
+        inset 0 0 45px rgba(223, 184, 111, .045);
+}
+
+/* ---------- High-end KPI cards ---------- */
+
+.iv-metrics-grid {
+    gap: 17px;
+}
+
+.iv-metric-card {
+    position: relative;
+    overflow: hidden;
+    min-height: 170px;
+    padding: 22px;
+    border: 1px solid #e0e6ee;
+    border-radius: 18px;
+    background: linear-gradient(160deg,
+            #fff 70%,
+            #fbfcfe);
+    box-shadow:
+        0 6px 22px rgba(21, 39, 66, .035),
+        0 1px 2px rgba(21, 39, 66, .02);
+}
+
+.iv-metric-card::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 2px;
+    background: linear-gradient(90deg,
+            transparent,
+            rgba(223, 184, 111, .65),
+            transparent);
+    opacity: 0;
+    transition: opacity .2s ease;
+}
+
+.iv-metric-clickable:hover {
+    transform: translateY(-4px);
+    border-color: #d9c4a1;
+    box-shadow: 0 16px 32px rgba(21, 39, 66, .085);
+}
+
+.iv-metric-clickable:hover::before {
+    opacity: 1;
+}
+
+.iv-metric-icon,
+.iv-panel-icon,
+.iv-quick-icon {
+    border-color: #eddcc0;
+    background: linear-gradient(#fffaf2, #f8efdf);
+    color: #9b7137;
+}
+
+.iv-metric-value {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -.06em;
+}
+
+/* ---------- Readiness intelligence ---------- */
+
+.iv-readiness-panel {
+    min-height: 255px;
+    border-radius: 22px;
+    border-color: #29415e;
+    background:
+        radial-gradient(circle at 86% 50%,
+            rgba(223, 184, 111, .09),
+            transparent 30%),
+        linear-gradient(110deg,
+            #10223a,
+            #152e4a);
+    box-shadow: 0 16px 36px rgba(16, 36, 59, .105);
+}
+
+.iv-readiness-main h3 {
+    font-size: clamp(23px, 2.3vw, 31px);
+}
+
+.iv-readiness-status {
+    color: #f0d6a7;
+}
+
+.iv-action-primary {
+    background: linear-gradient(115deg,
+            #e7c27b,
+            #d7aa5c);
+    color: #071323;
+    border: 1px solid rgba(255, 255, 255, .14);
+}
+
+.iv-action-primary:hover {
+    background: #f0cd8d;
+    box-shadow: 0 10px 23px rgba(0, 0, 0, .15);
+}
+
+.iv-orbit-center {
+    box-shadow: 0 0 25px rgba(223, 184, 111, .08);
+}
+
+/* ---------- Team, onboarding, and content cards ---------- */
+
+.iv-content-grid {
+    gap: 20px;
+    align-items: start;
+}
+
+.iv-panel {
+    border-radius: 19px;
+    border-color: #e1e7f0;
+    background: #fff;
+    box-shadow:
+        0 6px 22px rgba(21, 39, 66, .04);
+}
+
+.iv-team-panel {
+    position: relative;
+    overflow: hidden;
+}
+
+.iv-team-panel::before {
+    content: "";
+    position: absolute;
+    width: 175px;
+    height: 175px;
+    top: -125px;
+    right: -90px;
+    border: 1px solid rgba(223, 184, 111, .2);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.iv-panel h3 {
+    letter-spacing: -.045em;
+}
+
+.iv-progress-track {
+    height: 8px;
+    background: #edf0f5;
+}
+
+.iv-progress-track>span {
+    background: linear-gradient(90deg,
+            #ae7e3b,
+            #e7bf75);
+}
+
+.iv-step {
+    transition: background .2s ease;
+}
+
+.iv-step:not(.iv-step-done):hover {
+    background: #fafbfd;
+}
+
+.iv-step-title a:hover,
+.iv-panel-footer-link:hover,
+.iv-text-link:hover {
+    color: #a87b3d;
+}
+
+.iv-team-member {
+    min-height: 70px;
+}
+
+.iv-team-avatar {
+    background: linear-gradient(145deg,
+            #eaf0f8,
+            #dce7f3);
+}
+
+.iv-panel-footer-link {
+    min-height: 49px;
+    align-items: center;
+}
+
+/* ---------- Quick actions ---------- */
+
+.iv-quick-card {
+    position: relative;
+    min-height: 92px;
+    border-radius: 16px;
+    background: #fff;
+}
+
+.iv-quick-card:hover {
+    transform: translateY(-4px);
+    border-color: #d9c4a1;
+    box-shadow: 0 15px 30px rgba(21, 39, 66, .075);
+}
+
+.iv-quick-arrow {
+    transition: transform .2s ease;
+}
+
+.iv-quick-card:hover .iv-quick-arrow {
+    transform: translate(3px, -3px);
+    color: #a87b3d;
+}
+
+/* ---------- Mobile navigation panel ---------- */
+
+.iv-mobile-menu {
+    animation: iv-menu-enter .24s ease both;
+}
+
+.iv-mobile-backdrop {
+    position: fixed;
+    z-index: 45;
+    top: var(--app-header-h, 76px);
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    border: 0;
+    background: rgba(5, 14, 26, .58);
+    backdrop-filter: blur(4px);
+    cursor: default;
+}
+
+@keyframes iv-menu-enter {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ---------- Responsive refinements ---------- */
+
+@media (max-width: 1240px) {
+
+    .iv-desktop-nav,
+    .iv-desktop-org,
+    .iv-desktop-signout,
+    .iv-header-create {
+        display: none;
+    }
+
+    .iv-mobile-toggle {
+        display: grid;
+    }
+
+    .iv-header-actions {
+        margin-left: auto;
+    }
+
+    .iv-header-inner {
+        min-height: 69px;
+    }
+
+    .iv-mobile-menu {
+        display: block;
+        position: absolute;
+        z-index: 2;
+        top: 100%;
+        left: 0;
+        right: 0;
+        max-height: calc(100dvh - var(--app-header-h, 69px));
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        padding: 19px 24px 24px;
+        background:
+            linear-gradient(145deg, #091626, #10243b);
+        border-top: 1px solid #2a3c55;
+        border-bottom: 1px solid #2a3c55;
+        box-shadow: 0 24px 50px rgba(0, 0, 0, .28);
+    }
+
+    .iv-mobile-menu-inner {
+        max-width: 620px;
+        margin: 0 auto;
+    }
+
+    .iv-mobile-profile {
+        padding: 8px 0 20px;
+    }
+
+    .iv-profile-name {
+        overflow: hidden;
+        color: #fff;
+        font-size: 14px;
+        font-weight: 750;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .iv-profile-email {
+        overflow: hidden;
+        margin-top: 4px;
+        color: #a8b8ce;
+        font-size: 12px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .iv-mobile-org {
+        padding-top: 20px;
+        padding-bottom: 23px;
+    }
+
+    .iv-mobile-caption {
+        color: #d3ad69;
+        letter-spacing: .16em;
+    }
+
+    .iv-menu-caption {
+        display: block;
+        margin: 0 0 11px 5px;
+    }
+
+    .iv-mobile-org .iv-org-control {
+        width: 100%;
+        min-height: 47px;
+    }
+
+    .iv-mobile-org .iv-org-control select {
+        min-height: 45px;
+        font-size: 13px;
+    }
+
+    .iv-mobile-links {
+        gap: 6px;
+    }
+
+    .iv-nav-mobile-link {
+        justify-content: flex-start;
+        min-height: 49px;
+        padding: 0 16px;
+        font-size: 13px;
+        border-radius: 10px;
+    }
+
+    .iv-nav-mobile-link.iv-nav-active::after {
+        display: none;
+    }
+
+    .iv-mobile-nav-end {
+        margin-left: auto;
+        color: #7990ab;
+    }
+
+    .iv-nav-current-dot {
+        display: block;
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--iv-gold);
+    }
+
+    .iv-mobile-footer {
+        margin-top: 18px;
+        padding-top: 18px;
+    }
+
+    .iv-mobile-secondary {
+        min-height: 49px;
+        font-weight: 600;
+    }
+
+    .iv-menu-footnote {
+        margin-top: 24px;
+        color: #7f91aa;
+        font-size: 10px;
+        letter-spacing: .18em;
+        text-align: center;
+    }
+
+    .iv-main {
+        width: min(100% - 36px, 1320px);
+    }
+}
+
+@media (min-width: 1241px) {
+
+    .iv-mobile-toggle,
+    .iv-mobile-menu,
+    .iv-mobile-backdrop {
+        display: none;
+    }
+}
+
+@media (max-width: 900px) {
+    .iv-metrics-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .iv-content-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .iv-quick-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 640px) {
+    .iv-main {
+        width: calc(100% - 28px);
+        padding-top: 20px;
+        padding-bottom: 45px;
+    }
+
+    .iv-dashboard {
+        gap: 26px;
+    }
+
+    .iv-header-inner {
+        width: calc(100% - 28px);
+        min-height: 66px;
+    }
+
+    .iv-brand-name {
+        font-size: 17px;
+    }
+
+    .iv-header-actions {
+        gap: 8px;
+    }
+
+    .iv-welcome {
+        min-height: auto;
+        padding: 29px 23px;
+        border-radius: 18px;
+    }
+
+    .iv-welcome h1 {
+        font-size: clamp(27px, 7vw, 36px);
+    }
+
+    .iv-metric-card {
+        min-height: 148px;
+        padding: 17px;
+        border-radius: 15px;
+    }
+
+    .iv-metric-value {
+        font-size: 26px;
+    }
+
+    .iv-readiness-panel {
+        grid-template-columns: minmax(0, 1fr);
+        padding: 27px 23px;
+    }
+
+    .iv-readiness-visual,
+    .iv-welcome-decoration {
+        display: none;
+    }
+
+    .iv-readiness-main {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .iv-readiness-actions .iv-action {
+        width: 100%;
+    }
+
+    .iv-panel {
+        padding: 20px;
+    }
+
+    .iv-quick-grid {
+        grid-template-columns: 1fr;
+        gap: 11px;
+    }
+
+    .iv-quick-card {
+        min-height: 76px;
+    }
+
+    .iv-mobile-menu {
+        padding: 16px 15px 22px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .iv-workspace *,
+    .iv-workspace *::before,
+    .iv-workspace *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* ---------- Desktop navigation that fits ----------
+   With labels, the nav needs about 930px for an owner's nine links (IBM Plex Sans), more
+   than the header leaves it below 1536px, and it used to draw over the logo and the
+   actions. Between the mobile breakpoint and 1536px the links show their icon only; the
+   label stays for screen readers and as the link's tooltip, and the current page keeps
+   its label. From 1536px an owner's eight links (Account is the avatar) show their
+   labels with tighter spacing; nine or more stay icons. If the nav still runs out of
+   room, it scrolls instead of overlapping. */
+
+.iv-desktop-nav {
+    justify-content: safe center;
+    overflow-x: auto;
+    /* Room for the focus outline, which the scroll box would clip. */
+    padding-block: 4px;
+    scrollbar-width: none;
+}
+
+.iv-desktop-nav::-webkit-scrollbar {
+    display: none;
+}
+
+@media (min-width: 1241px) and (max-width: 1535px) {
+    .iv-desktop-nav .iv-nav-link:not(.iv-nav-active) > span {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        margin: -1px;
+        padding: 0;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+}
+
+@media (min-width: 1536px) {
+    .iv-desktop-nav {
+        gap: 2px;
+    }
+
+    .iv-desktop-nav .iv-nav-link {
+        padding-inline: 10px;
+    }
+
+    .iv-desktop-nav:has(> :nth-child(9)) .iv-nav-link:not(.iv-nav-active) > span {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        margin: -1px;
+        padding: 0;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+}

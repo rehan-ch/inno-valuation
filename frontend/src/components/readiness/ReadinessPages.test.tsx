@@ -66,9 +66,22 @@ describe("ReadinessListPage", () => {
     expect(screen.getByRole("button", { name: "Start a readiness assessment" })).toBeInTheDocument();
   });
 
+  it("asks to continue only someone who has answers to give", async () => {
+    stubApi({
+      "GET /api/v1/readiness/assessments": [
+        fakeAssessmentSummary({ status: "collecting", my_status: "submitted" }),
+      ],
+    });
+
+    renderWithMe(<ReadinessListPage />, fakeMe());
+
+    expect(await screen.findByRole("link", { name: "View the assessment" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Continue|Answer the questions/ })).not.toBeInTheDocument();
+  });
+
   it("reloads the list, from a loading state, after a switch in the header", async () => {
     const BETA = "99999999-9999-9999-9999-999999999999";
-    let releaseLoad: () => void = () => {};
+    let releaseLoad: () => void = () => { };
     let loads = 0;
     stubApi({
       "GET /api/v1/readiness/assessments": () => {
@@ -76,8 +89,8 @@ describe("ReadinessListPage", () => {
         return loads === 1
           ? [fakeAssessmentSummary({ status: "collecting", created_by_name: "Olive Owner" })]
           : new Promise((resolve) => {
-              releaseLoad = () => resolve([]);
-            });
+            releaseLoad = () => resolve([]);
+          });
       },
     });
     const me = fakeMe({
@@ -103,7 +116,9 @@ describe("ReadinessListPage", () => {
     expect(await screen.findByText("Loading assessments...")).toBeInTheDocument();
     expect(screen.queryByText(/by Olive Owner/)).not.toBeInTheDocument();
     releaseLoad();
-    expect(await screen.findByText("No assessment yet.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Your innovation journey begins here.")
+    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Start a readiness assessment" })).toBeInTheDocument();
   });
 });
@@ -132,8 +147,22 @@ describe("QuestionnairePage", () => {
       body: { answers: { customer_journey_1: 4 } },
     });
     expect(await screen.findByText("Saved")).toBeInTheDocument();
-    expect(screen.getByText("1 of 4 answered")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Submit my answers" })).toBeDisabled();
+    expect(
+      screen.getByRole("progressbar", {
+        name: "Assessment completion",
+      })
+    ).toHaveAttribute("aria-valuenow", "1");
+    await user.click(
+      screen.getByRole("button", {
+        name: "Review all answers",
+      })
+    );
+
+    expect(
+      screen.getByRole("button", {
+        name: "Submit my answers",
+      })
+    ).toBeDisabled();
   });
 
   it("offers the AI explanation only while the server has the AI switched on", async () => {
@@ -163,13 +192,37 @@ describe("QuestionnairePage", () => {
     const user = userEvent.setup();
 
     renderWithMe(<QuestionnairePage assessmentId={ID} />, fakeMe());
-    await user.click(await screen.findByRole("button", { name: "Submit my answers" }));
+    await user.click(
+      await screen.findByRole("button", {
+        name: "Review all answers",
+      })
+    );
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "Submit my answers",
+      })
+    );
     await user.click(screen.getByRole("button", { name: "Submit now" }));
 
     expect(calls.at(-1)).toMatchObject({ method: "POST", path: `${A}/my-answers/submit` });
     expect(await screen.findByText(/Your answers are submitted/)).toBeInTheDocument();
     // Submitted answers are locked.
-    const question = screen.getByRole("group", { name: "Is feedback integrated?" });
+    await user.click(
+      screen.getByRole("button", {
+        name: "Focused view",
+      })
+    );
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "Next question",
+      })
+    );
+
+    const question = await screen.findByRole("group", {
+      name: "Is feedback integrated?",
+    });
     expect(within(question).getByRole("radio", { name: "4" })).toBeDisabled();
   });
 
@@ -216,11 +269,15 @@ describe("QuestionnairePage", () => {
       /Not saved/,
     );
     expect(within(question).getByRole("radio", { name: "4" })).not.toBeChecked();
-    expect(screen.getByText("0 of 4 answered")).toBeInTheDocument();
+    expect(
+      screen.getByRole("progressbar", {
+        name: "Assessment completion",
+      })
+    ).toHaveAttribute("aria-valuenow", "0");
   });
 
   it("submits only after the last answer has saved", async () => {
-    let releaseSave: () => void = () => {};
+    let releaseSave: () => void = () => { };
     const order: string[] = [];
     stubApi({
       [`GET ${A}`]: fakeAssessment({
@@ -242,8 +299,31 @@ describe("QuestionnairePage", () => {
     const user = userEvent.setup();
 
     renderWithMe(<QuestionnairePage assessmentId={ID} />, fakeMe());
-    const last = await screen.findByRole("group", { name: "Does the story resonate?" });
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: "Review all answers",
+      })
+    );
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "Go to first unanswered question",
+      })
+    );
+
+    const last = await screen.findByRole("group", {
+      name: "Does the story resonate?",
+    });
+
     await user.click(within(last).getByRole("radio", { name: "2" }));
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "Review all answers",
+      })
+    );
+
     // The last answer is still saving when the person submits.
     await user.click(screen.getByRole("button", { name: "Submit my answers" }));
     await user.click(screen.getByRole("button", { name: "Submit now" }));
@@ -252,6 +332,68 @@ describe("QuestionnairePage", () => {
 
     expect(await screen.findByText(/Your answers are submitted/)).toBeInTheDocument();
     expect(order).toEqual(["save", "submit"]);
+  });
+
+  it("stops the submit, and says why, when the last save fails while it waits", async () => {
+    let failSave: () => void = () => { };
+    const calls = stubApi({
+      [`GET ${A}`]: fakeAssessment({
+        my_answers: { customer_journey_1: 3, customer_journey_2: 4, brand_magnetism_1: 3 },
+      }),
+      "GET /api/v1/readiness/question-set": fakeQuestionSet(),
+      [`PATCH ${A}/my-answers`]: () =>
+        new Promise((resolve) => {
+          failSave = () => resolve(errorResponse("internal_error", "Server error.", 500));
+        }),
+    });
+    const user = userEvent.setup();
+
+    renderWithMe(<QuestionnairePage assessmentId={ID} />, fakeMe());
+    await user.click(await screen.findByRole("button", { name: "Review all answers" }));
+    await user.click(screen.getByRole("button", { name: "Go to first unanswered question" }));
+    const last = await screen.findByRole("group", { name: "Does the story resonate?" });
+    await user.click(within(last).getByRole("radio", { name: "2" }));
+    await user.click(screen.getByRole("button", { name: "Review all answers" }));
+
+    await user.click(screen.getByRole("button", { name: "Submit my answers" }));
+    await user.click(screen.getByRole("button", { name: "Submit now" }));
+    failSave();
+
+    expect(await screen.findByText(
+      "Some answers were not saved. Choose the marked answers again.",
+    )).toBeInTheDocument();
+    expect(calls.some((c) => c.path === `${A}/my-answers/submit`)).toBe(false);
+  });
+
+  it("lets a person submit the answer a failed save went back to", async () => {
+    const calls = stubApi({
+      [`GET ${A}`]: fakeAssessment({ my_answers: ALL, my_status: "in_progress" }),
+      "GET /api/v1/readiness/question-set": fakeQuestionSet(),
+      [`PATCH ${A}/my-answers`]: errorResponse("internal_error", "Server error.", 500),
+      [`POST ${A}/my-answers/submit`]: fakeAssessment({
+        my_answers: ALL,
+        my_status: "submitted",
+        my_submitted_at: "2026-10-21T10:00:00Z",
+      }),
+    });
+    const user = userEvent.setup();
+
+    renderWithMe(<QuestionnairePage assessmentId={ID} />, fakeMe());
+    const first = await screen.findByRole("group", {
+      name: "Do you understand the end-to-end experience?",
+    });
+    // The change fails, so the saved 3 comes back. Choosing 3 again does nothing, so the
+    // person must still be able to submit it.
+    await user.click(within(first).getByRole("radio", { name: "4" }));
+    expect(await screen.findByText("Not saved. Choose your answer again.")).toBeInTheDocument();
+    expect(within(first).getByRole("radio", { name: "3" })).toBeChecked();
+
+    await user.click(screen.getByRole("button", { name: "Review all answers" }));
+    await user.click(screen.getByRole("button", { name: "Submit my answers" }));
+    await user.click(screen.getByRole("button", { name: "Submit now" }));
+
+    expect(await screen.findByText(/Your answers are submitted/)).toBeInTheDocument();
+    expect(calls.at(-1)).toMatchObject({ method: "POST", path: `${A}/my-answers/submit` });
   });
 
   it("keeps a failed answer marked after a later save works", async () => {
@@ -264,34 +406,101 @@ describe("QuestionnairePage", () => {
         return saves === 1
           ? errorResponse("unknown_error", "The server returned an error (500).", 500)
           : fakeAssessment({
-              my_answers: (call.body as { answers: Record<string, number> }).answers,
-            });
+            my_answers: (call.body as { answers: Record<string, number> }).answers,
+          });
       },
     });
     const user = userEvent.setup();
 
     renderWithMe(<QuestionnairePage assessmentId={ID} />, fakeMe());
+
     const first = await screen.findByRole("group", {
       name: "Do you understand the end-to-end experience?",
     });
-    const second = screen.getByRole("group", { name: "Is feedback integrated?" });
-    await user.click(within(first).getByRole("radio", { name: "4" }));
-    expect(await screen.findByRole("status", { name: "Save status" })).toHaveTextContent(
-      /Not saved/,
-    );
-    await user.click(within(second).getByRole("radio", { name: "3" }));
 
-    expect(await screen.findByRole("status", { name: "Save status" })).toHaveTextContent(
-      "Saved, but 1 answer was not saved. Choose again where marked.",
+    await user.click(
+      within(first).getByRole("radio", { name: "4" })
     );
-    expect(within(first).getByText("Not saved. Choose your answer again.")).toBeInTheDocument();
-    expect(within(second).queryByText(/Not saved/)).not.toBeInTheDocument();
-    expect(screen.getByText("1 of 4 answered")).toBeInTheDocument();
 
-    // Choosing the marked question again clears the mark once the save works.
-    await user.click(within(first).getByRole("radio", { name: "5, Strongly Agree" }));
-    expect(await screen.findByText("Saved")).toBeInTheDocument();
-    expect(within(first).queryByText(/Not saved/)).not.toBeInTheDocument();
+    await vi.waitFor(() =>
+      expect(
+        screen.getByRole("status", {
+          name: "Save status",
+        })
+      ).toHaveTextContent(/Not saved/)
+    );
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "Next question",
+      })
+    );
+
+    const second = await screen.findByRole("group", {
+      name: "Is feedback integrated?",
+    });
+
+    await user.click(
+      within(second).getByRole("radio", { name: "3" })
+    );
+
+    await vi.waitFor(() =>
+      expect(
+        screen.getByRole("status", {
+          name: "Save status",
+        })
+      ).toHaveTextContent(
+        "Saved, but 1 answer was not saved. Choose again where marked."
+      )
+    );
+
+    expect(
+      screen.queryByText("Not saved. Choose your answer again.")
+    ).not.toBeInTheDocument();
+
+    expect(
+      screen.getByRole("progressbar", {
+        name: "Assessment completion",
+      })
+    ).toHaveAttribute("aria-valuenow", "1");
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "Previous",
+      })
+    );
+
+    const failedQuestion = await screen.findByRole("group", {
+      name: "Do you understand the end-to-end experience?",
+    });
+
+    expect(
+      screen.getByText("Not saved. Choose your answer again.")
+    ).toBeInTheDocument();
+
+    await user.click(
+      within(failedQuestion).getByRole("radio", {
+        name: "5, Strongly Agree",
+      })
+    );
+
+    await vi.waitFor(() =>
+      expect(
+        screen.getByRole("status", {
+          name: "Save status",
+        })
+      ).toHaveTextContent(/^Saved$/)
+    );
+
+    expect(
+      screen.queryByText("Not saved. Choose your answer again.")
+    ).not.toBeInTheDocument();
+
+    expect(
+      screen.getByRole("progressbar", {
+        name: "Assessment completion",
+      })
+    ).toHaveAttribute("aria-valuenow", "2");
   });
 
   it("says a 403 is about permission, not the connection", async () => {
@@ -337,7 +546,7 @@ describe("QuestionnairePage", () => {
   });
 
   it("locks the answers while the submit runs", async () => {
-    let releaseSubmit: () => void = () => {};
+    let releaseSubmit: () => void = () => { };
     stubApi({
       [`GET ${A}`]: fakeAssessment({ my_answers: ALL, my_status: "in_progress" }),
       "GET /api/v1/readiness/question-set": fakeQuestionSet(),
@@ -356,16 +565,70 @@ describe("QuestionnairePage", () => {
     const user = userEvent.setup();
 
     renderWithMe(<QuestionnairePage assessmentId={ID} />, fakeMe());
-    const question = await screen.findByRole("group", { name: "Is feedback integrated?" });
-    expect(within(question).getByRole("radio", { name: "4" })).toBeEnabled();
-    await user.click(screen.getByRole("button", { name: "Submit my answers" }));
-    await user.click(screen.getByRole("button", { name: "Submit now" }));
 
-    expect(within(question).getByRole("radio", { name: "4" })).toBeDisabled();
+    await user.click(
+      await screen.findByRole("button", {
+        name: "Next question",
+      })
+    );
+
+    const question = await screen.findByRole("group", {
+      name: "Is feedback integrated?",
+    });
+
+    expect(
+      within(question).getByRole("radio", { name: "4" })
+    ).toBeEnabled();
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "Review all answers",
+      })
+    );
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "Submit my answers",
+      })
+    );
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "Submit now",
+      })
+    );
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "Focused view",
+      })
+    );
+
+    const lockedQuestion = await screen.findByRole("group", {
+      name: "Is feedback integrated?",
+    });
+
+    expect(
+      within(lockedQuestion).getByRole("radio", {
+        name: "4",
+      })
+    ).toBeDisabled();
+
     releaseSubmit();
 
-    expect(await screen.findByText(/Your answers are submitted/)).toBeInTheDocument();
-    expect(within(question).getByRole("radio", { name: "4" })).toBeDisabled();
+    expect(
+      await screen.findByText(/Your answers are submitted/)
+    ).toBeInTheDocument();
+
+    expect(
+      within(
+        screen.getByRole("group", {
+          name: "Is feedback integrated?",
+        })
+      ).getByRole("radio", {
+        name: "4",
+      })
+    ).toBeDisabled();
   });
 
   it("tells an investor that their role watches", async () => {
