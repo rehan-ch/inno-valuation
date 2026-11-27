@@ -1,4 +1,8 @@
 @import "tailwindcss";
+@import "./readiness.css";
+@import "./organisation.css";
+@import "./consultants.css";
+@import "./account.css";
 
 /* Design tokens. PROVISIONAL Q17: the brand hues come from the compass mark (blue and
    emerald), pending Amy's approval. The rest of the system is deliberately plain: white
@@ -17,7 +21,7 @@
   --background: hsl(210 20% 98%);
   --foreground: hsl(215 25% 13%);
   /* The signed-in header's height; AppShell keeps it current as the header wraps. */
-  --app-header-h: 6rem;
+  --app-header-h: 4.75rem;
 }
 
 @theme inline {
@@ -67,6 +71,632 @@ h3 {
 }
 
 /* Native date inputs render their own icon; keep it the ink colour, not the accent. */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  opacity: 0.6;
+}
+
+/* The redesigned header, landing, sign-in and workspace pages were drawn on a 16px base
+   (their own stylesheets size most text). Every other page keeps the 14px body above. */
+.iv-app-header,
+.landing-page,
+.iv-auth-layout,
+.iv-dashboard,
+.iv-team-page,
+.iv-os-page,
+.iv-consultants,
+.iv-account-page,
+.iv-readiness,
+.iv-q {
+  font-size: 1rem;
+}
+
+/* ==========================================
+   InnoValuation — Organisation Switcher
+   ========================================== */
+
+@keyframes iv-org-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-7px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [class*="iv-org-enter"] {
+    animation: none !important;
+  }
+}
+
+/* Header actions */
+
+.iv-header-actions-fixed {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.iv-header-actions-fixed .iv-desktop-org {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 230px;
+  flex: 0 0 230px;
+  min-width: 0;
+}
+
+/* Only one switcher control */
+
+.iv-org-control {
+  position: relative;
+  display: block;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+.iv-org-control>div {
+  width: 100%;
+  min-width: 0;
+}
+
+.iv-header-actions-fixed .iv-desktop-signout,
+.iv-header-actions-fixed .iv-account-avatar,
+.iv-header-actions-fixed .iv-header-create {
+  flex-shrink: 0;
+}
+
+/* Responsive desktop */
+
+@media (min-width: 1024px) and (max-width: 1450px) {
+  .iv-header-actions-fixed .iv-desktop-org {
+    width: 220px;
+    flex-basis: 220px;
+  }
+
+  .iv-header-actions-fixed {
+    gap: 8px;
+  }
+}
+
+/* Mobile */
+
+@media (max-width: 767px) {
+
+  .iv-mobile-org .iv-org-control,
+  .iv-mobile-org .iv-org-control>div {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+/* InnoValuation — Premium team role selector */
+
+@keyframes iv-team-role-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.iv-team-role-menu {
+  transform-origin: top right;
+  animation: iv-team-role-enter 180ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .iv-team-role-menu {
+    animation: none;
+  }
+}
+
+/* ==========================================
+   InnoValuation — Team Member Actions
+   ========================================== */
+
+/* Member row stacking for open dropdowns */
+.iv-team-member-row {
+  position: relative;
+  z-index: 0;
+}
+
+.iv-team-member-row:hover,
+.iv-team-member-row:focus-within {
+  z-index: 40;
+}
+
+/* Role selector and Remove button sit independently */
+.iv-team-member-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+/* Fixed width for the role selector */
+.iv-team-member-actions .iv-role-selector {
+  position: relative;
+  width: 220px;
+  min-width: 0;
+  flex: 0 0 220px;
+}
+
+.iv-team-member-actions .iv-role-selector>button {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Remove button must not collapse */
+.iv-team-member-actions .iv-remove-button {
+  position: relative;
+  flex: 0 0 auto;
+  min-width: 90px;
+  white-space: nowrap;
+}
+
+.iv-team-member-actions .iv-remove-button button {
+  white-space: nowrap;
+}
+
+/* Premium role dropdown */
+.iv-team-role-menu {
+  position: absolute;
+  z-index: 50;
+  right: 0;
+  top: calc(100% + 8px);
+  width: max-content;
+  min-width: 100%;
+  max-width: min(320px, 90vw);
+  transform-origin: top right;
+  animation: iv-team-role-enter 180ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* Responsive team actions */
+@media (max-width: 767px) {
+  .iv-team-member-actions {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 10px;
+  }
+
+  .iv-team-member-actions .iv-role-selector {
+    width: auto;
+    flex: 1 1 180px;
+  }
+
+  .iv-team-member-actions .iv-remove-button {
+    flex: 0 0 auto;
+  }
+
+  .iv-team-role-menu {
+    right: 0;
+    max-width: min(320px, 90vw);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .iv-team-role-menu {
+    animation: none;
+  }
+}
+
+/* ================================================
+   InnoValuation — Responsive Layout
+   ================================================ */
+
+html,
+body {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.iv-workspace,
+.iv-main {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.iv-main>* {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Desktop and tablet content safety */
+.iv-header-inner {
+  min-width: 0;
+}
+
+.iv-header-actions-fixed,
+.iv-header-actions {
+  min-width: 0;
+}
+
+.iv-dashboard,
+.iv-dashboard section,
+.iv-dashboard section>div {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* ================================================
+   Mobile — 767px and below
+   ================================================ */
+
+@media (max-width: 767px) {
+  .iv-workspace {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .iv-app-header {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .iv-header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: nowrap;
+    gap: 8px;
+    width: 100%;
+    min-width: 0;
+    padding: 10px 12px;
+  }
+
+  /* Brand */
+  .iv-brand {
+    display: flex;
+    align-items: center;
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: 145px;
+  }
+
+  .iv-brand-mark {
+    flex: 0 0 auto;
+  }
+
+  .iv-brand-mark img {
+    width: 30px;
+    height: 30px;
+    object-fit: contain;
+  }
+
+  .iv-brand-name {
+    min-width: 0;
+    font-size: 14px;
+    white-space: nowrap;
+  }
+
+  /* Hide desktop-only controls */
+  .iv-desktop-nav,
+  .iv-desktop-signout,
+  .iv-header-create,
+  .iv-header-actions .iv-desktop-org,
+  .iv-header-actions-fixed .iv-desktop-org {
+    display: none !important;
+  }
+
+  /* Mobile header actions */
+  .iv-header-actions,
+  .iv-header-actions-fixed {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex: 0 0 auto;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .iv-account-avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 36px;
+    width: 36px;
+    height: 36px;
+  }
+
+  .iv-mobile-toggle {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 40px;
+    width: 40px;
+    height: 40px;
+  }
+
+  /* Mobile navigation */
+  .iv-mobile-menu {
+    width: 100%;
+    max-width: 100%;
+    max-height: calc(100dvh - var(--app-header-h));
+    overflow-x: hidden;
+    overflow-y: auto;
+    box-sizing: border-box;
+  }
+
+  .iv-mobile-org,
+  .iv-mobile-org .iv-org-control,
+  .iv-mobile-org .iv-org-control>div {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  /* Main content */
+  .iv-main {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding-inline: 12px;
+    box-sizing: border-box;
+  }
+
+  /* Dashboard */
+  .iv-dashboard {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .iv-welcome {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+
+  .iv-welcome-copy {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .iv-welcome h1 {
+    font-size: clamp(26px, 7vw, 36px);
+    line-height: 1.18;
+    overflow-wrap: anywhere;
+  }
+
+  .iv-welcome p {
+    overflow-wrap: anywhere;
+  }
+
+  .iv-welcome-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    max-width: 100%;
+  }
+
+  .iv-welcome-tags>* {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .iv-welcome-decoration {
+    display: none;
+  }
+
+  /* Metrics */
+  .iv-metric-card {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  /* Prevent grid children forcing wider tracks */
+  .iv-dashboard .grid>* {
+    min-width: 0;
+  }
+
+  /* Forms and cards */
+  .iv-main input,
+  .iv-main textarea,
+  .iv-main select {
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+}
+
+/* ================================================
+   Small mobile screens — iPhone SE
+   ================================================ */
+
+@media (max-width: 390px) {
+  .iv-header-inner {
+    gap: 6px;
+    padding-inline: 10px;
+  }
+
+  .iv-brand {
+    max-width: 135px;
+  }
+
+  .iv-header-actions,
+  .iv-header-actions-fixed {
+    gap: 6px;
+  }
+
+  .iv-main {
+    padding-inline: 10px;
+  }
+}
+
+/* ================================================
+   Reduced motion
+   ================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+
+  .iv-mobile-menu,
+  .iv-welcome,
+  .iv-metric-card {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ============================================
+   InnoValuation — Mobile Team Role Dropdown
+   ============================================ */
+
+@media (max-width: 767px) {
+
+  /* Allow the dropdown to extend beyond the member row */
+  .iv-team-member-row {
+    position: relative;
+  }
+
+  .iv-team-member-row:focus-within {
+    z-index: 100;
+  }
+
+  /* Keep selector and remove action aligned */
+  .iv-team-member-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 10px;
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* Selector fills available space */
+  .iv-team-member-actions .iv-role-selector {
+    position: relative;
+    flex: 1 1 0;
+    width: auto;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .iv-team-member-actions .iv-role-selector>button {
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* Remove button keeps its own space */
+  .iv-team-member-actions .iv-remove-button {
+    flex: 0 0 auto;
+    min-width: 86px;
+  }
+
+  /* Open the menu from the right edge of its trigger */
+  .iv-team-member-actions .iv-team-role-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    left: auto;
+    width: min(300px, calc(100vw - 40px));
+    min-width: 0;
+    max-width: calc(100vw - 40px);
+    box-sizing: border-box;
+    z-index: 200;
+  }
+
+  /* Ensure menu content fits */
+  .iv-team-role-menu button {
+    width: 100%;
+    min-width: 0;
+    white-space: normal;
+    text-align: left;
+  }
+}
+
+@media (max-width: 390px) {
+  .iv-team-member-actions {
+    gap: 8px;
+  }
+
+  .iv-team-member-actions .iv-remove-button {
+    min-width: 78px;
+  }
+}
+
+/* ==========================================
+   InnoValuation — Team Role Dropdown Fix
+   ========================================== */
+
+/* Desktop: align menu to the right of the selector */
+.iv-team-member-actions .iv-team-role-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  left: auto;
+
+  width: 300px;
+  min-width: 0;
+  max-width: min(300px, calc(100vw - 32px));
+
+  box-sizing: border-box;
+  z-index: 100;
+}
+
+/* Mobile: align menu to the LEFT of the selector
+   to prevent it going outside the viewport */
+@media (max-width: 767px) {
+  .iv-team-member-actions .iv-role-selector {
+    position: relative;
+    min-width: 0;
+  }
+
+  .iv-team-member-actions .iv-team-role-menu {
+    left: 0;
+    right: auto;
+
+    width: min(270px, calc(100vw - 100px));
+    max-width: calc(100vw - 100px);
+    min-width: 0;
+
+    max-height: min(65dvh, 480px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+
+    transform-origin: top left;
+  }
+
+  .iv-team-role-menu [role="option"] {
+    min-width: 0;
+  }
+}
+
+/* Very small devices */
+@media (max-width: 360px) {
+  .iv-team-member-actions .iv-team-role-menu {
+    width: min(240px, calc(100vw - 90px));
+    max-width: calc(100vw - 90px);
+  }
+}
+
+/* Native date input icon */
 input[type="date"]::-webkit-calendar-picker-indicator {
   opacity: 0.6;
 }

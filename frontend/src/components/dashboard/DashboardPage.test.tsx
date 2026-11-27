@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   EMPTY_DASHBOARD,
   fakeAssessmentSummary,
+  fakeDashboard,
   fakeGrant,
   fakeInvitation,
   fakeMe,
@@ -18,9 +19,20 @@ import { DashboardPage } from "./DashboardPage";
 vi.mock("next/navigation", async () => (await import("@/test/navigation")).navigationMock());
 
 function stat(label: string): string {
-  const glance = within(screen.getByRole("region", { name: "At a glance" }));
-  const card = glance.getByText(label).parentElement as HTMLElement;
-  return within(card).getAllByText(/.+/)[1]?.textContent ?? "";
+  const glance = within(
+    screen.getByRole("region", { name: "At a glance" })
+  );
+
+  const labelElement = glance.getByText(label);
+  const card = labelElement.closest(".iv-metric-card");
+
+  if (!card) {
+    throw new Error(`Metric card not found: ${label}`);
+  }
+
+  return (
+    card.querySelector(".iv-metric-value")?.textContent?.trim() ?? ""
+  );
 }
 
 describe("DashboardPage", () => {
@@ -43,10 +55,19 @@ describe("DashboardPage", () => {
 
     renderWithMe(<DashboardPage />, fakeMe());
 
-    expect(await screen.findByRole("heading", { name: "Welcome back, Olive" })).toBeInTheDocument();
-    expect(screen.getByText("Acme · you are an owner")).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", {
+        level: 1,
+        name: /^Welcome back,\s*Olive\s*\.$/,
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Acme")).toBeInTheDocument();
+
+    expect(
+      screen.getByText("an owner"),
+    ).toBeInTheDocument();
     expect(stat("Team members")).toBe("2");
-    expect(stat("Invitations waiting")).toBe("1"); // the expired one does not count
+    expect(stat("Pending invitations")).toBe("1"); // the expired one does not count
     expect(stat("Consultant access")).toBe("1");
     expect(stat("Currency")).toBe("USD");
 
@@ -54,23 +75,50 @@ describe("DashboardPage", () => {
     expect(steps).not.toBeNull();
     const checklist = within(steps as HTMLElement);
     // Profile is incomplete (no country or size yet), so it stays a link to fix it.
-    expect(checklist.getByRole("link", { name: "Complete the organisation profile" })).toHaveAttribute(
+
+    // The organisation profile is incomplete.
+    const profileLinks = checklist.getAllByRole("link", {
+      name: "Complete organisation profile",
+    });
+
+    expect(profileLinks[0]).toHaveAttribute(
       "href",
       "/organisation",
     );
-    // Two members means the team is invited; a live grant means the consultant has access.
-    expect(checklist.queryByRole("link", { name: "Invite your team" })).not.toBeInTheDocument();
-    expect(checklist.getByRole("link", { name: "Run the readiness assessment" })).toHaveAttribute(
+
+    // Two members means the team is already invited.
+    expect(
+      checklist.queryByRole("link", {
+        name: "Invite your team",
+      }),
+    ).not.toBeInTheDocument();
+
+    // A readiness assessment has not been completed yet.
+    const readinessLinks = checklist.getAllByRole("link", {
+      name: "Run the readiness assessment",
+    });
+
+    expect(readinessLinks[0]).toHaveAttribute(
       "href",
       "/readiness",
     );
-    expect(screen.getByRole("link", { name: "Start a readiness assessment" })).toBeInTheDocument();
 
+    // The main readiness action is available.
+    expect(
+      screen.getByRole("link", {
+        name: "Start assessment",
+      }),
+    ).toHaveAttribute("href", "/readiness");
+
+    // The signed-in user appears in the team card.
     expect(screen.getByText("(you)")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Invite a team member" })).toHaveAttribute(
-      "href",
-      "/team",
+
+    // The dashboard provides navigation to team management.
+    const teamLinks = screen.getAllByRole("link").filter(
+      (link) => link.getAttribute("href") === "/team",
     );
+
+    expect(teamLinks.length).toBeGreaterThan(0);
   });
 
   it("leaves ideas out, and does not ask for them, while the AI is switched off", async () => {
@@ -115,10 +163,21 @@ describe("DashboardPage", () => {
       }),
     );
 
-    expect(await screen.findByText("Acme · you are a member")).toBeInTheDocument();
-    expect(screen.queryByText("Invitations waiting")).not.toBeInTheDocument();
+    expect(
+      (await screen.findAllByText("Acme")).length
+    ).toBeGreaterThan(0);
+
+    expect(
+      screen.getByText("a member"),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Pending invitations")).not.toBeInTheDocument();
+    expect(screen.queryByText("Consultant access")).not.toBeInTheDocument();
     expect(screen.queryByText("Getting started")).not.toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Readiness assessment" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", {
+        name: "Know where you stand.",
+      })
+    ).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Invite a team member" })).not.toBeInTheDocument();
   });
 
@@ -166,9 +225,34 @@ describe("DashboardPage", () => {
 
     expect(await screen.findByText("Building Blocks")).toBeInTheDocument();
     expect(screen.getByText("190")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "See the result" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "View results" })).toHaveAttribute(
       "href",
       "/readiness/77777777-7777-7777-7777-777777777777/result",
+    );
+  });
+
+  it("keeps the newer assessment and the ideas entry point once there are scores", async () => {
+    stubApi({
+      "GET /api/v1/organisation": fakeOrganisation(),
+      "GET /api/v1/organisation/members": [fakeMember()],
+      "GET /api/v1/organisation/invitations": [],
+      "GET /api/v1/organisation/consultants": [],
+      "GET /api/v1/readiness/assessments": [
+        fakeAssessmentSummary({ status: "collecting", my_status: "not_started" }),
+      ],
+      "GET /api/v1/ideas": [],
+      "GET /api/v1/dashboard": fakeDashboard(),
+    });
+
+    renderWithMe(<DashboardPage />, fakeMe());
+
+    // The scores are shown, and a second assessment under way still asks for answers.
+    expect(
+      await screen.findByRole("link", { name: "Continue assessment" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Add an idea" })).toHaveAttribute(
+      "href",
+      "/ideas/new",
     );
   });
 
@@ -177,7 +261,12 @@ describe("DashboardPage", () => {
 
     renderWithMe(<DashboardPage />, fakeMe({ active_organisation_id: null, memberships: [] }));
 
-    expect(screen.getByRole("heading", { name: "Welcome, Olive" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", {
+        level: 1,
+        name: /^Welcome back,\s*Olive\s*\.$/,
+      }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Create an organisation" })).toHaveAttribute(
       "href",
       "/organisations/new",

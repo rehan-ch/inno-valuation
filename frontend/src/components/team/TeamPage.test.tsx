@@ -1,4 +1,4 @@
-import { screen, within } from "@testing-library/react";
+import { act, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -63,8 +63,32 @@ describe("TeamPage", () => {
     const user = userEvent.setup();
 
     renderWithMe(<TeamPage />, fakeMe());
-    await user.selectOptions(await screen.findByLabelText("Role of Mia Member"), "admin");
-    expect(calls.at(-1)).toMatchObject({ method: "PATCH", body: { role: "admin" } });
+    await user.click(
+      await screen.findByRole("button", {
+        name: "Role of Mia Member: Member",
+      }),
+    );
+
+    const roleMenu = screen.getByRole("listbox", {
+      name: "Role of Mia Member",
+    });
+
+    await user.click(
+      within(roleMenu).getByRole("option", {
+        name: "Admin",
+      }),
+    );
+
+    expect(
+      await screen.findByRole("button", {
+        name: "Role of Mia Member: Admin",
+      }),
+    ).toBeInTheDocument();
+
+    expect(calls.at(-1)).toMatchObject({
+      method: "PATCH",
+      body: { role: "admin" },
+    });
 
     await user.click(screen.getByRole("button", { name: "Cancel" }));
     await user.click(screen.getByRole("button", { name: "Cancel invitation?" }));
@@ -117,7 +141,7 @@ describe("TeamPage", () => {
       email: "noah@example.com",
       role: "member",
     });
-    let releaseRemove: () => void = () => {};
+    let releaseRemove: () => void = () => { };
     stubApi({
       "GET /api/v1/organisation": fakeOrganisation(),
       "GET /api/v1/organisation/members": [fakeMember(), mia, noah],
@@ -136,12 +160,22 @@ describe("TeamPage", () => {
     await user.click(within(miaRow).getByRole("button", { name: "Remove member?" }));
 
     expect(within(noahRow).getByRole("button", { name: "Remove" })).toBeDisabled();
-    expect(screen.getByLabelText("Role of Noah Member")).toBeDisabled();
-    releaseRemove();
+    expect(
+      screen.getByRole("button", {
+        name: /^Role of Noah Member:/,
+      })
+    ).toBeDisabled();
+    await act(async () => {
+      releaseRemove();
+    });
 
     await vi.waitFor(() => expect(screen.queryByText("Mia Member")).not.toBeInTheDocument());
     expect(within(noahRow).getByRole("button", { name: "Remove" })).toBeEnabled();
-    expect(screen.getByLabelText("Role of Noah Member")).toBeEnabled();
+    expect(
+      screen.getByRole("button", {
+        name: /^Role of Noah Member:/,
+      })
+    ).toBeEnabled();
   });
 
   it("closes the removal question again when the removal fails", async () => {
@@ -222,6 +256,38 @@ describe("TeamPage", () => {
     expect(
       await screen.findByText("You have read-only consultant access to Acme.", { exact: false }),
     ).toBeInTheDocument();
+  });
+
+  it("drops the old team at once after a switch in the header", async () => {
+    const BETA = "99999999-9999-9999-9999-999999999999";
+    let current: "acme" | "beta" = "acme";
+    let releaseLoad: () => void = () => {};
+    stubApi({
+      "GET /api/v1/organisation": () =>
+        current === "acme"
+          ? fakeOrganisation()
+          : new Promise((resolve) => {
+              releaseLoad = () => resolve(fakeOrganisation({ id: BETA, name: "Beta Ltd" }));
+            }),
+      "GET /api/v1/organisation/members": () =>
+        current === "acme"
+          ? [fakeMember()]
+          : [fakeMember({ id: "55555555-5555-5555-5555-555555555555", name: "Bea Beta" })],
+      "GET /api/v1/organisation/invitations": [],
+    });
+    const me = fakeMe();
+
+    const { setMe } = renderWithMe(<TeamPage />, me);
+    expect(await screen.findByText("Olive Owner")).toBeInTheDocument();
+
+    current = "beta";
+    setMe({ ...me, active_organisation_id: BETA });
+
+    // While the new organisation loads, nothing of the old one is left to act on.
+    expect(await screen.findByText("Loading the team...")).toBeInTheDocument();
+    expect(screen.queryByText("Olive Owner")).not.toBeInTheDocument();
+    releaseLoad();
+    expect(await screen.findByText("Bea Beta")).toBeInTheDocument();
   });
 
   it("asks for an organisation when none is active", () => {

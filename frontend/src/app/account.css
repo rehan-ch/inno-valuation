@@ -1,0 +1,887 @@
+/* ============================================
+   InnoValuation — Premium Account Experience
+   ============================================ */
+
+@keyframes iv-account-fade-up {
+    from {
+        opacity: 0;
+        transform: translateY(16px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes iv-account-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.iv-account-page {
+    width: 100%;
+    min-width: 0;
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 36px 20px 85px;
+    color: #10233d;
+}
+
+.iv-account-page-intro {
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+    gap: 24px;
+    margin-bottom: 27px;
+    animation: iv-account-fade-up 500ms ease both;
+}
+
+.iv-account-top-label,
+.iv-account-eyebrow,
+.iv-account-aside-eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    color: #aa7528;
+}
+
+.iv-account-label-dot {
+    width: 7px;
+    height: 7px;
+    flex: none;
+    border-radius: 50%;
+    background: #ddb46a;
+}
+
+.iv-account-page-intro h1 {
+    margin: 13px 0 9px;
+    font-family: var(--font-sans);
+    font-size: clamp(28px, 3vw, 39px);
+    font-weight: 800;
+    letter-spacing: -0.055em;
+    line-height: 1.15;
+    color: #091b32;
+}
+
+.iv-account-page-intro h1 span {
+    color: #d4a454;
+}
+
+.iv-account-page-subtitle {
+    font-size: 14px;
+    line-height: 1.65;
+    color: #71829b;
+}
+
+.iv-account-heading-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    flex-shrink: 0;
+    padding: 11px 15px;
+    border: 1px solid #dfdfd9;
+    border-radius: 50px;
+    background: #fff;
+    color: #3d536b;
+    font-size: 12px;
+    font-weight: 650;
+}
+
+.iv-account-heading-tag svg {
+    color: #b88b46;
+}
+
+/* Hero */
+
+.iv-account-hero {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-height: 216px;
+    padding: 38px 42px;
+    overflow: hidden;
+    isolation: isolate;
+    border: 1px solid #253c55;
+    border-radius: 24px;
+    background:
+        radial-gradient(circle at 85% 30%,
+            rgba(75, 104, 134, 0.23),
+            transparent 40%),
+        linear-gradient(115deg, #08172a 0%, #11253e 100%);
+    box-shadow: 0 18px 38px rgba(17, 34, 54, 0.1);
+    animation: iv-account-fade-up 550ms 70ms ease both;
+}
+
+.iv-account-hero::before {
+    content: "";
+    position: absolute;
+    width: 115px;
+    height: 3px;
+    top: 0;
+    left: 42px;
+    border-radius: 0 0 4px 4px;
+    background: #e8bd70;
+}
+
+.iv-account-hero-pattern {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.23;
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.045) 1px,
+            transparent 1px),
+        linear-gradient(90deg,
+            rgba(255, 255, 255, 0.045) 1px,
+            transparent 1px);
+    background-size: 45px 45px;
+    mask-image: linear-gradient(90deg, transparent 10%, #000);
+}
+
+.iv-account-hero-content {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 25px;
+    min-width: 0;
+}
+
+.iv-account-hero-avatar {
+    display: grid;
+    place-items: center;
+    width: 84px;
+    height: 84px;
+    flex: 0 0 84px;
+    border: 2px solid rgba(236, 190, 111, 0.67);
+    border-radius: 23px;
+    background: linear-gradient(135deg, #f5d593, #d5a85e);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
+    color: #10233a;
+    font-size: 29px;
+    font-weight: 800;
+    letter-spacing: -0.07em;
+}
+
+.iv-account-hero-person {
+    min-width: 0;
+}
+
+.iv-account-hero-eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #e8bc73;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.13em;
+}
+
+.iv-account-hero-person h2 {
+    margin: 11px 0;
+    color: #fff;
+    font-family: var(--font-sans);
+    font-size: clamp(25px, 2.7vw, 37px);
+    font-weight: 800;
+    letter-spacing: -0.045em;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+}
+
+.iv-account-hero-email {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-width: 0;
+    color: #b4c3d8;
+    font-size: 14px;
+}
+
+.iv-account-hero-email span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.iv-account-hero-email svg {
+    flex: none;
+}
+
+.iv-account-hero-decoration {
+    position: absolute;
+    right: 105px;
+    top: 50%;
+    width: 175px;
+    height: 175px;
+    transform: translateY(-50%);
+    opacity: 0.72;
+    pointer-events: none;
+}
+
+.iv-account-orbit {
+    position: absolute;
+    border: 1px solid rgba(224, 180, 108, 0.33);
+    border-radius: 50%;
+}
+
+.iv-account-orbit-one {
+    inset: 0;
+}
+
+.iv-account-orbit-two {
+    inset: 22px;
+}
+
+.iv-account-orbit-center {
+    position: absolute;
+    inset: 51px;
+    display: grid;
+    place-items: center;
+    border: 1px solid #e4b86d;
+    border-radius: 50%;
+    color: #e4b86d;
+}
+
+.iv-account-hero-corner {
+    position: absolute;
+    z-index: 2;
+    right: 25px;
+    bottom: 22px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: #aebed0;
+    font-size: 11px;
+}
+
+/* Main layout */
+
+.iv-account-content-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.7fr) minmax(270px, 0.8fr);
+    align-items: start;
+    gap: 24px;
+    margin-top: 26px;
+}
+
+.iv-account-main-column {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    min-width: 0;
+}
+
+/* Cards */
+
+.iv-account-card {
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid #dbe5ee;
+    border-radius: 22px;
+    background: #fff;
+    box-shadow: 0 7px 24px rgba(12, 37, 66, 0.045);
+    transition:
+        border-color 220ms ease,
+        box-shadow 220ms ease,
+        transform 220ms ease;
+}
+
+.iv-account-card:hover {
+    border-color: #c8d8e7;
+    box-shadow: 0 13px 36px rgba(12, 37, 66, 0.075);
+}
+
+.iv-account-profile-card {
+    animation: iv-account-fade-up 560ms 130ms ease both;
+}
+
+.iv-account-security-card {
+    animation: iv-account-fade-up 560ms 210ms ease both;
+}
+
+.iv-account-section-heading {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 27px 29px;
+    border-bottom: 1px solid #e9eef4;
+}
+
+.iv-account-section-icon {
+    display: grid;
+    place-items: center;
+    width: 52px;
+    height: 52px;
+    flex: 0 0 52px;
+    border: 1px solid #efd9b4;
+    border-radius: 15px;
+    background: #fcf5e9;
+    color: #aa782c;
+}
+
+.iv-account-section-copy {
+    min-width: 0;
+}
+
+.iv-account-eyebrow {
+    font-size: 10px;
+}
+
+.iv-account-section-copy h2 {
+    margin: 5px 0 4px;
+    color: #0b2038;
+    font-family: var(--font-sans);
+    font-size: 20px;
+    font-weight: 750;
+    letter-spacing: -0.035em;
+}
+
+.iv-account-section-description {
+    color: #74839a;
+    font-size: 13px;
+    line-height: 1.55;
+}
+
+.iv-account-card-body {
+    padding: 29px;
+}
+
+.iv-account-form {
+    display: flex;
+    flex-direction: column;
+    gap: 21px;
+}
+
+.iv-account-field {
+    min-width: 0;
+}
+
+.iv-account-label {
+    display: block;
+    margin-bottom: 9px;
+    color: #203a55;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.iv-account-required {
+    margin-left: 4px;
+    color: #b78039;
+}
+
+.iv-account-input-wrap {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    min-height: 52px;
+    border: 1px solid #d8e3ee;
+    border-radius: 12px;
+    background: #fdfefe;
+    transition:
+        background 180ms ease,
+        border-color 180ms ease,
+        box-shadow 180ms ease;
+}
+
+.iv-account-input-wrap:hover {
+    border-color: #aebfd2;
+}
+
+.iv-account-input-wrap:focus-within {
+    border-color: #c49a56;
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(206, 163, 94, 0.12);
+}
+
+.iv-account-input-icon {
+    display: grid;
+    place-items: center;
+    width: 49px;
+    flex: 0 0 49px;
+    color: #8c9bb0;
+}
+
+.iv-account-input-wrap:focus-within .iv-account-input-icon {
+    color: #b88942;
+}
+
+.iv-account-input {
+    width: 100%;
+    min-width: 0;
+    min-height: 50px;
+    padding: 11px 12px 11px 0;
+    outline: none;
+    border: none;
+    background: transparent;
+    color: #122c46;
+    font-family: var(--font-sans);
+    font-size: 14px;
+}
+
+.iv-account-input::placeholder {
+    color: #9aa9ba;
+}
+
+.iv-account-input-disabled {
+    background: #f2f6fa;
+}
+
+.iv-account-input-disabled .iv-account-input {
+    cursor: not-allowed;
+    color: #73859a;
+}
+
+.iv-account-input-disabled:hover {
+    border-color: #d8e3ee;
+}
+
+.iv-account-input-disabled:focus-within {
+    border-color: #d8e3ee;
+    box-shadow: none;
+}
+
+.iv-account-input-error {
+    border-color: #e4a4a4;
+}
+
+.iv-account-input-trailing {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    margin-right: 13px;
+    color: #8596aa;
+}
+
+.iv-account-visibility {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: #788da5;
+    cursor: pointer;
+    transition: background 180ms ease, color 180ms ease;
+}
+
+.iv-account-visibility:hover {
+    background: #eaf0f7;
+    color: #152e4a;
+}
+
+.iv-account-visibility:focus-visible,
+.iv-account-primary-button:focus-visible {
+    outline: 3px solid #e6bd78;
+    outline-offset: 3px;
+}
+
+.iv-account-field-hint,
+.iv-account-field-error {
+    margin-top: 8px;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.iv-account-field-hint {
+    color: #8090a3;
+}
+
+.iv-account-field-error {
+    color: #c03939;
+}
+
+/* Form footer */
+
+.iv-account-form-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 18px;
+    padding-top: 21px;
+    border-top: 1px solid #edf0f5;
+}
+
+.iv-account-footer-note {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    max-width: 360px;
+    color: #8291a4;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.iv-account-footer-note svg {
+    flex: none;
+    color: #b18b51;
+}
+
+.iv-account-primary-button {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    min-height: 46px;
+    padding: 11px 19px;
+    border: 1px solid #19324c;
+    border-radius: 11px;
+    background: #10243b;
+    box-shadow: 0 5px 13px rgba(10, 29, 50, 0.13);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
+    transition:
+        background 180ms ease,
+        box-shadow 180ms ease,
+        transform 180ms ease;
+}
+
+.iv-account-primary-button:hover:not(:disabled) {
+    transform: translateY(-2px);
+    background: #1b3858;
+    box-shadow: 0 9px 20px rgba(10, 29, 50, 0.19);
+}
+
+.iv-account-primary-button:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.iv-account-primary-button:disabled {
+    opacity: 0.65;
+    cursor: wait;
+}
+
+.iv-account-spinner {
+    width: 17px;
+    height: 17px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: iv-account-spin 750ms linear infinite;
+}
+
+/* Password section */
+
+.iv-account-security-notice {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 25px;
+    padding: 16px 18px;
+    border: 1px solid #dbe8f3;
+    border-radius: 13px;
+    background: #f2f7fc;
+}
+
+.iv-account-notice-icon {
+    display: grid;
+    place-items: center;
+    width: 35px;
+    height: 35px;
+    flex: 0 0 35px;
+    border-radius: 10px;
+    background: #e0ecf8;
+    color: #315b86;
+}
+
+.iv-account-security-notice strong {
+    display: block;
+    margin-bottom: 3px;
+    color: #284565;
+    font-size: 13px;
+}
+
+.iv-account-security-notice p {
+    color: #68809b;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.iv-account-password-guidance {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-top: -8px;
+    color: #8390a1;
+    font-size: 12px;
+}
+
+.iv-account-requirement-icon {
+    display: grid;
+    place-items: center;
+    width: 21px;
+    height: 21px;
+    flex: none;
+    border-radius: 50%;
+    background: #edf1f5;
+    color: #74849a;
+}
+
+.iv-account-requirement-met {
+    background: #e4f5eb;
+    color: #16804e;
+}
+
+/* Sidebar */
+
+.iv-account-aside {
+    display: flex;
+    flex-direction: column;
+    gap: 17px;
+    min-width: 0;
+    animation: iv-account-fade-up 560ms 190ms ease both;
+}
+
+.iv-account-aside-card {
+    padding: 29px 27px;
+    border: 1px solid #dce6ef;
+    border-radius: 22px;
+    background: linear-gradient(155deg, #fff 0%, #f8fafc 100%);
+    box-shadow: 0 7px 24px rgba(12, 37, 66, 0.04);
+}
+
+.iv-account-aside-icon {
+    display: grid;
+    place-items: center;
+    width: 53px;
+    height: 53px;
+    margin-bottom: 21px;
+    border: 1px solid #ead6b7;
+    border-radius: 15px;
+    background: #fbf3e8;
+    color: #b18a4e;
+}
+
+.iv-account-aside-eyebrow {
+    font-size: 10px;
+}
+
+.iv-account-aside-card h2 {
+    margin: 10px 0;
+    color: #112842;
+    font-family: var(--font-sans);
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.045em;
+    line-height: 1.3;
+}
+
+.iv-account-aside-description {
+    color: #798ba1;
+    font-size: 13px;
+    line-height: 1.75;
+}
+
+.iv-account-aside-divider {
+    height: 1px;
+    margin: 25px 0;
+    background: #e5eaf0;
+}
+
+.iv-account-tip {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    margin-top: 23px;
+}
+
+.iv-account-tip>svg {
+    flex: none;
+    margin-top: 2px;
+    color: #b58c4b;
+}
+
+.iv-account-tip strong {
+    display: block;
+    color: #18334e;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.iv-account-tip p {
+    margin-top: 5px;
+    color: #8190a2;
+    font-size: 12px;
+    line-height: 1.65;
+}
+
+.iv-account-aside-footer {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px;
+    border: 1px solid #dce6ef;
+    border-radius: 13px;
+    background: rgba(255, 255, 255, 0.68);
+    color: #71849a;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.iv-account-aside-footer svg {
+    flex: none;
+    color: #a77b3e;
+}
+
+/* Responsive */
+
+@media (max-width: 1050px) {
+    .iv-account-content-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .iv-account-aside {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .iv-account-aside-card {
+        padding: 25px;
+    }
+}
+
+@media (max-width: 767px) {
+    .iv-account-page {
+        width: 100%;
+        max-width: 100%;
+        padding: 25px 0 55px;
+    }
+
+    .iv-account-page-intro {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .iv-account-heading-tag {
+        padding: 9px 13px;
+    }
+
+    .iv-account-hero {
+        min-height: 0;
+        padding: 31px 21px;
+        border-radius: 19px;
+    }
+
+    .iv-account-hero::before {
+        left: 21px;
+    }
+
+    .iv-account-hero-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 17px;
+        width: 100%;
+    }
+
+    .iv-account-hero-avatar {
+        width: 67px;
+        height: 67px;
+        flex-basis: 67px;
+        border-radius: 18px;
+        font-size: 24px;
+    }
+
+    .iv-account-hero-person {
+        width: 100%;
+    }
+
+    .iv-account-hero-person h2 {
+        font-size: 28px;
+    }
+
+    .iv-account-hero-decoration,
+    .iv-account-hero-corner {
+        display: none;
+    }
+
+    .iv-account-content-grid {
+        gap: 17px;
+        margin-top: 18px;
+    }
+
+    .iv-account-main-column {
+        gap: 17px;
+    }
+
+    .iv-account-card {
+        border-radius: 17px;
+    }
+
+    .iv-account-section-heading {
+        align-items: flex-start;
+        gap: 12px;
+        padding: 21px 18px;
+    }
+
+    .iv-account-section-icon {
+        width: 43px;
+        height: 43px;
+        flex-basis: 43px;
+        border-radius: 12px;
+    }
+
+    .iv-account-section-copy h2 {
+        font-size: 18px;
+    }
+
+    .iv-account-card-body {
+        padding: 21px 18px;
+    }
+
+    .iv-account-form-footer {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .iv-account-primary-button {
+        width: 100%;
+    }
+
+    .iv-account-aside-card {
+        border-radius: 17px;
+        padding: 23px 20px;
+    }
+}
+
+@media (max-width: 390px) {
+    .iv-account-hero {
+        padding: 27px 16px;
+    }
+
+    .iv-account-hero-person h2 {
+        font-size: 25px;
+    }
+
+    .iv-account-section-heading {
+        padding: 20px 14px;
+    }
+
+    .iv-account-card-body {
+        padding: 20px 14px;
+    }
+
+    .iv-account-hero-eyebrow {
+        font-size: 9px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .iv-account-page *,
+    .iv-account-page *::before,
+    .iv-account-page *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
+}

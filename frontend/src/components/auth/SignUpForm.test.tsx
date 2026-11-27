@@ -14,11 +14,11 @@ describe("SignUpForm", () => {
     const user = userEvent.setup();
 
     render(<SignUpForm />);
-    await user.type(screen.getByLabelText("Name"), "New Person");
-    await user.type(screen.getByLabelText("Email"), "new@example.com");
-    await user.type(screen.getByLabelText("Password"), "a-long-password");
+    await user.type(screen.getByLabelText("Full name"), "New Person");
+    await user.type(screen.getByLabelText("Email address"), "new@example.com");
+    await user.type(screen.getByLabelText("Create password"), "a-long-password");
     await user.click(screen.getByRole("checkbox"));
-    await user.click(screen.getByRole("button", { name: "Create account" }));
+    await user.click(screen.getByRole("button", { name: "Create your account" }));
 
     expect(calls[0]?.body).toEqual({
       name: "New Person",
@@ -34,11 +34,11 @@ describe("SignUpForm", () => {
     const user = userEvent.setup();
 
     render(<SignUpForm />);
-    await user.type(screen.getByLabelText("Name"), "New Person");
-    await user.type(screen.getByLabelText("Email"), "new@example");
-    await user.type(screen.getByLabelText("Password"), "short");
+    await user.type(screen.getByRole("textbox", { name: "Full name" }), "New Person");
+    await user.type(screen.getByLabelText("Email address"), "new@example");
+    await user.type(screen.getByLabelText("Create password"), "short");
     await user.click(screen.getByRole("checkbox"));
-    await user.click(screen.getByRole("button", { name: "Create account" }));
+    await user.click(screen.getByRole("button", { name: "Create your account" }));
 
     expect(
       screen.getByText("Enter a full email address, like name@company.com."),
@@ -51,7 +51,11 @@ describe("SignUpForm", () => {
     const calls = stubApi({});
 
     render(<SignUpForm />);
-    expect(screen.getByRole("button", { name: "Create account" })).toBeDisabled();
+    expect(
+      screen.getByRole("button", {
+        name: "Create your account",
+      })
+    ).toBeDisabled();
     expect(calls).toHaveLength(0);
   });
 });

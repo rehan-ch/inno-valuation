@@ -16,7 +16,7 @@ describe("ForgotPasswordForm", () => {
     const user = userEvent.setup();
 
     render(<ForgotPasswordForm />);
-    await user.type(screen.getByLabelText("Email"), "me@example.com");
+    await user.type(screen.getByLabelText("Email address"), "me@example.com");
     await user.click(screen.getByRole("button", { name: "Send reset link" }));
 
     expect(calls[0]?.body).toEqual({ email: "me@example.com" });
@@ -47,7 +47,7 @@ describe("ResetPasswordForm", () => {
     render(<ResetPasswordForm />);
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "This page needs the link from the password reset email.",
+      "This reset link is missing or invalid.",
     );
   });
 });
