@@ -4,7 +4,7 @@ Innovation diagnostic platform built on Amy-Renee's "12 Dimensions of Innovation
 
 ## Run it locally
 
-Needs: `uv`, Node 20 with `npm`, Docker with Compose.
+Needs: `uv`, Node 20 with `npm`, Docker with Compose. PDF reports are drawn with WeasyPrint, which needs Pango and HarfBuzz on the machine (on Debian or Ubuntu: `sudo apt-get install libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0`; on macOS: `brew install pango`). Generated PDFs are kept under `backend/var/files/` locally.
 
 ```bash
 bin/setup        # .env from .env.example, Postgres + Redis in Docker, backend venv, migrations, frontend deps
