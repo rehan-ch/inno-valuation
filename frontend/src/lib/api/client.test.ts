@@ -4,6 +4,7 @@ import {
   ApiError,
   apiFetch,
   apiUrl,
+  getBlob,
   getHealth,
   setUnauthorizedHandler,
 } from "./client";
@@ -96,6 +97,36 @@ describe("apiFetch", () => {
     );
 
     await expect(apiFetch("/x")).rejects.toMatchObject({ code: "invalid_response", status: 200 });
+  });
+});
+
+describe("getBlob", () => {
+  it("returns the file's bytes as sent, with credentials and the asked type", async () => {
+    const bytes = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x00, 0xff]);
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(new Response(bytes, { headers: { "Content-Type": "application/pdf" } }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const blob = await getBlob("/reports/1/file", "application/pdf");
+
+    expect(new Uint8Array(await blob.arrayBuffer())).toEqual(bytes);
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(init.credentials).toBe("include");
+    expect(new Headers(init.headers).get("Accept")).toBe("application/pdf");
+  });
+
+  it("turns an error envelope into an ApiError", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        jsonResponse({ error: { code: "report_not_ready", message: "Not ready." } }, 409),
+      ),
+    );
+
+    const error = await getBlob("/reports/1/file", "application/pdf").catch((e: unknown) => e);
+
+    expect(error).toMatchObject({ code: "report_not_ready", status: 409 });
   });
 });
 

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { AdvicePanel } from "@/components/advice/AdvicePanel";
+import { ReportsPanel } from "@/components/reports/ReportsPanel";
 import { useMe } from "@/components/app/me-context";
 import { Compass } from "@/components/compass/Compass";
 import { Alert } from "@/components/ui/Alert";
@@ -176,6 +177,8 @@ export function ResultPage({ assessmentId }: { assessmentId: string }) {
       </div>
 
       {me.ai_enabled && <AdvicePanel adviceRef={{ kind: "readiness", assessmentId }} />}
+
+      <ReportsPanel reportRef={{ kind: "readiness", assessmentId }} />
 
       {!result.compass && (
       <Card>

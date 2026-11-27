@@ -100,4 +100,7 @@ export type AdviceRequestIn = Schemas["AdviceRequestIn"];
 export type AdvicePartName = NonNullable<AdviceRequestIn["parts"]>[number];
 export type AdvicePartStatus = AdviceOut["interpretation"]["status"];
 export type AdviceUsageOut = Schemas["UsageOut"];
+export type ReportsOut = Schemas["ReportsOut"];
+export type ReportOut = Schemas["ReportOut"];
+export type ReportStatus = ReportOut["status"];
 export type RecommendationOut = Schemas["RecommendationOut"];

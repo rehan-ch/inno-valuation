@@ -65,8 +65,8 @@ function isErrorEnvelope(value: unknown): value is ApiErrorEnvelope {
 }
 
 /** Sends the request and rejects with an ApiError on a network failure or a non-2xx
- * status. A 2xx comes back with its body text, still unparsed. */
-async function send(path: string, init: RequestInit): Promise<{ response: Response; text: string }> {
+ * status. A 2xx comes back unread. */
+async function open(path: string, init: RequestInit): Promise<Response> {
   const headers = new Headers(init.headers);
   if (!headers.has("Accept")) headers.set("Accept", "application/json");
   // Only JSON strings get a JSON content type; FormData and Blob bodies set their own.
@@ -90,9 +90,9 @@ async function send(path: string, init: RequestInit): Promise<{ response: Respon
     throw new ApiError("network_error", "We could not reach the server.", 0);
   }
 
-  const text = await response.text();
-  if (response.ok) return { response, text };
+  if (response.ok) return response;
 
+  const text = await response.text();
   if (response.status === 401) unauthorizedHandler?.();
   let body: unknown;
   try {
@@ -108,6 +108,18 @@ async function send(path: string, init: RequestInit): Promise<{ response: Respon
     `The server returned an error (${response.status}).`,
     response.status,
   );
+}
+
+/** Sends the request; a 2xx comes back with its body text, still unparsed. */
+async function send(path: string, init: RequestInit): Promise<{ response: Response; text: string }> {
+  const response = await open(path, init);
+  return { response, text: await response.text() };
+}
+
+/** A file the API serves (a PDF report). Errors come back as ApiError, like every call. */
+export async function getBlob(path: string, accept: string): Promise<Blob> {
+  const response = await open(path, { method: "GET", headers: { Accept: accept } });
+  return response.blob();
 }
 
 /** A call whose 2xx answer is a JSON body. Every route answers with one, so an empty or

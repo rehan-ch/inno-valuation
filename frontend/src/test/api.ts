@@ -21,6 +21,8 @@ import type {
   MeOut,
   OrganisationOut,
   QuestionSetOut,
+  ReportOut,
+  ReportsOut,
   WeightsChangeOut,
   WeightsOut,
 } from "@/lib/api/types";
@@ -820,3 +822,30 @@ export function fakeAdvice(overrides: Partial<AdviceOut> = {}): AdviceOut {
     ...overrides,
   };
 }
+
+export function fakeReport(overrides: Partial<ReportOut> = {}): ReportOut {
+  return {
+    id: "77777777-7777-7777-7777-777777777771",
+    version: 1,
+    status: "ready",
+    question_set_version: 1,
+    requested_by_name: "Olive Owner",
+    created_at: "2026-11-27T10:00:00Z",
+    finished_at: "2026-11-27T10:00:03Z",
+    file_size: 74000,
+    page_count: 5,
+    ...overrides,
+  };
+}
+
+/** The reports of one result, newest first; none by default. */
+export function fakeReports(overrides: Partial<ReportsOut> = {}): ReportsOut {
+  return {
+    subject: "readiness_result",
+    assessment_id: "55555555-5555-5555-5555-555555555555",
+    can_request: true,
+    reports: [],
+    ...overrides,
+  };
+}
+

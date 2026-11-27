@@ -11,6 +11,7 @@ import {
   fakeMe,
   fakeNoAdvice,
   fakeQuestionSet,
+  fakeReports,
   stubApi,
 } from "@/test/api";
 import type { RecordedCall } from "@/test/api";
@@ -877,11 +878,16 @@ describe("ResultPage", () => {
   });
 
   it("leaves the AI advice out while the server has no AI key", async () => {
-    const calls = stubApi({ [`GET ${A}/result`]: fakeResult() });
+    const calls = stubApi({
+      [`GET ${A}/result`]: fakeResult(),
+      [`GET ${A}/reports`]: fakeReports(),
+    });
     renderWithMe(<ResultPage assessmentId={ID} />, fakeMe({ ai_enabled: false }));
     await screen.findByRole("region", { name: "Total" });
     expect(screen.queryByRole("heading", { name: "AI advice" })).not.toBeInTheDocument();
-    expect(calls.map((c) => c.path)).toEqual([`${A}/result`]);
+    // The PDF report needs no AI, so it is still offered.
+    expect(await screen.findByRole("heading", { name: "PDF report" })).toBeInTheDocument();
+    expect(calls.map((c) => c.path).sort()).toEqual([`${A}/reports`, `${A}/result`]);
   });
 
   it("shows the permission message when the result is not for this person", async () => {
