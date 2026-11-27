@@ -50,6 +50,15 @@ ORGANISATION_SUBJECTS: Final[dict[OrganisationEmail, str]] = {
     OrganisationEmail.CONSULTANT_ACCESS: f"You have been given access on {PRODUCT_NAME}",
 }
 
+
+class ReportEmail(StrEnum):
+    REPORT_READY = "report_ready"
+
+
+REPORT_SUBJECTS: Final[dict[ReportEmail, str]] = {
+    ReportEmail.REPORT_READY: f"Your {PRODUCT_NAME} report is ready",
+}
+
 # How a role reads in a sentence: "join ... as a committee member".
 ROLE_PHRASES: Final[dict[str, str]] = {
     "owner": "an owner",
@@ -157,6 +166,22 @@ def render_consultant_access(
         organisation=organisation_name,
         granter=granter_name or "Someone",
         ends_on=f"{ends_on.day} {ends_on:%B %Y}",
+    )
+
+
+def render_report_ready(
+    *, to: str, origin: str, path: str, organisation_name: str, kind: str
+) -> EmailMessage:
+    """The PDF report someone asked for is ready. It links to the result's page, where the
+    report is downloaded after signing in; it holds no score, no idea text and no file."""
+    email = ReportEmail.REPORT_READY
+    return _render(
+        email.value,
+        REPORT_SUBJECTS[email],
+        to=to,
+        link=frontend_link(origin, path),
+        organisation=organisation_name,
+        report=kind,
     )
 
 

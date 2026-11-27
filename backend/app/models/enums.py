@@ -118,6 +118,15 @@ class AdviceSubject(StrEnum):
     IQ_ASSESSMENT = "iq_assessment"  # subject id: the IQ assessment
 
 
+class ReportStatus(StrEnum):
+    """One PDF report, left to right: queued, rendering, then ready or failed for good."""
+
+    QUEUED = "queued"
+    RENDERING = "rendering"
+    READY = "ready"
+    FAILED = "failed"
+
+
 class AiRunStatus(StrEnum):
     """One AI run, left to right: queued, running, then succeeded or failed for good."""
 

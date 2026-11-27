@@ -55,6 +55,7 @@ ACTION_LABELS: Final[Mapping[str, str]] = {
     AuditAction.WEIGHTS_CHANGED: "Dimension importance changed",
     AuditAction.TARGETS_CHANGED: "Targets changed",
     AuditAction.ADVICE_REQUESTED: "AI advice requested",
+    AuditAction.REPORT_REQUESTED: "PDF report made",
 }
 
 
@@ -256,6 +257,11 @@ def _detail(event: AuditEvent) -> str | None:  # noqa: PLR0911, PLR0912 (one cas
             )
             again = " Asked again." if details.get("rerun") else ""
             return f"For {about}: " + ", ".join(named) + "." + again
+    elif action == AuditAction.REPORT_REQUESTED:
+        about = "a readiness result" if details.get("subject") == "readiness_result" else "an idea"
+        version = details.get("version")
+        if isinstance(version, int):
+            return f"For {about}, version {version}."
     return None
 
 

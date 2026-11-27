@@ -1,0 +1,7 @@
+{% extends "_layout.html" %}
+{% block content %}
+<p style="margin:0 0 16px;">Hello,</p>
+<p style="margin:0 0 16px;">The {{ report }} you asked for on {{ product }} for {{ organisation }} is ready.</p>
+<p style="margin:0 0 16px;">To download it, sign in and open the result.</p>
+{% with label = "Open the result" %}{% include "_button.html" %}{% endwith %}
+{% endblock %}

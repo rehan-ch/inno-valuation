@@ -10,6 +10,8 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+# Files the app generates locally (PDF reports)
+backend/var/
 
 # Node
 node_modules/

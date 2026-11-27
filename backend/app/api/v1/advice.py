@@ -73,7 +73,7 @@ def _name(question_set: QuestionSet, key: Any) -> str:
     return question_set.dimension(str(key)).name
 
 
-def _out(ctx: OrgContext, found: advice.Advice) -> AdviceOut:
+def advice_out(ctx: OrgContext, found: advice.Advice) -> AdviceOut:
     facts = found.subject.facts
     question_set = facts.question_set
     parts = found.parts
@@ -152,7 +152,7 @@ def _ask(db: Session, ctx: OrgContext, subject: advice.Subject, body: AdviceRequ
         parts=[_PARTS[name] for name in body.parts] if body.parts is not None else None,
         regenerate=body.regenerate,
     )
-    return _out(ctx, advice.get(db, ctx, subject))
+    return advice_out(ctx, advice.get(db, ctx, subject))
 
 
 READINESS: Final = "/readiness/assessments/{assessment_id}/advice"
@@ -166,7 +166,7 @@ def get_readiness_advice(
     db: Session = Depends(get_db),
 ) -> AdviceOut:
     """The AI advice on a final readiness result, part by part, as it stands."""
-    return _out(ctx, advice.get(db, ctx, advice.readiness_subject(db, ctx, assessment_id)))
+    return advice_out(ctx, advice.get(db, ctx, advice.readiness_subject(db, ctx, assessment_id)))
 
 
 @router.post(READINESS, response_model=AdviceOut, status_code=status.HTTP_200_OK)
@@ -189,7 +189,7 @@ def get_iq_advice(
     db: Session = Depends(get_db),
 ) -> AdviceOut:
     """The AI advice on an idea's confirmed scores, part by part, as it stands."""
-    return _out(ctx, advice.get(db, ctx, advice.iq_subject(db, ctx, idea_id, assessment_id)))
+    return advice_out(ctx, advice.get(db, ctx, advice.iq_subject(db, ctx, idea_id, assessment_id)))
 
 
 @router.post(IQ, response_model=AdviceOut, status_code=status.HTTP_200_OK)

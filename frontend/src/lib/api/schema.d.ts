@@ -440,6 +440,51 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/ideas/{idea_id}/assessments/{assessment_id}/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Iq Reports
+         * @description The PDF reports of an idea's confirmed scores, newest first.
+         */
+        get: operations["list_iq_reports_api_v1_ideas__idea_id__assessments__assessment_id__reports_get"];
+        put?: never;
+        /**
+         * Request Iq Report
+         * @description Make a PDF report of an idea's confirmed scores. Returns at once; poll the GET until
+         *     the newest report is ready or failed.
+         */
+        post: operations["request_iq_report_api_v1_ideas__idea_id__assessments__assessment_id__reports_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ideas/{idea_id}/assessments/{assessment_id}/reports/{report_id}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download Iq Report
+         * @description The PDF of a ready report of an idea's confirmed scores.
+         */
+        get: operations["download_iq_report_api_v1_ideas__idea_id__assessments__assessment_id__reports__report_id__file_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/ideas/{idea_id}/assessments/{assessment_id}/review": {
         parameters: {
             query?: never;
@@ -914,6 +959,52 @@ export interface paths {
         put?: never;
         /** Submit My Answers */
         post: operations["submit_my_answers_api_v1_readiness_assessments__assessment_id__my_answers_submit_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/readiness/assessments/{assessment_id}/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Readiness Reports
+         * @description The PDF reports of a final readiness result, newest first.
+         */
+        get: operations["list_readiness_reports_api_v1_readiness_assessments__assessment_id__reports_get"];
+        put?: never;
+        /**
+         * Request Readiness Report
+         * @description Make a PDF report of a final readiness result. Returns at once; poll the GET until
+         *     the newest report is ready or failed. Asking again while one is on its way, or when
+         *     nothing has changed since the newest one, returns that one.
+         */
+        post: operations["request_readiness_report_api_v1_readiness_assessments__assessment_id__reports_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/readiness/assessments/{assessment_id}/reports/{report_id}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download Readiness Report
+         * @description The PDF of a ready report of a final readiness result.
+         */
+        get: operations["download_readiness_report_api_v1_readiness_assessments__assessment_id__reports__report_id__file_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2741,6 +2832,58 @@ export interface components {
             /** Version */
             version: number | null;
         };
+        /**
+         * ReportOut
+         * @description One report of a result. ``status`` is queued or rendering while it is being drawn,
+         *     then ready (download it) or failed (make it again).
+         */
+        ReportOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** File Size */
+            file_size: number | null;
+            /** Finished At */
+            finished_at: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Page Count */
+            page_count: number | null;
+            /** Question Set Version */
+            question_set_version: number;
+            /** Requested By Name */
+            requested_by_name: string | null;
+            status: components["schemas"]["ReportStatus"];
+            /** Version */
+            version: number;
+        };
+        /**
+         * ReportStatus
+         * @description One PDF report, left to right: queued, rendering, then ready or failed for good.
+         * @enum {string}
+         */
+        ReportStatus: "queued" | "rendering" | "ready" | "failed";
+        /**
+         * ReportsOut
+         * @description Every report of one result, newest first.
+         */
+        ReportsOut: {
+            /**
+             * Assessment Id
+             * Format: uuid
+             */
+            assessment_id: string;
+            /** Can Request */
+            can_request: boolean;
+            /** Reports */
+            reports: components["schemas"]["ReportOut"][];
+            subject: components["schemas"]["AdviceSubject"];
+        };
         /** ResetPasswordIn */
         ResetPasswordIn: {
             /** New Password */
@@ -3834,6 +3977,103 @@ export interface operations {
             };
         };
     };
+    list_iq_reports_api_v1_ideas__idea_id__assessments__assessment_id__reports_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                idea_id: string;
+                assessment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    request_iq_report_api_v1_ideas__idea_id__assessments__assessment_id__reports_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                idea_id: string;
+                assessment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_iq_report_api_v1_ideas__idea_id__assessments__assessment_id__reports__report_id__file_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                idea_id: string;
+                assessment_id: string;
+                report_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     save_review_api_v1_ideas__idea_id__assessments__assessment_id__review_patch: {
         parameters: {
             query?: never;
@@ -4830,6 +5070,100 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AssessmentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_readiness_reports_api_v1_readiness_assessments__assessment_id__reports_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assessment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    request_readiness_report_api_v1_readiness_assessments__assessment_id__reports_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assessment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_readiness_report_api_v1_readiness_assessments__assessment_id__reports__report_id__file_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assessment_id: string;
+                report_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": unknown;
                 };
             };
             /** @description Validation Error */

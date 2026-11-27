@@ -296,10 +296,10 @@ def finalise(
     db: Session = Depends(get_db),
 ) -> ResultOut:
     readiness.finalise(db, ctx, assessment_id)
-    return _result_out(db, readiness.get_assessment(db, ctx, assessment_id))
+    return result_out(db, readiness.get_assessment(db, ctx, assessment_id))
 
 
-def _result_out(db: Session, assessment: ReadinessAssessment) -> ResultOut:
+def result_out(db: Session, assessment: ReadinessAssessment) -> ResultOut:
     result = readiness.result_of(db, assessment)
     if result is None or assessment.finalised_at is None:
         raise AppError("not_found", "This assessment has no result yet.", 404)
@@ -374,7 +374,7 @@ def get_result(
 ) -> ResultOut:
     """The final result: total out of 300 and its band in the book's words, the 12 dimension
     scores, category totals, priorities with the book's next steps, and strengths."""
-    return _result_out(db, readiness.get_assessment(db, ctx, assessment_id))
+    return result_out(db, readiness.get_assessment(db, ctx, assessment_id))
 
 
 _EXPLANATION_STATUS: Final[dict[AiRunStatus, ExplanationStatus]] = {

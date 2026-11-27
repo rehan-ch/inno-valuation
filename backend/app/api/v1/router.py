@@ -11,6 +11,7 @@ from app.api.v1 import (
     me,
     organisation,
     readiness,
+    reports,
     targets,
     team,
     weights,
@@ -34,3 +35,4 @@ api_router.include_router(targets.router)
 api_router.include_router(dashboard.router)
 api_router.include_router(audit.router)
 api_router.include_router(advice.router)
+api_router.include_router(reports.router)

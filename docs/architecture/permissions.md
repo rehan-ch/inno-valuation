@@ -11,7 +11,7 @@ One table decides who may do what inside an organisation: `ROLE_PERMISSIONS` in 
 
 An archived organisation is view-only until the archive feature exists (Phase 8): it cannot be chosen as the active organisation, and only `organisation.view`, `team.view`, `assessments.view`, `ideas.view` and `audit.view` still work, so results and the activity log stay readable. `require_permission(...)` enforces this; `require_role(...)` checks the role only, so routes that change data use `require_permission(...)`.
 
-## Matrix (Phases 2 to 6)
+## Matrix (Phases 2 to 7)
 
 | Permission | Code | owner | admin | member | committee | investor | consultant |
 |---|---|---|---|---|---|---|---|
@@ -30,6 +30,7 @@ An archived organisation is view-only until the archive feature exists (Phase 8)
 | Set dimension importance (orders tied priorities only) | `weights.manage` | yes | yes | no | no | no | no |
 | Set target scores per dimension | `targets.manage` | yes | yes | no | no | no | no |
 | Ask the AI for advice on a result | `advice.request` | yes | yes | yes | yes | no | no |
+| Make a PDF report of a result | `reports.request` | yes | yes | yes | yes | no | no |
 | View the activity log | `audit.view` | yes | yes | no | no | no | no |
 
 An investor watches: they see assessments, ideas and results but neither answers nor adds ideas. A consultant (Amy) reads assessments, ideas and results only while their grant is live; the service layer additionally limits consultants to assessments that are `final` and to ideas whose latest IQ assessment is confirmed.
@@ -37,6 +38,8 @@ An investor watches: they see assessments, ideas and results but neither answers
 Dimension importance (which dimensions matter more) is read by everyone who views the organisation and set by owners and admins. It never changes a score or the IQ; it only orders priorities whose scores tie (Amy Q2, PROVISIONAL Q23).
 
 Targets (the score an organisation wants to reach on a dimension, on either scale) are read by everyone who views results and set by owners and admins. A target changes no score; the gap is the target minus the current score (PROVISIONAL Q8: targets per dimension only).
+
+A PDF report shows what the app shows for one result. Making one needs `reports.request`; downloading one needs only the permission to see its result (`assessments.view` or `ideas.view`), so an investor or a consultant can download every report of a result they may see, but cannot make one (PROVISIONAL, to confirm with Haroon).
 
 The activity log lists the organisation's recorded actions (who, what, when). It is read-only for everyone: no route changes or deletes an event. Owners and admins may view, filter and export it.
 

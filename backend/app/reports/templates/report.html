@@ -1,0 +1,342 @@
+{# The PDF report of one result (Phase 7). Everything comes from the snapshot ``s``; nothing
+   here works out a number. Readiness and the IQ are never shown together (spec 4). #}
+{% set readiness = s.kind == "readiness" %}
+{% if readiness %}
+  {% set result = s.result %}
+  {% set compass = result.compass %}
+  {% set title = "Innovation Readiness report" %}
+{% else %}
+  {% set result = s.assessment %}
+  {% set compass = result.compass %}
+  {% set title = "Innovation Quotient report" %}
+{% endif %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>{{ title }}: {{ s.organisation.name }}</title>
+<meta name="author" content="{{ product }}">
+<meta name="description" content="{{ title }}">
+<style>
+  @font-face { font-family: "Plex"; src: url("fonts/IBMPlexSans-Regular.ttf"); font-weight: 400; }
+  @font-face { font-family: "Plex"; src: url("fonts/IBMPlexSans-SemiBold.ttf"); font-weight: 600; }
+  @font-face { font-family: "Plex"; src: url("fonts/IBMPlexSans-Bold.ttf"); font-weight: 700; }
+
+  @page {
+    size: A4;
+    margin: 18mm 16mm 20mm 16mm;
+    @bottom-left {
+      content: "Confidential. Prepared for " string(organisation) ".";
+      font: 400 7.5pt "Plex"; color: #6a7481;
+    }
+    @bottom-right {
+      content: "Page " counter(page) " of " counter(pages);
+      font: 400 7.5pt "Plex"; color: #6a7481;
+    }
+  }
+
+  html { font-family: "Plex", sans-serif; font-size: 9.5pt; line-height: 1.45; color: #192029; }
+  body { margin: 0; }
+  h1, h2, h3, p, ul, ol, table { margin: 0; }
+  h1 { font-size: 20pt; font-weight: 600; letter-spacing: -0.01em; }
+  h2 { font-size: 12.5pt; font-weight: 600; margin: 0 0 2mm; page-break-after: avoid; }
+  h3 { font-size: 10pt; font-weight: 600; page-break-after: avoid; }
+  ul { padding-left: 4.5mm; }
+  li { margin: 0.6mm 0; }
+  .num { font-variant-numeric: tabular-nums; }
+  .muted { color: #6a7481; }
+  .small { font-size: 8pt; }
+  .org { string-set: organisation content(); }
+
+  .brand { display: flex; align-items: center; gap: 2.5mm; margin-bottom: 8mm; }
+  .brand img { width: 9mm; height: auto; }
+  .brand span { font-size: 11pt; font-weight: 600; color: #166eb6; letter-spacing: 0.01em; }
+  .meta { margin-top: 2mm; color: #4f5a69; }
+
+  section { margin-top: 7mm; }
+  .panel { border: 0.3mm solid #dee3e7; border-radius: 1.5mm; padding: 4mm 5mm; }
+  .eyebrow { font-size: 7.5pt; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #6a7481; }
+
+  .headline { display: flex; gap: 8mm; align-items: flex-start; }
+  .headline .score { font-size: 30pt; font-weight: 600; line-height: 1.1; }
+  .headline .score span { font-size: 14pt; font-weight: 400; color: #6a7481; }
+  .headline .side { border-left: 0.3mm solid #dee3e7; padding-left: 8mm; flex: 1; }
+  .headline .side p.name { font-size: 12pt; font-weight: 600; margin-top: 1mm; }
+
+  .categories { display: flex; gap: 3mm; }
+  .categories .panel { flex: 1; }
+  .categories .value { font-size: 15pt; font-weight: 600; margin-top: 1mm; }
+  .categories .value span { font-size: 9pt; font-weight: 400; color: #6a7481; }
+
+  .keep { page-break-inside: avoid; }
+  .drawing { text-align: center; margin-top: 2mm; }
+  .drawing svg { width: 82mm; height: 82mm; }
+  .drawing p { margin-top: 0.5mm; }
+
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-size: 7.5pt; font-weight: 600; color: #6a7481; border-bottom: 0.3mm solid #c5ccd3; padding: 1mm 1.5mm; }
+  td { padding: 1mm 1.5mm; border-bottom: 0.2mm solid #f0f2f5; vertical-align: top; }
+  tr { page-break-inside: avoid; }
+  td.right, th.right { text-align: right; }
+  tr.category td { background: #f9fafb; font-size: 8pt; font-weight: 600; color: #4f5a69; }
+  .rank { color: #6a7481; font-size: 8pt; }
+
+  .list > div { padding: 2.5mm 0; border-bottom: 0.2mm solid #f0f2f5; page-break-inside: avoid; }
+  .list > div:last-child { border-bottom: none; }
+  .list .row { display: flex; justify-content: space-between; gap: 4mm; }
+  .list .row strong { font-weight: 600; }
+  .fixed { border-left: 0.8mm solid #166eb6; padding-left: 2.5mm; margin-top: 1mm; }
+
+  .ai { border: 0.3mm solid #dee3e7; border-radius: 1.5mm; padding: 4mm 5mm; }
+  .ai .part { margin-top: 4mm; padding-top: 3mm; border-top: 0.3mm solid #dee3e7; }
+  .ai .part:first-of-type { border-top: none; padding-top: 0; }
+  .badge { display: inline-block; font-size: 7pt; font-weight: 600; color: #166eb6; background: #e9f3fb; border: 0.2mm solid #b9d6ef; border-radius: 1mm; padding: 0.2mm 1.5mm; margin-left: 1.5mm; vertical-align: 1pt; }
+  .note { background: #f9fafb; border: 0.2mm solid #dee3e7; border-radius: 1mm; padding: 1.5mm 2.5mm; margin-top: 1.5mm; }
+  .two { display: flex; gap: 6mm; }
+  .two > div { flex: 1; }
+  .label { font-size: 8pt; font-weight: 600; color: #4f5a69; margin-top: 1.5mm; }
+
+  .about p { margin-top: 1.5mm; }
+</style>
+</head>
+<body>
+
+<div class="brand"><img src="assets/innovaluation-mark.png" alt=""><span>{{ product }}</span></div>
+
+<header>
+  <p class="eyebrow">{{ title }}</p>
+  <h1 class="org">{{ s.organisation.name }}</h1>
+  {% if readiness %}
+    <p class="meta">Result made final on {{ result.finalised_at | long_date }} · answers from {{ result.submitted_count }} {{ "person" if result.submitted_count == 1 else "people" }} · question set version {{ result.question_set_version }}</p>
+  {% else %}
+    <p class="meta"><strong>Idea:</strong> {{ s.idea.title }}</p>
+    <p class="meta">Scores confirmed on {{ result.confirmed_at | long_date }}{% if result.confirmed_by_name %} by {{ result.confirmed_by_name }}{% endif %} · question set version {{ result.question_set_version }}</p>
+  {% endif %}
+  <p class="meta small muted">Report prepared on {{ s.generated_at | long_date }}{% if s.requested_by %} for {{ s.requested_by }}{% endif %}.</p>
+</header>
+
+{% if not readiness and s.idea.summary %}
+<section>
+  <h2>The idea</h2>
+  <p>{{ s.idea.summary }}</p>
+</section>
+{% endif %}
+
+<section class="panel headline">
+  {% if readiness %}
+    <div>
+      <p class="eyebrow">Readiness score</p>
+      <p class="score num">{{ result.total }}<span> / {{ result.total_maximum }}</span></p>
+    </div>
+    <div class="side">
+      <p class="eyebrow">Band</p>
+      <p class="name">{{ result.band.name }}</p>
+      <p>{{ result.band.text }}</p>
+    </div>
+  {% else %}
+    <div>
+      <p class="eyebrow">Innovation Quotient</p>
+      <p class="score num">{{ result.iq }}<span> / {{ result.iq_maximum }}</span></p>
+    </div>
+    <div class="side">
+      <p class="eyebrow">Value for money</p>
+      {% if result.vfm and result.vfm.per_point %}
+        <p class="name num">{{ result.vfm.per_point | money(result.vfm.currency) }} <span class="muted">per innovation point</span></p>
+        <p>{% if result.vfm.investment %}{{ result.vfm.investment | money(result.vfm.currency) }} planned investment{% endif %} divided by the IQ. Lower is better.</p>
+      {% else %}
+        <p class="name">Not calculable</p>
+        <p>{{ result.vfm.not_calculable_reason if result.vfm else "" }}</p>
+      {% endif %}
+    </div>
+  {% endif %}
+</section>
+
+<section class="categories">
+  {% for category in result.categories %}
+    <div class="panel">
+      <p>{{ category.name }}</p>
+      <p class="value num">{{ category.score if category.score is not none else "–" }}<span> / {{ category.maximum }}</span></p>
+    </div>
+  {% endfor %}
+</section>
+
+{% if compass %}
+<section>
+  <div class="keep">
+    <h2>{{ "Readiness compass" if readiness else "Idea compass" }}</h2>
+    <p class="muted small">The 12 dimensions in the method's order, grouped into its three categories. Each segment fills as far as its score is of {{ compass.maximum }}{% if compass.segments | selectattr("target", "ne", none) | list %}; a dashed mark is the target{% endif %}.</p>
+    <div class="drawing">
+      {% if readiness %}
+        {{ compass_svg(compass, value=result.total | string, maximum=result.total_maximum | string, label=result.band.name) }}
+      {% else %}
+        {{ compass_svg(compass, value=result.iq, maximum=result.iq_maximum | whole, label="Innovation Quotient") }}
+      {% endif %}
+      <p class="small muted">
+        {% for category in compass.categories %}
+          {% set orders = compass.segments | selectattr("key", "in", category.dimension_keys) | map(attribute="order") | list %}
+          {% if orders %}Segments {{ orders | min }} to {{ orders | max }}: {{ category.name }}.{{ " " if not loop.last }}{% endif %}
+        {% endfor %}
+      </p>
+      {% if compass.levels %}
+        <p class="small muted">Levels, lightest to darkest: {% for level in compass.levels %}{{ level.name }} ({{ level.min }} to {{ level.max }}){{ ", " if not loop.last }}{% endfor %}.</p>
+      {% endif %}
+    </div>
+  </div>
+  <table style="margin-top: 3mm">
+    <thead><tr><th>Dimension</th><th class="right">Score</th>{% if not readiness %}<th>Level</th>{% endif %}<th class="right">Target</th><th>Gap</th></tr></thead>
+    <tbody>
+    {% for category in compass.categories %}
+      <tr class="category"><td>{{ category.name }}</td><td class="right num">{{ category.score }} / {{ category.maximum }}</td>{% if not readiness %}<td></td>{% endif %}<td></td><td></td></tr>
+      {% for segment in compass.segments if segment.key in category.dimension_keys %}
+        <tr>
+          <td><span class="rank">{{ segment.order }}</span> {{ segment.name }}{% if segment.priority_rank %} <span class="rank">priority {{ segment.priority_rank }}</span>{% endif %}</td>
+          <td class="right num"><strong>{{ segment.score }}</strong> / {{ segment.maximum }}</td>
+          {% if not readiness %}<td>{{ segment.level.name if segment.level else "" }}</td>{% endif %}
+          <td class="right num">{{ segment.target if segment.target is not none else "–" }}</td>
+          <td class="num">{{ segment.gap | gap_words }}</td>
+        </tr>
+      {% endfor %}
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% else %}
+<section>
+  <h2>The 12 dimensions</h2>
+  <table>
+    <thead><tr><th>Dimension</th><th class="right">Score</th></tr></thead>
+    <tbody>
+    {% for dimension in result.dimensions %}
+      <tr><td><span class="rank">{{ dimension.order }}</span> {{ dimension.name }}</td><td class="right num"><strong>{{ dimension.score if readiness else dimension.final_score }}</strong> / {{ dimension.maximum if readiness else result.scale.max }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endif %}
+
+<section>
+  <h2>Focus first</h2>
+  <p class="muted small">The lowest-scoring dimensions, with the next steps from the method, as written.</p>
+  <div class="list">
+  {% for priority in result.priorities %}
+    <div>
+      <p class="row"><span><span class="rank">{{ priority.rank }}</span> <strong>{{ priority.name }}</strong></span><span class="num">{{ priority.score }} / {{ priority.maximum if readiness else result.scale.max }}{% if not readiness %} · {{ priority.level_name }}{% endif %}</span></p>
+      <p class="fixed">{{ priority.next_steps }}</p>
+    </div>
+  {% endfor %}
+  </div>
+</section>
+
+{% if result.strengths %}
+<section>
+  <h2>Strengths</h2>
+  <p class="muted small">The dimensions that score above every priority.</p>
+  <div class="list">
+  {% for strength in result.strengths %}
+    <div><p class="row"><strong>{{ strength.name }}</strong><span class="num">{{ strength.score }} / {{ strength.maximum }}{% if not readiness %} · {{ strength.level_name }}{% endif %}</span></p></div>
+  {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% if not readiness %}
+  {% set noted = result.dimensions | selectattr("note") | list %}
+  {% if noted %}
+  <section>
+    <h2>Notes on the scores</h2>
+    <p class="muted small">What the idea's owner wrote when confirming the scores.</p>
+    <div class="list">
+    {% for dimension in noted %}
+      <div><p><strong>{{ dimension.name }}</strong></p><p>{{ dimension.note }}</p></div>
+    {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+{% endif %}
+
+{% if s.advice %}
+{% set advice = s.advice %}
+<section class="ai">
+  <h2>AI advice</h2>
+  <p class="muted">Written by AI from this result, to help you decide what to do next. It suggests; it never changes a score. It can be wrong, so use your own judgement.</p>
+
+  {% if advice.consultation %}
+  <div class="part">
+    <h3>Consultation<span class="badge">Proposed by AI</span></h3>
+    {% if advice.consultation.outdated %}<p class="note small">This was written before something it is based on changed.</p>{% endif %}
+    {% for sentence in advice.consultation.message %}<p>{{ sentence }}</p>{% endfor %}
+    {% if advice.consultation.reasons %}
+      <ul>{% for reason in advice.consultation.reasons %}<li><strong>{{ reason.name }}:</strong> {{ reason.reason }}</li>{% endfor %}</ul>
+    {% endif %}
+    <p class="small muted">Written by AI on {{ advice.consultation.generated_at | long_date }}.</p>
+  </div>
+  {% endif %}
+
+  {% if advice.interpretation %}
+  <div class="part">
+    <h3>What this result means<span class="badge">Proposed by AI</span></h3>
+    {% if advice.interpretation.outdated %}<p class="note small">This was written before something it is based on changed.</p>{% endif %}
+    {% for sentence in advice.interpretation.summary %}<p>{{ sentence }}</p>{% endfor %}
+    {% for dimension in advice.interpretation.dimensions %}
+      <div style="margin-top: 2.5mm; page-break-inside: avoid">
+        <p><strong>{{ dimension.name }}</strong></p>
+        <p>{{ dimension.meaning }}</p>
+        {% if dimension.strengths %}<p class="label">Strengths</p><ul>{% for item in dimension.strengths %}<li>{{ item }}</li>{% endfor %}</ul>{% endif %}
+        {% if dimension.gaps %}<p class="label">Gaps</p><ul>{% for item in dimension.gaps %}<li>{{ item }}</li>{% endfor %}</ul>{% endif %}
+      </div>
+    {% endfor %}
+    <p class="small muted">Written by AI on {{ advice.interpretation.generated_at | long_date }}.</p>
+  </div>
+  {% endif %}
+
+  {% if advice.recommendations %}
+  <div class="part">
+    <h3>Recommendations for the priorities</h3>
+    {% if advice.recommendations.outdated %}<p class="note small">This was written before something it is based on changed.</p>{% endif %}
+    {% for item in advice.recommendations["items"] %}
+      <div class="keep" style="margin-top: 3mm">
+        <p><strong>{{ item.rank }}. {{ item.name }}</strong></p>
+        <p class="label">Next steps from the method, as written</p>
+        <p class="fixed">{{ item.fixed_text }}</p>
+        <p class="label">The AI's advice<span class="badge">Proposed by AI</span></p>
+        <div class="two">
+          <div>
+            <p class="label">Initiatives</p><ul>{% for x in item.initiatives %}<li>{{ x }}</li>{% endfor %}</ul>
+            <p class="label">Timeline</p><ul><li>{{ item.timeline }}</li></ul>
+          </div>
+          <div>
+            <p class="label">What to measure</p><ul>{% for x in item.kpis %}<li>{{ x }}</li>{% endfor %}</ul>
+            <p class="label">What it needs</p><ul>{% for x in item.resources %}<li>{{ x }}</li>{% endfor %}</ul>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+    <p class="small muted">The text marked "Proposed by AI" was written by AI on {{ advice.recommendations.generated_at | long_date }}. The method's next steps are shown as written.</p>
+  </div>
+  {% endif %}
+
+  {% if advice.gap_actions %}
+  <div class="part">
+    <h3>Actions to close the gaps<span class="badge">Proposed by AI</span></h3>
+    {% if advice.gap_actions.outdated %}<p class="note small">This was written before something it is based on changed.</p>{% endif %}
+    {% for dimension in advice.gap_actions.dimensions %}
+      <div class="keep">
+        <p class="label">{{ dimension.name }}</p>
+        <ul>{% for action in dimension.actions %}<li>{{ action }}</li>{% endfor %}</ul>
+      </div>
+    {% endfor %}
+    <p class="small muted">Written by AI on {{ advice.gap_actions.generated_at | long_date }}.</p>
+  </div>
+  {% endif %}
+</section>
+{% endif %}
+
+<section class="about small muted">
+  <h2 style="color: #192029">About this report</h2>
+  <p>Every score in this report was worked out by {{ product }} from {{ "the team's agreed answers" if readiness else "the scores confirmed by the idea's owner" }}, using the 12 Dimensions of Innovation method, question set version {{ result.question_set_version }}. The numbers are the same as {{ product }} shows for this result.</p>
+  {% if s.advice %}<p>Sections marked "Proposed by AI" were written by AI. They suggest; they never change a score.</p>{% endif %}
+  <p>This report is confidential to {{ s.organisation.name }}.</p>
+</section>
+
+</body>
+</html>

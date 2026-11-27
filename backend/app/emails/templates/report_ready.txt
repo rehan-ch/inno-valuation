@@ -1,0 +1,8 @@
+Hello,
+
+The {{ report }} you asked for on {{ product }} for {{ organisation }} is ready.
+
+To download it, sign in and open:
+{{ link }}
+
+{{ product }}

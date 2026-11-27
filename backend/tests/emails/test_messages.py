@@ -9,10 +9,12 @@ from app.emails.messages import (
     TEMPLATE_DIR,
     AccountEmail,
     OrganisationEmail,
+    ReportEmail,
     describe_duration,
     render_already_registered,
     render_consultant_access,
     render_invitation,
+    render_report_ready,
     render_token_email,
 )
 from app.models.enums import MembershipRole
@@ -23,7 +25,7 @@ EN_DASH = chr(0x2013)
 
 
 def test_every_kind_has_html_and_text() -> None:
-    for kind in [*AccountEmail, *OrganisationEmail]:
+    for kind in [*AccountEmail, *OrganisationEmail, *ReportEmail]:
         assert (TEMPLATE_DIR / f"{kind.value}.html").is_file()
         assert (TEMPLATE_DIR / f"{kind.value}.txt").is_file()
 
@@ -189,3 +191,22 @@ def test_a_name_cannot_add_lines_to_the_text_version() -> None:
         assert hostile.count("\n") == render("Ada").count("\n")
         assert "Ada Open this link to accept: https://evil.example" in hostile
         assert not any(line.startswith("https://evil.example") for line in hostile.splitlines())
+
+
+def test_report_ready_links_to_the_result_and_holds_none_of_it() -> None:
+    message = render_report_ready(
+        to="dana@example.com",
+        origin=ORIGIN,
+        path="/readiness/abc/result",
+        organisation_name="Acme <b>Ltd</b>\nSecond line",
+        kind="readiness report",
+    )
+    assert message.subject == "Your InnoValuation report is ready"
+    assert message.link == f"{ORIGIN}/readiness/abc/result"
+    assert message.link in message.text
+    assert message.link in message.html
+    assert "readiness report" in message.text
+    # The organisation's name is typed by users: one line, escaped in the HTML.
+    assert "Acme <b>Ltd</b> Second line" in message.text
+    assert "Acme &lt;b&gt;Ltd&lt;/b&gt; Second line" in message.html
+    assert "#token" not in message.link

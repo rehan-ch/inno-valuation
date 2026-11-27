@@ -20,6 +20,7 @@ from sqlalchemy.orm import Session
 
 from app.ai.client import AiError, AiReply, override_ai_client
 from app.core.deps import get_db
+from app.core.storage import LocalFileStorage, override_storage
 from app.emails.backends import MemoryEmailBackend, override_email_backend
 from app.jobs.db import override_task_session
 from tests import factories
@@ -36,6 +37,16 @@ def _never_open_a_browser(monkeypatch: pytest.MonkeyPatch) -> None:
 
     monkeypatch.setattr("webbrowser.open", refuse)
     monkeypatch.setattr("webbrowser.open_new_tab", refuse)
+
+
+@pytest.fixture(autouse=True)
+def _files_in_a_temporary_folder(tmp_path_factory: pytest.TempPathFactory) -> Iterator[None]:
+    """Generated files (PDF reports) go to a folder of the test's own, never the real one."""
+    override_storage(LocalFileStorage(tmp_path_factory.mktemp("files")))
+    try:
+        yield
+    finally:
+        override_storage(None)
 
 
 @pytest.fixture

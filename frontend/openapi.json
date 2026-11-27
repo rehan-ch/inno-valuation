@@ -4926,6 +4926,133 @@
         "title": "RecommendationsOut",
         "type": "object"
       },
+      "ReportOut": {
+        "description": "One report of a result. ``status`` is queued or rendering while it is being drawn,\nthen ready (download it) or failed (make it again).",
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "file_size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Size"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "page_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Count"
+          },
+          "question_set_version": {
+            "title": "Question Set Version",
+            "type": "integer"
+          },
+          "requested_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requested By Name"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ReportStatus"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "version",
+          "status",
+          "question_set_version",
+          "requested_by_name",
+          "created_at",
+          "finished_at",
+          "file_size",
+          "page_count"
+        ],
+        "title": "ReportOut",
+        "type": "object"
+      },
+      "ReportStatus": {
+        "description": "One PDF report, left to right: queued, rendering, then ready or failed for good.",
+        "enum": [
+          "queued",
+          "rendering",
+          "ready",
+          "failed"
+        ],
+        "title": "ReportStatus",
+        "type": "string"
+      },
+      "ReportsOut": {
+        "description": "Every report of one result, newest first.",
+        "properties": {
+          "assessment_id": {
+            "format": "uuid",
+            "title": "Assessment Id",
+            "type": "string"
+          },
+          "can_request": {
+            "title": "Can Request",
+            "type": "boolean"
+          },
+          "reports": {
+            "items": {
+              "$ref": "#/components/schemas/ReportOut"
+            },
+            "title": "Reports",
+            "type": "array"
+          },
+          "subject": {
+            "$ref": "#/components/schemas/AdviceSubject"
+          }
+        },
+        "required": [
+          "subject",
+          "assessment_id",
+          "can_request",
+          "reports"
+        ],
+        "title": "ReportsOut",
+        "type": "object"
+      },
       "ResetPasswordIn": {
         "additionalProperties": false,
         "properties": {
@@ -6943,6 +7070,172 @@
         ]
       }
     },
+    "/api/v1/ideas/{idea_id}/assessments/{assessment_id}/reports": {
+      "get": {
+        "description": "The PDF reports of an idea's confirmed scores, newest first.",
+        "operationId": "list_iq_reports_api_v1_ideas__idea_id__assessments__assessment_id__reports_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "idea_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Idea Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "assessment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Assessment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Iq Reports",
+        "tags": [
+          "reports"
+        ]
+      },
+      "post": {
+        "description": "Make a PDF report of an idea's confirmed scores. Returns at once; poll the GET until\nthe newest report is ready or failed.",
+        "operationId": "request_iq_report_api_v1_ideas__idea_id__assessments__assessment_id__reports_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "idea_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Idea Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "assessment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Assessment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Request Iq Report",
+        "tags": [
+          "reports"
+        ]
+      }
+    },
+    "/api/v1/ideas/{idea_id}/assessments/{assessment_id}/reports/{report_id}/file": {
+      "get": {
+        "description": "The PDF of a ready report of an idea's confirmed scores.",
+        "operationId": "download_iq_report_api_v1_ideas__idea_id__assessments__assessment_id__reports__report_id__file_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "idea_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Idea Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "assessment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Assessment Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "report_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Report Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/pdf": {}
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Download Iq Report",
+        "tags": [
+          "reports"
+        ]
+      }
+    },
     "/api/v1/ideas/{idea_id}/assessments/{assessment_id}/review": {
       "patch": {
         "description": "Autosave of the owner's review: changed scores (null puts the proposal back) and notes.",
@@ -8294,6 +8587,142 @@
         "summary": "Submit My Answers",
         "tags": [
           "readiness"
+        ]
+      }
+    },
+    "/api/v1/readiness/assessments/{assessment_id}/reports": {
+      "get": {
+        "description": "The PDF reports of a final readiness result, newest first.",
+        "operationId": "list_readiness_reports_api_v1_readiness_assessments__assessment_id__reports_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "assessment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Assessment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Readiness Reports",
+        "tags": [
+          "reports"
+        ]
+      },
+      "post": {
+        "description": "Make a PDF report of a final readiness result. Returns at once; poll the GET until\nthe newest report is ready or failed. Asking again while one is on its way, or when\nnothing has changed since the newest one, returns that one.",
+        "operationId": "request_readiness_report_api_v1_readiness_assessments__assessment_id__reports_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "assessment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Assessment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Request Readiness Report",
+        "tags": [
+          "reports"
+        ]
+      }
+    },
+    "/api/v1/readiness/assessments/{assessment_id}/reports/{report_id}/file": {
+      "get": {
+        "description": "The PDF of a ready report of a final readiness result.",
+        "operationId": "download_readiness_report_api_v1_readiness_assessments__assessment_id__reports__report_id__file_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "assessment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Assessment Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "report_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Report Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/pdf": {}
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Download Readiness Report",
+        "tags": [
+          "reports"
         ]
       }
     },

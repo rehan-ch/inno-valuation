@@ -22,6 +22,7 @@ CLIENT_TABLES = {
     "dimension_targets",
     "interpretations",
     "recommendations",
+    "reports",
 }
 
 

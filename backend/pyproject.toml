@@ -19,6 +19,7 @@ dependencies = [
     "resend>=2.49.1",
     "sqlalchemy>=2",
     "uvicorn[standard]>=0.54.0",
+    "weasyprint>=68",
 ]
 
 [dependency-groups]
@@ -27,6 +28,7 @@ dev = [
     "factory-boy>=3.3.3",
     "httpx2>=2.16.0",
     "mypy>=2.4.0",
+    "pypdf>=6",
     "pytest>=9.1.1",
     "ruff>=0.16.10",
     "types-pyyaml>=6.0.12.20260906",
@@ -95,4 +97,8 @@ disallow_untyped_calls = false
 
 [[tool.mypy.overrides]]
 module = ["factory.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["weasyprint", "weasyprint.*"]
 ignore_missing_imports = true

@@ -150,7 +150,7 @@ def restore_idea(
     return _detail(db, ctx, ideas.restore_idea(db, ctx, idea_id))
 
 
-def _assessment_out(
+def assessment_out(
     db: Session, ctx: OrgContext, idea: Idea, assessment: IqAssessment
 ) -> IqAssessmentOut:
     question_set: QuestionSet = ideas.question_set_of(assessment)
@@ -288,7 +288,7 @@ def request_assessment(
     then confirms or changes each one (Amy Q1). Scoring again keeps the earlier confirmed
     assessments for history."""
     assessment = ideas.request_assessment(db, ctx, idea_id)
-    return _assessment_out(db, ctx, ideas.get_idea(db, ctx, idea_id), assessment)
+    return assessment_out(db, ctx, ideas.get_idea(db, ctx, idea_id), assessment)
 
 
 @router.get(
@@ -305,7 +305,7 @@ def get_assessment(
     """The proposal beside the owner's review and, once confirmed, the result: IQ out of 100,
     levels, category scores, priorities with the book's next steps, Value for Money."""
     idea = ideas.get_idea(db, ctx, idea_id)
-    return _assessment_out(db, ctx, idea, ideas.get_assessment(db, ctx, idea, assessment_id))
+    return assessment_out(db, ctx, idea, ideas.get_assessment(db, ctx, idea, assessment_id))
 
 
 @router.patch(
@@ -323,7 +323,7 @@ def save_review(
     """Autosave of the owner's review: changed scores (null puts the proposal back) and notes."""
     ideas.save_review(db, ctx, idea_id, assessment_id, scores=body.scores, notes=body.notes)
     idea = ideas.get_idea(db, ctx, idea_id)
-    return _assessment_out(db, ctx, idea, ideas.get_assessment(db, ctx, idea, assessment_id))
+    return assessment_out(db, ctx, idea, ideas.get_assessment(db, ctx, idea, assessment_id))
 
 
 @router.post(
@@ -341,4 +341,4 @@ def confirm_assessment(
     priorities and Value for Money once; nothing about the assessment changes afterwards."""
     ideas.confirm(db, ctx, idea_id, assessment_id)
     idea = ideas.get_idea(db, ctx, idea_id)
-    return _assessment_out(db, ctx, idea, ideas.get_assessment(db, ctx, idea, assessment_id))
+    return assessment_out(db, ctx, idea, ideas.get_assessment(db, ctx, idea, assessment_id))

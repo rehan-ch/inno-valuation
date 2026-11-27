@@ -23,6 +23,7 @@ from app.models.readiness import (
     ReadinessResponse,
     ReadinessResult,
 )
+from app.models.reports import Report
 from app.models.targets import DimensionTargets
 from app.models.weights import DimensionWeights
 
@@ -45,6 +46,7 @@ __all__ = [
     "ReadinessResponse",
     "ReadinessResult",
     "Recommendation",
+    "Report",
     "RevokedSession",
     "SignInThrottle",
     "User",

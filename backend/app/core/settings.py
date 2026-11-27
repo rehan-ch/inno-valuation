@@ -68,6 +68,10 @@ class Settings(BaseSettings):
     dev_mail_web_url: str = "http://localhost:8025"
     dev_email_open_browser: bool = True
 
+    # Where generated files (PDF reports) are kept on this machine. Development and tests
+    # only: a deployed site needs durable object storage, chosen with the hosting (Phase 8).
+    file_storage_dir: Path = BACKEND_DIR / "var" / "files"
+
     # Sessions. A session lasts a fixed time from sign-in; switching organisation keeps
     # the original end time.
     session_lifetime_days: int = Field(default=7, ge=1, le=30)

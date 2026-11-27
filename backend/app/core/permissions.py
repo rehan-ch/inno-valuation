@@ -48,6 +48,7 @@ class Permission(StrEnum):
     MANAGE_WEIGHTS = "weights.manage"  # dimension importance (orders tied priorities only)
     MANAGE_TARGETS = "targets.manage"  # target scores per dimension (change no score)
     REQUEST_ADVICE = "advice.request"  # ask the AI for advice on a result one may see
+    REQUEST_REPORTS = "reports.request"  # make a PDF report of a result one may see
     VIEW_AUDIT = "audit.view"  # the organisation's activity log, read-only
 
 
@@ -64,6 +65,7 @@ _PARTICIPATE: Final = _VIEW | {
     Permission.ANSWER_ASSESSMENT,
     Permission.CREATE_IDEAS,
     Permission.REQUEST_ADVICE,
+    Permission.REQUEST_REPORTS,
 }
 
 # What anyone may still do in an archived organisation (view-only until the archive

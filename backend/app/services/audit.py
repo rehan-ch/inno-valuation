@@ -46,6 +46,7 @@ class AuditAction(StrEnum):
     WEIGHTS_CHANGED = "weights.changed"
     TARGETS_CHANGED = "targets.changed"
     ADVICE_REQUESTED = "advice.requested"
+    REPORT_REQUESTED = "report.requested"
 
 
 def record(
