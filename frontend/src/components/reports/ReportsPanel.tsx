@@ -164,7 +164,7 @@ function ReportsBody({
           {newest?.status === "ready" && (
             <p className="text-xs text-neutral-500">
               A new version is made only when something on this page has changed, such as a
-              target or the AI advice.
+              target.
             </p>
           )}
         </div>
