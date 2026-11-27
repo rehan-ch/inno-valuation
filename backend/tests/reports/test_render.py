@@ -121,6 +121,8 @@ def test_wording_helpers_match_the_app() -> None:
     assert whole("100.0") == "100"
     assert whole("72.5") == "72.5"
     assert long_date("2026-11-19T23:30:00+00:00") == "19 November 2026"
+    # Read in UTC, like the app: the database may answer in another time zone.
+    assert long_date("2026-11-19T02:30:00+05:00") == "18 November 2026"
 
 
 def test_the_compass_draws_twelve_segments_and_the_targets() -> None:
@@ -197,3 +199,52 @@ def test_long_content_flows_onto_more_pages() -> None:
 def test_the_same_snapshot_draws_the_same_words() -> None:
     snapshot = _readiness()
     assert _text(render_pdf(snapshot).data) == _text(render_pdf(deepcopy(snapshot)).data)
+
+
+def test_target_columns_only_when_a_target_is_set() -> None:
+    with_targets = render_html(_readiness())
+    assert '<th class="right">Target</th>' in with_targets
+    assert "5 below target" in with_targets
+    without = render_html(_readiness(compass=_compass(targets=False)))
+    assert '<th class="right">Target</th>' not in without
+    assert "below target" not in without
+
+
+def test_a_consultation_not_suggested_says_so() -> None:
+    snapshot = _readiness()
+    snapshot["advice"] = {
+        "consultation": {
+            "outdated": False,
+            "generated_at": "2026-11-19T09:00:00+00:00",
+            "suggest": False,
+            "message": [],
+            "reasons": [],
+        }
+    }
+    html = render_html(snapshot)
+    assert "The AI sees no gap wide enough to suggest a consultation." in html
+    assert "Proposed by AI" in html
+
+
+def test_the_band_is_marked_as_the_methods_words_and_the_date_is_given() -> None:
+    html = render_html(_readiness())
+    assert "Band, in the method" in html
+    assert "showed for this result on 27 November 2026" in html
+
+
+def test_advice_with_only_some_parts_answered_still_draws() -> None:
+    snapshot = _readiness()
+    snapshot["advice"] = {
+        "gap_actions": {
+            "outdated": True,
+            "generated_at": "2026-11-19T09:00:00+00:00",
+            "dimensions": [
+                {"key": DIMENSIONS[2].key, "name": DIMENSIONS[2].name, "actions": ["Act."]}
+            ],
+        }
+    }
+    pdf = render_pdf(snapshot)
+    text = _text(pdf.data)
+    assert "Actions to close the gaps" in text
+    assert "This was written before something it is based on changed." in text
+    assert "What this result means" not in text

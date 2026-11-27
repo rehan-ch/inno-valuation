@@ -6,7 +6,8 @@ shows. It is stored with the report and never rebuilt: the PDF can be drawn agai
 as it was, whatever changes later.
 
 AI advice is copied only where the app would show it: the AI is connected, the part has an
-answer, and that answer is not sample text from the development stand-in. Usage figures
+answer (the newest one there is), and that answer is not sample text from the development
+stand-in. Usage figures
 (model, tokens, cost) and anything that depends on who is looking are left out.
 """
 
@@ -25,13 +26,15 @@ TEMPLATE_VERSION: Final = 1
 ADVICE_PARTS: Final = ("consultation", "interpretation", "recommendations", "gap_actions")
 
 
-def _advice(advice: AdviceOut | None) -> dict[str, Any] | None:
+def advice_shown(advice: AdviceOut | None) -> dict[str, Any] | None:
     if advice is None:
         return None
     shown: dict[str, Any] = {}
     for name in ADVICE_PARTS:
         part = getattr(advice, name)
-        if part.status == "ready" and not part.sample:
+        # As the page shows it: the newest answer there is, even while a newer one is on
+        # its way or after asking again failed; never the stand-in's sample text.
+        if part.generated_at is not None and not part.sample:
             shown[name] = part.model_dump(mode="json", exclude={"usage", "status", "sample"})
     return shown or None
 
@@ -64,7 +67,7 @@ def readiness_snapshot(
             generated_at=generated_at,
         ),
         "result": result.model_dump(mode="json"),
-        "advice": _advice(advice),
+        "advice": advice_shown(advice),
     }
 
 
@@ -83,5 +86,5 @@ def iq_snapshot(
         ),
         "idea": {"title": idea.title, "summary": idea.summary, "stage": idea.stage.value},
         "assessment": assessment.model_dump(mode="json", exclude={"can_review"}),
-        "advice": _advice(advice),
+        "advice": advice_shown(advice),
     }

@@ -61,7 +61,7 @@ export function ReportsPanel({ reportRef }: { reportRef: ReportRef }) {
     <Card>
       <CardHeader
         title="PDF report"
-        description="A PDF of this result to keep or share, with the same numbers as this page. It is marked confidential to your organisation."
+        description="A PDF of this result to keep or share, with the numbers this page shows when it is made. It is marked confidential to your organisation."
       />
       <p role="status" aria-live="polite" className="sr-only">
         {arrived ? "The PDF report is ready to download." : ""}
@@ -114,7 +114,7 @@ function ReportsBody({
         <p className="text-sm text-neutral-600">
           {reports.can_request
             ? "No report has been made of this result yet."
-            : "No report has been made of this result yet. Someone who takes part in the assessment can make one."}
+            : "No report has been made of this result yet. An owner, admin, member or committee member can make one."}
         </p>
       )}
 

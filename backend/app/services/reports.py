@@ -77,19 +77,42 @@ def _of(ctx: OrgContext, subject: ReportSubject) -> Select[Report]:
 
 
 def _stale(report: Report, now: datetime) -> bool:
-    return report.status in PENDING and now - report.created_at > STALE_AFTER
+    """Queued too long without a worker, or drawn too long by one: timed from when it was
+    queued, or from when a worker started drawing it."""
+    if report.status is ReportStatus.QUEUED:
+        return now - report.created_at > STALE_AFTER
+    if report.status is ReportStatus.RENDERING:
+        return now - (report.started_at or report.created_at) > STALE_AFTER
+    return False
 
 
-def fail(db: Session, report: Report, error: str) -> None:
-    """Fail a report that is still queued or being drawn; leave a finished one alone.
-    Commits."""
+def _mark_failed(db: Session, report: Report, error: str) -> None:
+    """Fail a report that is still queued or being drawn; leave a finished one alone. The
+    caller commits."""
     db.execute(
         update(Report)
         .where(Report.id == report.id, Report.status.in_(PENDING))
         .values(status=ReportStatus.FAILED, error=error, finished_at=datetime.now(UTC))
     )
-    db.commit()
     db.refresh(report)
+
+
+def fail(db: Session, report: Report, error: str) -> None:
+    """Fail a report that is still queued or being drawn; leave a finished one alone.
+    Commits."""
+    _mark_failed(db, report, error)
+    db.commit()
+
+
+def file_intact(report: Report) -> bool:
+    """The ready report's file is in storage and is the file that was stored."""
+    if report.status is not ReportStatus.READY or report.file_key is None:
+        return False
+    try:
+        data = get_storage().get(report.file_key)
+    except FileNotFoundError:
+        return False
+    return hashlib.sha256(data).hexdigest() == report.file_sha256
 
 
 def list_reports(db: Session, ctx: OrgContext, subject: ReportSubject) -> list[Report]:
@@ -99,7 +122,7 @@ def list_reports(db: Session, ctx: OrgContext, subject: ReportSubject) -> list[R
     now = datetime.now(UTC)
     for report in reports:
         if _stale(report, now):
-            fail(db, report, "The report was not drawn in time.")
+            _mark_failed(db, report, "The report was not drawn in time.")
     db.commit()
     return reports
 
@@ -124,11 +147,16 @@ def request(
     now = datetime.now(UTC)
     newest = db.scalars(_of(ctx, subject).order_by(Report.version.desc()).limit(1)).first()
     if newest is not None and _stale(newest, now):
-        fail(db, newest, "The report was not drawn in time.")
-        _lock(db, ctx)  # the commit above released it
+        # In this transaction, under the lock: whoever asks next sees it failed.
+        _mark_failed(db, newest, "The report was not drawn in time.")
     if newest is not None and (
         newest.status in PENDING
-        or (newest.status is ReportStatus.READY and _same_content(newest.snapshot, snapshot))
+        or (
+            newest.status is ReportStatus.READY
+            and _same_content(newest.snapshot, snapshot)
+            # A ready report whose file is gone is made again, not handed back.
+            and file_intact(newest)
+        )
     ):
         db.commit()
         return newest
@@ -143,6 +171,7 @@ def request(
     version = (
         db.scalar(
             select(func.max(Report.version)).where(
+                Report.organisation_id == ctx.organisation_id,
                 Report.subject_type == subject.subject_type,
                 Report.subject_id == subject.assessment_id,
             )

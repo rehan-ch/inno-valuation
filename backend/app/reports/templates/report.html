@@ -115,6 +115,12 @@
   <p class="meta small muted">Report prepared on {{ s.generated_at | long_date }}{% if s.requested_by %} for {{ s.requested_by }}{% endif %}.</p>
 </header>
 
+{% if not readiness and result.sample %}
+<section class="note">
+  <strong>Sample scores.</strong> When these scores were proposed the AI was not connected, so every dimension was proposed at the middle of the scale with placeholder reasons. They are not a real assessment of the idea.
+</section>
+{% endif %}
+
 {% if not readiness and s.idea.summary %}
 <section>
   <h2>The idea</h2>
@@ -129,7 +135,7 @@
       <p class="score num">{{ result.total }}<span> / {{ result.total_maximum }}</span></p>
     </div>
     <div class="side">
-      <p class="eyebrow">Band</p>
+      <p class="eyebrow">Band, in the method's words</p>
       <p class="name">{{ result.band.name }}</p>
       <p>{{ result.band.text }}</p>
     </div>
@@ -178,22 +184,25 @@
         {% endfor %}
       </p>
       {% if compass.levels %}
-        <p class="small muted">Levels, lightest to darkest: {% for level in compass.levels %}{{ level.name }} ({{ level.min }} to {{ level.max }}){{ ", " if not loop.last }}{% endfor %}.</p>
+        <p class="small muted">Levels from the method, lightest to darkest: {% for level in compass.levels %}{{ level.name }} ({{ level.min }} to {{ level.max }}){{ ", " if not loop.last }}{% endfor %}.</p>
       {% endif %}
     </div>
   </div>
+  {% set has_targets = compass.segments | selectattr("target", "ne", none) | list | length > 0 %}
   <table style="margin-top: 3mm">
-    <thead><tr><th>Dimension</th><th class="right">Score</th>{% if not readiness %}<th>Level</th>{% endif %}<th class="right">Target</th><th>Gap</th></tr></thead>
+    <thead><tr><th>Dimension</th><th class="right">Score</th>{% if not readiness %}<th>Level</th>{% endif %}{% if has_targets %}<th class="right">Target</th><th>Gap</th>{% endif %}</tr></thead>
     <tbody>
     {% for category in compass.categories %}
-      <tr class="category"><td>{{ category.name }}</td><td class="right num">{{ category.score }} / {{ category.maximum }}</td>{% if not readiness %}<td></td>{% endif %}<td></td><td></td></tr>
+      <tr class="category"><td>{{ category.name }}</td><td class="right num">{{ category.score }} / {{ category.maximum }}</td>{% if not readiness %}<td></td>{% endif %}{% if has_targets %}<td></td><td></td>{% endif %}</tr>
       {% for segment in compass.segments if segment.key in category.dimension_keys %}
         <tr>
           <td><span class="rank">{{ segment.order }}</span> {{ segment.name }}{% if segment.priority_rank %} <span class="rank">priority {{ segment.priority_rank }}</span>{% endif %}</td>
           <td class="right num"><strong>{{ segment.score }}</strong> / {{ segment.maximum }}</td>
           {% if not readiness %}<td>{{ segment.level.name if segment.level else "" }}</td>{% endif %}
+          {% if has_targets %}
           <td class="right num">{{ segment.target if segment.target is not none else "–" }}</td>
           <td class="num">{{ segment.gap | gap_words }}</td>
+          {% endif %}
         </tr>
       {% endfor %}
     {% endfor %}
@@ -216,7 +225,7 @@
 
 <section>
   <h2>Focus first</h2>
-  <p class="muted small">The lowest-scoring dimensions, with the next steps from the method, as written.</p>
+  <p class="muted small">The lowest-scoring dimensions, with the next steps from the method, as written.{% if not readiness and result.custom_weights %} Where scores tie, the more important dimension comes first, as set in the organisation's dimension importance. Importance never changes a score or the IQ.{% endif %}</p>
   <div class="list">
   {% for priority in result.priorities %}
     <div>
@@ -244,7 +253,7 @@
   {% if noted %}
   <section>
     <h2>Notes on the scores</h2>
-    <p class="muted small">What the idea's owner wrote when confirming the scores.</p>
+    <p class="muted small">What was written about a score when the scores were confirmed.</p>
     <div class="list">
     {% for dimension in noted %}
       <div><p><strong>{{ dimension.name }}</strong></p><p>{{ dimension.note }}</p></div>
@@ -260,11 +269,15 @@
   <h2>AI advice</h2>
   <p class="muted">Written by AI from this result, to help you decide what to do next. It suggests; it never changes a score. It can be wrong, so use your own judgement.</p>
 
-  {% if advice.consultation %}
+  {% if advice.get("consultation") %}
   <div class="part">
     <h3>Consultation<span class="badge">Proposed by AI</span></h3>
     {% if advice.consultation.outdated %}<p class="note small">This was written before something it is based on changed.</p>{% endif %}
-    {% for sentence in advice.consultation.message %}<p>{{ sentence }}</p>{% endfor %}
+    {% if advice.consultation.suggest %}
+      {% for sentence in advice.consultation.message %}<p>{{ sentence }}</p>{% endfor %}
+    {% else %}
+      <p>The AI sees no gap wide enough to suggest a consultation.</p>
+    {% endif %}
     {% if advice.consultation.reasons %}
       <ul>{% for reason in advice.consultation.reasons %}<li><strong>{{ reason.name }}:</strong> {{ reason.reason }}</li>{% endfor %}</ul>
     {% endif %}
@@ -272,7 +285,7 @@
   </div>
   {% endif %}
 
-  {% if advice.interpretation %}
+  {% if advice.get("interpretation") %}
   <div class="part">
     <h3>What this result means<span class="badge">Proposed by AI</span></h3>
     {% if advice.interpretation.outdated %}<p class="note small">This was written before something it is based on changed.</p>{% endif %}
@@ -289,7 +302,7 @@
   </div>
   {% endif %}
 
-  {% if advice.recommendations %}
+  {% if advice.get("recommendations") %}
   <div class="part">
     <h3>Recommendations for the priorities</h3>
     {% if advice.recommendations.outdated %}<p class="note small">This was written before something it is based on changed.</p>{% endif %}
@@ -315,7 +328,7 @@
   </div>
   {% endif %}
 
-  {% if advice.gap_actions %}
+  {% if advice.get("gap_actions") %}
   <div class="part">
     <h3>Actions to close the gaps<span class="badge">Proposed by AI</span></h3>
     {% if advice.gap_actions.outdated %}<p class="note small">This was written before something it is based on changed.</p>{% endif %}
@@ -333,7 +346,12 @@
 
 <section class="about small muted">
   <h2 style="color: #192029">About this report</h2>
-  <p>Every score in this report was worked out by {{ product }} from {{ "the team's agreed answers" if readiness else "the scores confirmed by the idea's owner" }}, using the 12 Dimensions of Innovation method, question set version {{ result.question_set_version }}. The numbers are the same as {{ product }} shows for this result.</p>
+  {% if readiness %}
+  <p>Every score in this report was worked out by {{ product }} from the team's agreed answers, using the 12 Dimensions of Innovation method, question set version {{ result.question_set_version }}.</p>
+  {% else %}
+  <p>The AI proposed each dimension's score; {{ result.confirmed_by_name or "the person who confirmed them" }} confirmed or changed each one. {{ product }} then worked out every score in this report from the confirmed scores, using the 12 Dimensions of Innovation method, question set version {{ result.question_set_version }}.</p>
+  {% endif %}
+  <p>The numbers are the ones {{ product }} showed for this result on {{ s.generated_at | long_date }}. Targets and gaps are those set at that time and may have changed since.</p>
   {% if s.advice %}<p>Sections marked "Proposed by AI" were written by AI. They suggest; they never change a score.</p>{% endif %}
   <p>This report is confidential to {{ s.organisation.name }}.</p>
 </section>

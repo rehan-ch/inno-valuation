@@ -4,20 +4,26 @@ and that every number in the PDF is the number the app shows for the same result
 import io
 import re
 from collections.abc import Callable
+from copy import deepcopy
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
 from pypdf import PdfReader
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
-from app.core.storage import get_storage
+from app.ai.client import AiUnavailableError
+from app.core.storage import LocalFileStorage, get_storage, override_storage
 from app.emails.backends import MemoryEmailBackend
 from app.jobs.tasks import reports as report_tasks
 from app.models import AuditEvent, Membership, Organisation, Report, User
 from app.models.enums import MembershipRole, OrganisationStatus, ReportStatus
+from app.reports import snapshot
+from app.reports.render import render_html, render_pdf
+from app.schemas.advice import AdviceOut
 from app.scoring.question_set import QUESTION_SET
 from app.services import reports
 from tests.ai.support import RecordedAiClient, fixture, recorded_replies
@@ -143,8 +149,9 @@ def test_every_number_in_the_readiness_pdf_is_the_number_the_app_shows(
     for category in shown["categories"]:
         assert f"{category['score']} / {category['maximum']}" in text
     for segment in shown["compass"]["segments"]:
-        assert f"{segment['name']}" in text
-        assert f"{segment['score']} / {segment['maximum']}" in text
+        # Each row: its place, its name, its priority if any, and its own score.
+        row = rf"{segment['order']} {re.escape(segment['name'])}(?: priority \d+)? "
+        assert re.search(row + rf"{segment['score']} / {segment['maximum']}", text), row
     target = next(s for s in shown["compass"]["segments"] if s["target"] is not None)
     assert f"{target['gap']} below target" in text
     for priority in shown["priorities"]:
@@ -153,7 +160,6 @@ def test_every_number_in_the_readiness_pdf_is_the_number_the_app_shows(
     for strength in shown["strengths"]:
         assert strength["name"] in text
     assert "question set version 1" in text
-    assert "Proposed by AI" not in text  # without a key the app shows no advice
 
 
 def test_every_number_in_the_idea_pdf_is_the_number_the_app_shows(
@@ -176,8 +182,9 @@ def test_every_number_in_the_idea_pdf_is_the_number_the_app_shows(
     for category in shown["categories"]:
         assert f"{category['score']} / {category['maximum']}" in text
     for segment in shown["compass"]["segments"]:
-        assert f"{segment['score']} / {segment['maximum']}" in text
-        assert segment["level"]["name"] in text
+        row = rf"{segment['order']} {re.escape(segment['name'])}(?: priority \d+)? "
+        level = re.escape(segment["level"]["name"])
+        assert re.search(row + rf"{segment['score']} / {segment['maximum']} {level}", text), row
     for priority in shown["priorities"]:
         assert " ".join(priority["next_steps"].split()) in text
     assert "innovation quotient report" in text.lower()
@@ -217,10 +224,39 @@ def test_sample_advice_from_the_stand_in_stays_out(client: TestClient, db: Sessi
         f"{READINESS}/assessments/{assessment_id}/advice", json={}, headers=csrf(client)
     )
     assert asked.status_code == 200  # the offline stand-in answers with marked samples
+    samples = AdviceOut.model_validate(asked.json())
+    assert samples.interpretation.sample
+    # Left out for two reasons: the AI is not connected, and the text is sample text.
+    assert snapshot.advice_shown(samples) is None
     report = _make(client, url)["reports"][0]
     stored = db.get(Report, report["id"])
     assert stored is not None
     assert stored.snapshot["advice"] is None
+    text = _text(_download(client, url, report["id"]))
+    assert "Proposed by AI" not in text
+
+
+def test_advice_the_page_still_shows_after_a_failed_refresh_goes_in(
+    client: TestClient, db: Session, use_ai: UseAi
+) -> None:
+    _, _, assessment_id, url = _readiness(client)
+    advice_url = f"{READINESS}/assessments/{assessment_id}/advice"
+    use_ai(
+        *recorded_replies(fixture("bridge_gaps", "typical")),
+        AiUnavailableError("The AI service did not answer in time."),
+    )
+    first = client.post(advice_url, json={"parts": ["gap_actions"]}, headers=csrf(client))
+    again = client.post(
+        advice_url, json={"parts": ["gap_actions"], "regenerate": True}, headers=csrf(client)
+    )
+    assert again.json()["gap_actions"]["status"] == "failed"
+    report = _make(client, url)["reports"][0]
+    stored = db.get(Report, report["id"])
+    assert stored is not None
+    assert (
+        stored.snapshot["advice"]["gap_actions"]["dimensions"]
+        == (first.json()["gap_actions"]["dimensions"])
+    )
 
 
 def test_asking_twice_gives_one_report_until_something_changes(
@@ -404,6 +440,75 @@ def test_a_missing_or_changed_file_is_never_served(client: TestClient, db: Sessi
     assert client.get(f"{url}/{made['id']}/file").status_code == 410
 
 
+def test_a_report_whose_file_is_gone_is_made_again(client: TestClient, db: Session) -> None:
+    _, _, _, url = _readiness(client)
+    made = _make(client, url)["reports"][0]
+    stored = db.get(Report, made["id"])
+    assert stored is not None
+    assert stored.file_key is not None
+    get_storage().delete(stored.file_key)
+    assert client.get(f"{url}/{made['id']}/file").status_code == 410
+    again = _make(client, url)["reports"]
+    assert [r["version"] for r in again] == [2, 1]
+    assert _download(client, url, again[0]["id"]).startswith(b"%PDF-")
+
+
+def test_asking_while_the_newest_is_stuck_fails_it_and_makes_a_new_one(
+    client: TestClient, db: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _, _, _, url = _readiness(client)
+    with monkeypatch.context() as patched:
+        patched.setattr(report_tasks.render_report, "delay", lambda report_id: None)
+        stuck = _make(client, url)["reports"][0]
+    stored = db.get(Report, stuck["id"])
+    assert stored is not None
+    stored.created_at = datetime.now(UTC) - reports.STALE_AFTER - timedelta(seconds=1)
+    db.flush()
+    again = _make(client, url)["reports"]
+    assert [(r["version"], r["status"]) for r in again] == [(2, "ready"), (1, "failed")]
+
+
+def test_a_report_that_cannot_be_stored_fails(
+    client: TestClient, db: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    class Full(LocalFileStorage):
+        def put(self, key: str, data: bytes) -> None:
+            raise OSError("No space left on device")
+
+    _, _, _, url = _readiness(client)
+    override_storage(Full(Path("/nonexistent")))
+    failed = _make(client, url)["reports"][0]
+    assert failed["status"] == "failed"
+    stored = db.get(Report, failed["id"])
+    assert stored is not None
+    assert stored.error == "The PDF could not be stored (OSError)."
+
+
+def test_a_report_failed_while_drawn_stays_failed_and_its_file_is_removed(
+    client: TestClient, db: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    real = render_pdf
+
+    def slow(content: dict[str, Any]) -> Any:
+        drawn = real(content)
+        # Meanwhile a reader decides the report took too long.
+        db.execute(
+            update(Report)
+            .where(Report.status == ReportStatus.RENDERING)
+            .values(status=ReportStatus.FAILED, error="The report was not drawn in time.")
+        )
+        return drawn
+
+    _, _, _, url = _readiness(client)
+    monkeypatch.setattr(report_tasks, "render_pdf", slow)
+    failed = _make(client, url)["reports"][0]
+    assert failed["status"] == "failed"
+    stored = db.get(Report, failed["id"])
+    assert stored is not None
+    with pytest.raises(FileNotFoundError):
+        get_storage().get(reports.file_key(stored))
+
+
 def test_the_daily_limit(client: TestClient, db: Session, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(reports, "DAILY_LIMIT", 1)
     _, _, _, url = _readiness(client)
@@ -468,3 +573,27 @@ def test_the_report_names_every_dimension_in_book_order(client: TestClient) -> N
     places = [text.find(d.name) for d in QUESTION_SET.dimensions]
     assert all(place >= 0 for place in places)
     assert places == sorted(places)
+
+
+def test_an_idea_report_says_how_the_scores_were_set_and_marks_samples(
+    client: TestClient, db: Session, use_ai: UseAi
+) -> None:
+    owner, org = member(MembershipRole.OWNER)
+    as_user(client, owner, org)
+    idea_id, assessment_id = confirmed_idea(client, use_ai)
+    made = _make(client, f"{IDEAS}/{idea_id}/assessments/{assessment_id}/reports")["reports"][0]
+    stored = db.get(Report, made["id"])
+    assert stored is not None
+    html = render_html(stored.snapshot)
+    assert f"The AI proposed each dimension's score; {owner.name} confirmed or changed" in html
+    assert "Sample scores." not in html
+    assert "more important dimension comes first" not in html
+
+    # A confirmed sample, and custom importance, are both said in the report.
+    snapshot = deepcopy(stored.snapshot)
+    snapshot["assessment"]["sample"] = True
+    snapshot["assessment"]["custom_weights"] = True
+    html = render_html(snapshot)
+    assert "Sample scores." in html
+    assert "more important dimension comes first" in html
+    assert "Importance never changes a score or the IQ." in html

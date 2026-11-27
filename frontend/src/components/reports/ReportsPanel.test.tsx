@@ -95,7 +95,7 @@ describe("ReportsPanel", () => {
     stubApi({ [`GET ${PATH}`]: fakeReports({ can_request: false }) });
     renderWithMe(<ReportsPanel reportRef={REF} />, fakeMe());
     expect(
-      await screen.findByText(/Someone who takes part in the assessment can make one/),
+      await screen.findByText(/An owner, admin, member or committee member can make one/),
     ).toBeInTheDocument();
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });

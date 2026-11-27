@@ -38,7 +38,9 @@ SKIPPED = "skipped"
 SENT = "sent"
 
 
-@celery_app.task(name="reports.render")
+# Drawing takes seconds. A worker stuck longer is stopped, so it cannot hold the worker
+# for good: the soft limit raises inside the task, which fails the report.
+@celery_app.task(name="reports.render", soft_time_limit=90, time_limit=120)
 def render_report(report_id: str) -> str:
     with task_session() as db:
         report = db.scalars(
@@ -55,16 +57,20 @@ def render_report(report_id: str) -> str:
         report.started_at = started
         db.commit()
 
+        key = reports.file_key(report)
+        storage = get_storage()
         try:
             pdf = render_pdf(report.snapshot)
         except Exception as error:  # any failure to draw fails the report
             logger.exception("Report %s could not be drawn", report_id)
             reports.fail(db, report, f"The PDF could not be drawn ({type(error).__name__}).")
             return report.status.value
-
-        key = reports.file_key(report)
-        storage = get_storage()
-        storage.put(key, pdf.data)
+        try:
+            storage.put(key, pdf.data)
+        except OSError as error:
+            logger.exception("Report %s could not be stored", report_id)
+            reports.fail(db, report, f"The PDF could not be stored ({type(error).__name__}).")
+            return report.status.value
         finished = db.execute(
             update(Report)
             .where(

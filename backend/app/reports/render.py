@@ -11,7 +11,7 @@ another file on the machine.
 """
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any, Final
@@ -55,7 +55,7 @@ class RenderedPdf:
 
 def long_date(value: str) -> str:
     """'19 November 2026' from an ISO date-time, read in UTC like the app's dates."""
-    moment = datetime.fromisoformat(value)
+    moment = datetime.fromisoformat(value).astimezone(UTC)
     return f"{moment.day} {moment:%B %Y}"
 
 
