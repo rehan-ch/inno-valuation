@@ -10,6 +10,8 @@
     --iv-navy-raised: #152b46;
     --iv-gold: #ddb66c;
     --iv-gold-light: #f4e4c1;
+    /* Darker gold for focus rings: at least 3:1 on the white pages and the navy header. */
+    --iv-focus: #a37535;
     --iv-ink: #14243a;
     --iv-muted: #687990;
     --iv-line: #e1e7ef;
@@ -209,7 +211,7 @@
 
 .iv-workspace a:focus-visible,
 .iv-workspace button:focus-visible {
-    outline: 2px solid var(--iv-gold);
+    outline: 2px solid var(--iv-focus);
     outline-offset: 3px;
 }
 
@@ -1491,7 +1493,7 @@
 .iv-workspace a:focus-visible,
 .iv-workspace button:focus-visible,
 .iv-workspace select:focus-visible {
-    outline: 2px solid var(--iv-gold);
+    outline: 2px solid var(--iv-focus);
     outline-offset: 3px;
 }
 

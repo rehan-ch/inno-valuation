@@ -41,7 +41,7 @@ function Logo({ light = false }: { light?: boolean }) {
     <Link
       href="/"
       aria-label="InnoValuation home"
-      className="inline-flex w-fit items-center gap-2.5 rounded-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#DAB56D]"
+      className="inline-flex w-fit items-center gap-2.5 rounded-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#A37535]"
     >
       <Image
         src="/innovaluation-mark.png"
@@ -181,7 +181,11 @@ function AuthPanel({
   };
 
   return (
-    <section className="flex min-w-0 flex-1 flex-col justify-start bg-white px-5 pt-7 pb-5 sm:justify-center sm:px-10 sm:py-8 lg:px-10 xl:px-16">
+    // The form side is the page's main landmark; the brand header and panel sit beside it.
+    <main
+      id="main"
+      className="flex min-w-0 flex-1 flex-col justify-start bg-white px-5 pt-7 pb-5 sm:justify-center sm:px-10 sm:py-8 lg:px-10 xl:px-16"
+    >
       <div className="mx-auto w-full max-w-[430px]">
         <div className="mb-5 sm:mb-6">
           <div className="hidden lg:block">
@@ -206,11 +210,11 @@ function AuthPanel({
 
         {children}
 
-        <p className="mt-6 text-center text-[11px] text-[#94A3B8]">
+        <p className="mt-6 text-center text-[11px] text-[#64748B]">
           Innovation · Growth · Valuation
         </p>
       </div>
-    </section>
+    </main>
   );
 }
 
@@ -244,15 +248,12 @@ export default function AuthLayout({
   }
 
   return (
-    <main
-      id="main"
-      className="iv-auth-layout flex min-h-dvh w-full flex-col bg-white lg:h-dvh lg:min-h-0 lg:flex-row lg:overflow-y-auto"
-    >
+    <div className="iv-auth-layout flex min-h-dvh w-full flex-col bg-white lg:h-dvh lg:min-h-0 lg:flex-row lg:overflow-y-auto">
       <MobileBrand />
       <BrandPanel />
       <AuthPanel pathname={pathname}>
         {children}
       </AuthPanel>
-    </main>
+    </div>
   );
 }

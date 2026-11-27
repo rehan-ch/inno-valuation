@@ -225,7 +225,6 @@ function TeamHero({
 }: {
   org: OrganisationOut;
   members: MemberOut[];
-  invitations: InvitationOut[];
   manage: boolean;
 }) {
   return (
@@ -345,9 +344,12 @@ function TeamHero({
               className="text-[#E6BA70]"
             />
           </div>
-          <span className="absolute bottom-1 right-5 rounded-full border border-[#E6BA70]/25 bg-[#10243D] px-3 py-1.5 font-sans text-[10px] font-semibold text-[#E6BA70]">
-            {members.length} team members
-          </span>
+          {/* A consultant is not sent the team list, so there is no count to show. */}
+          {org.role !== "consultant" && (
+            <span className="absolute bottom-1 right-5 rounded-full border border-[#E6BA70]/25 bg-[#10243D] px-3 py-1.5 font-sans text-[10px] font-semibold text-[#E6BA70]">
+              {members.length} team members
+            </span>
+          )}
         </div>
       </div>
     </section>
@@ -453,7 +455,6 @@ export function TeamPage() {
       <TeamHero
         org={org}
         members={members}
-        invitations={invitations}
         manage={manage}
       />
 
@@ -492,19 +493,25 @@ export function TeamPage() {
               title="Your people, at a glance."
               description="A clear overview of your organisation's collaboration."
             />
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div
+              className={`grid grid-cols-1 gap-4 ${manage ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}
+            >
               <StatCard
                 icon={<UsersRound size={21} strokeWidth={1.7} />}
                 label="Team members"
                 value={members.length}
                 description="People in your workspace"
               />
-              <StatCard
-                icon={<Mail size={21} strokeWidth={1.7} />}
-                label="Pending invitations"
-                value={pending}
-                description="Awaiting acceptance"
-              />
+              {/* Invitations are loaded only for those who may manage them; anyone else
+                  would always read 0 here. */}
+              {manage && (
+                <StatCard
+                  icon={<Mail size={21} strokeWidth={1.7} />}
+                  label="Pending invitations"
+                  value={pending}
+                  description="Awaiting acceptance"
+                />
+              )}
               <StatCard
                 icon={<UserRoundCheck size={21} strokeWidth={1.7} />}
                 label="Owners and admins"

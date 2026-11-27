@@ -322,7 +322,9 @@ export function OrganisationSettings() {
 
               <span>
                 <strong>Dimension importance</strong>
-                <small>Set innovation priorities</small>
+                <small>
+                  Orders tied priorities; never changes a score or the IQ
+                </small>
               </span>
 
               <ArrowUpRight
@@ -344,7 +346,9 @@ export function OrganisationSettings() {
 
               <span>
                 <strong>Activity log</strong>
-                <small>Review organisation activity</small>
+                <small>
+                  Who did what, and when; entries cannot be changed
+                </small>
               </span>
 
               <ArrowUpRight

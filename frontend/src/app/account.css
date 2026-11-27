@@ -394,7 +394,7 @@
 }
 
 .iv-account-input-wrap:focus-within {
-    border-color: #c49a56;
+    border-color: #a37535;
     background: #fff;
     box-shadow: 0 0 0 4px rgba(206, 163, 94, 0.12);
 }
@@ -478,7 +478,7 @@
 
 .iv-account-visibility:focus-visible,
 .iv-account-primary-button:focus-visible {
-    outline: 3px solid #e6bd78;
+    outline: 3px solid #a37535; /* 3:1 or more on white and on navy */
     outline-offset: 3px;
 }
 

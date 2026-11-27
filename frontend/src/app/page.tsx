@@ -646,13 +646,17 @@ function Footer() {
 
 export default function Home() {
   return (
-    <main id="main" className="landing-page w-full flex-1">
+    // The header and footer sit outside <main>, so "Skip to content" passes the
+    // navigation and both keep their banner and footer landmarks.
+    <div className="landing-page w-full flex-1">
       <Header />
-      <Hero />
-      <HowItWorks />
-      <Audiences />
-      <FinalCTA />
+      <main id="main">
+        <Hero />
+        <HowItWorks />
+        <Audiences />
+        <FinalCTA />
+      </main>
       <Footer />
-    </main>
+    </div>
   );
 }

@@ -644,6 +644,9 @@ describe("QuestionnairePage", () => {
       await screen.findByText("Your role watches the assessment; it does not answer."),
     ).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Submit my answers" })).not.toBeInTheDocument();
+    // A role that only watches has no progress of its own to show.
+    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+    expect(screen.queryByText(/questions answered/)).not.toBeInTheDocument();
   });
 });
 

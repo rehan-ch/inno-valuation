@@ -113,12 +113,10 @@ describe("DashboardPage", () => {
     // The signed-in user appears in the team card.
     expect(screen.getByText("(you)")).toBeInTheDocument();
 
-    // The dashboard provides navigation to team management.
-    const teamLinks = screen.getAllByRole("link").filter(
-      (link) => link.getAttribute("href") === "/team",
-    );
-
-    expect(teamLinks.length).toBeGreaterThan(0);
+    // A manager is offered the invite shortcut, and it goes to the team page.
+    expect(
+      screen.getByRole("link", { name: /^Invite a member/ }),
+    ).toHaveAttribute("href", "/team");
   });
 
   it("leaves ideas out, and does not ask for them, while the AI is switched off", async () => {
@@ -178,7 +176,7 @@ describe("DashboardPage", () => {
         name: "Know where you stand.",
       })
     ).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Invite a team member" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /^Invite a member/ })).not.toBeInTheDocument();
   });
 
   it("gives a consultant a read-only welcome with the access end date", async () => {

@@ -306,7 +306,7 @@
 .iv-os-field select:focus {
     outline: none;
     background: #fff;
-    border-color: #d3ab61;
+    border-color: #a37535;
     box-shadow: 0 0 0 4px #ddb56b20;
 }
 

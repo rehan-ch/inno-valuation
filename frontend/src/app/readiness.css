@@ -538,7 +538,7 @@
 
 .iv-readiness a:focus-visible,
 .iv-readiness button:focus-visible {
-    outline: 3px solid var(--rd-gold);
+    outline: 3px solid #a37535; /* 3:1 or more on white and on navy */
     outline-offset: 3px;
 }
 

@@ -347,93 +347,94 @@ export function QuestionnairePage({
           <FacilitatorPanel assessment={assessment} />
         )}
 
-      <section className="iv-q-progress">
-        <div className="iv-q-progress-heading">
-          <div>
-            <span className="iv-q-section-kicker">
-              YOUR ASSESSMENT PROGRESS
-            </span>
-            <h2>
-              {allAnswered
-                ? "All questions answered"
-                : "Keep your momentum"}
-            </h2>
-            <p>
-              {answered} of {total} questions answered
-              {remaining > 0
-                ? ` · ${remaining} remaining`
-                : " · Ready for review"}
-            </p>
+      {/* Progress belongs to people who answer; a role that only watches has none. */}
+      {assessment.my_answers !== null && (
+        <section className="iv-q-progress">
+          <div className="iv-q-progress-heading">
+            <div>
+              <span className="iv-q-section-kicker">
+                YOUR ASSESSMENT PROGRESS
+              </span>
+              <h2>
+                {allAnswered
+                  ? "All questions answered"
+                  : "Keep your momentum"}
+              </h2>
+              <p>
+                {answered} of {total} questions answered
+                {remaining > 0
+                  ? ` · ${remaining} remaining`
+                  : " · Ready for review"}
+              </p>
+            </div>
+
+            <div
+              className="iv-q-progress-ring"
+              style={{
+                background: `conic-gradient(#E4B963 ${percentage}%, #DFE5EF ${percentage}%)`,
+              }}
+              aria-label={`${percentage}% complete`}
+            >
+              <div>
+                <strong>{percentage}%</strong>
+                <span>complete</span>
+              </div>
+            </div>
           </div>
 
           <div
-            className="iv-q-progress-ring"
-            style={{
-              background: `conic-gradient(#E4B963 ${percentage}%, #DFE5EF ${percentage}%)`,
-            }}
-            aria-label={`${percentage}% complete`}
+            className="iv-q-progress-track"
+            role="progressbar"
+            aria-label="Assessment completion"
+            aria-valuenow={answered}
+            aria-valuemin={0}
+            aria-valuemax={total}
           >
-            <div>
-              <strong>{percentage}%</strong>
-              <span>complete</span>
-            </div>
+            <div style={{ width: `${percentage}%` }} />
           </div>
-        </div>
 
-        <div
-          className="iv-q-progress-track"
-          role="progressbar"
-          aria-label="Assessment completion"
-          aria-valuenow={answered}
-          aria-valuemin={0}
-          aria-valuemax={total}
-        >
-          <div style={{ width: `${percentage}%` }} />
-        </div>
+          <div className="iv-q-progress-footer">
+            <span
+              role="status"
+              aria-label="Save status"
+              aria-live="polite"
+              className={
+                save === "error"
+                  ? "iv-q-save-state iv-q-save-error"
+                  : "iv-q-save-state"
+              }
+            >
 
-        <div className="iv-q-progress-footer">
-          <span
-            role="status"
-            aria-label="Save status"
-            aria-live="polite"
-            className={
-              save === "error"
-                ? "iv-q-save-state iv-q-save-error"
-                : "iv-q-save-state"
-            }
-          >
+              {save === "saving" ? (
+                <>
+                  <Cloud size={15} aria-hidden="true" />
+                  Saving your answer...
+                </>
+              ) : save === "saved" ? (
+                <>
+                  <CloudCheck size={15} aria-hidden="true" />
 
-            {save === "saving" ? (
-              <>
-                <Cloud size={15} aria-hidden="true" />
-                Saving your answer...
-              </>
-            ) : save === "saved" ? (
-              <>
-                <CloudCheck size={15} aria-hidden="true" />
+                  {failed.length === 0
+                    ? "Saved"
+                    : `Saved, but ${failed.length} ${failed.length === 1
+                      ? "answer was not saved"
+                      : "answers were not saved"
+                    }. Choose again where marked.`}
+                </>
+              ) : save === "error" ? (
+                <>
+                  <CircleAlert size={15} aria-hidden="true" />
+                  {saveError ?? "Some answers were not saved."}
+                </>
+              ) : (
+                <>
+                  <Save size={15} aria-hidden="true" />
+                  Progress is saved as you answer
+                </>
+              )}
 
-                {failed.length === 0
-                  ? "Saved"
-                  : `Saved, but ${failed.length} ${failed.length === 1
-                    ? "answer was not saved"
-                    : "answers were not saved"
-                  }. Choose again where marked.`}
-              </>
-            ) : save === "error" ? (
-              <>
-                <CircleAlert size={15} aria-hidden="true" />
-                {saveError ?? "Some answers were not saved."}
-              </>
-            ) : (
-              <>
-                <Save size={15} aria-hidden="true" />
-                Progress is saved as you answer
-              </>
-            )}
+            </span>
 
-          </span>
-
-          {assessment.my_answers !== null && (
             <button
               type="button"
               className="iv-q-review-link"
@@ -451,9 +452,9 @@ export function QuestionnairePage({
                 </>
               )}
             </button>
-          )}
-        </div>
-      </section>
+          </div>
+        </section>
+      )}
 
       {reviewMode ? (
         <section className="iv-q-review">

@@ -4,7 +4,13 @@
 @import "./consultants.css";
 @import "./account.css";
 
-/* Design tokens. PROVISIONAL Q17: the brand hues come from the compass mark (blue and
+/* Two looks live side by side. The landing page, the sign-in pages, the signed-in header
+   and the dashboard, team, consultant, organisation, account and readiness list and
+   questionnaire pages use the navy and gold redesign, each styled by its own stylesheet
+   (imported above, plus landing.css, (app)/workspace.css and questionnaire.css). Every
+   other page still uses the plain system described below.
+
+   Design tokens. PROVISIONAL Q17: the brand hues come from the compass mark (blue and
    emerald), pending Amy's approval. The rest of the system is deliberately plain: white
    surfaces, 1px borders, one accent colour for actions, and no decoration that carries
    no meaning. Red, green and amber stay reserved for error, success and warning states.

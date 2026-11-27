@@ -244,6 +244,8 @@ describe("TeamPage", () => {
 
     expect(screen.queryByRole("button", { name: "Send invitation" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Remove" })).not.toBeInTheDocument();
+    // A member is not sent the invitations, so no count of them is shown.
+    expect(screen.queryByText("Pending invitations")).not.toBeInTheDocument();
   });
 
   it("tells a consultant the team list is hidden", async () => {
@@ -256,6 +258,8 @@ describe("TeamPage", () => {
     expect(
       await screen.findByText("You have read-only consultant access to Acme.", { exact: false }),
     ).toBeInTheDocument();
+    // A consultant is not sent the team list, so no member count is shown.
+    expect(screen.queryByText(/team members$/)).not.toBeInTheDocument();
   });
 
   it("drops the old team at once after a switch in the header", async () => {
