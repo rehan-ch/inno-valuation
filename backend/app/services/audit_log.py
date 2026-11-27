@@ -54,6 +54,16 @@ ACTION_LABELS: Final[Mapping[str, str]] = {
     AuditAction.IQ_CONFIRMED: "Idea scores confirmed",
     AuditAction.WEIGHTS_CHANGED: "Dimension importance changed",
     AuditAction.TARGETS_CHANGED: "Targets changed",
+    AuditAction.ADVICE_REQUESTED: "AI advice requested",
+}
+
+
+# The parts of the advice, as the screens name them.
+ADVICE_PARTS: Final[Mapping[str, str]] = {
+    "interpret_results": "what the result means",
+    "bridge_gaps": "actions to close the gaps",
+    "recommendations": "recommendations",
+    "consultation_nudge": "consultation suggestion",
 }
 
 
@@ -235,6 +245,17 @@ def _detail(event: AuditEvent) -> str | None:  # noqa: PLR0911, PLR0912 (one cas
         changed = _dimension_names(details.get("changed"))
         if changed:
             return f"{scale} targets changed for: " + ", ".join(changed) + "."
+    elif action == AuditAction.ADVICE_REQUESTED:
+        parts = details.get("parts")
+        named = (
+            [ADVICE_PARTS.get(str(p), _words(p)) for p in parts] if isinstance(parts, list) else []
+        )
+        if named:
+            about = (
+                "a readiness result" if details.get("subject") == "readiness_result" else "an idea"
+            )
+            again = " Asked again." if details.get("rerun") else ""
+            return f"For {about}: " + ", ".join(named) + "." + again
     return None
 
 

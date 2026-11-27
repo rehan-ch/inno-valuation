@@ -59,9 +59,21 @@ def test_an_archived_organisation_fails_the_run_without_calling_the_ai(db: Sessi
 
 
 def test_a_touchpoint_not_built_yet_fails_the_run(db: Session) -> None:
-    run = AiRunFactory.create(touchpoint=AiTouchpoint.BRIDGE_GAPS)
+    run = AiRunFactory.create(touchpoint=AiTouchpoint.REPORT_NARRATIVE)
     assert run_ai.delay(str(run.id)).get() == "failed"
-    assert run.error == "Touchpoint bridge_gaps is not built yet."
+    assert run.error == "Touchpoint report_narrative is not built yet."
+
+
+def test_a_run_that_cannot_be_checked_is_failed_without_calling_the_ai(db: Session) -> None:
+    # An advice run that does not say which dimensions it asked about.
+    run = AiRunFactory.create(
+        touchpoint=AiTouchpoint.BRIDGE_GAPS,
+        subject_type="readiness_result",
+        subject_id=f"1:{uuid.uuid4()}",
+    )
+    assert run_ai.delay(str(run.id)).get() == "failed"
+    assert run.error == "The run could not be prepared (OutputRejectedError)."
+    assert run.attempts == 0
 
 
 def test_a_queued_run_that_waited_too_long_is_failed_without_calling_the_ai(db: Session) -> None:

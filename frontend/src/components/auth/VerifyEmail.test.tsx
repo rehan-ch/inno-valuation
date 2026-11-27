@@ -57,7 +57,7 @@ describe("VerifyEmail", () => {
     render(<VerifyEmail />);
     expect(await screen.findByRole("alert")).toHaveTextContent("This link is not valid");
 
-    await user.type(screen.getByLabelText("Email"), "me@example.com");
+    await user.type(screen.getByRole("textbox", { name: "Email address" }), "me@example.com");
     await user.click(screen.getByRole("button", { name: "Send a new confirmation email" }));
 
     expect(calls.at(-1)).toMatchObject({

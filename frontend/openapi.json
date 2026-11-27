@@ -16,6 +16,91 @@
         "title": "ActiveOrganisationIn",
         "type": "object"
       },
+      "AdviceOut": {
+        "properties": {
+          "assessment_id": {
+            "format": "uuid",
+            "title": "Assessment Id",
+            "type": "string"
+          },
+          "can_request": {
+            "title": "Can Request",
+            "type": "boolean"
+          },
+          "consultation": {
+            "$ref": "#/components/schemas/ConsultationOut"
+          },
+          "gap_actions": {
+            "$ref": "#/components/schemas/GapActionsOut"
+          },
+          "interpretation": {
+            "$ref": "#/components/schemas/InterpretationOut"
+          },
+          "question_set_version": {
+            "title": "Question Set Version",
+            "type": "integer"
+          },
+          "recommendations": {
+            "$ref": "#/components/schemas/RecommendationsOut"
+          },
+          "subject": {
+            "$ref": "#/components/schemas/AdviceSubject"
+          }
+        },
+        "required": [
+          "subject",
+          "assessment_id",
+          "question_set_version",
+          "can_request",
+          "interpretation",
+          "gap_actions",
+          "recommendations",
+          "consultation"
+        ],
+        "title": "AdviceOut",
+        "type": "object"
+      },
+      "AdviceRequestIn": {
+        "additionalProperties": false,
+        "properties": {
+          "parts": {
+            "anyOf": [
+              {
+                "items": {
+                  "enum": [
+                    "interpretation",
+                    "gap_actions",
+                    "recommendations",
+                    "consultation"
+                  ],
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parts"
+          },
+          "regenerate": {
+            "default": false,
+            "title": "Regenerate",
+            "type": "boolean"
+          }
+        },
+        "title": "AdviceRequestIn",
+        "type": "object"
+      },
+      "AdviceSubject": {
+        "description": "What a piece of AI advice is about: one final readiness result or one confirmed IQ\nassessment. The two scores are never mixed (spec 4), so advice is always about one.",
+        "enum": [
+          "readiness_result",
+          "iq_assessment"
+        ],
+        "title": "AdviceSubject",
+        "type": "string"
+      },
       "AnswersIn": {
         "additionalProperties": false,
         "properties": {
@@ -1176,6 +1261,104 @@
         "title": "ConsultantOrganisationOut",
         "type": "object"
       },
+      "ConsultationOut": {
+        "properties": {
+          "generated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated At"
+          },
+          "message": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Message",
+            "type": "array"
+          },
+          "outdated": {
+            "title": "Outdated",
+            "type": "boolean"
+          },
+          "reasons": {
+            "items": {
+              "$ref": "#/components/schemas/ConsultationReasonOut"
+            },
+            "title": "Reasons",
+            "type": "array"
+          },
+          "sample": {
+            "title": "Sample",
+            "type": "boolean"
+          },
+          "status": {
+            "enum": [
+              "off",
+              "none",
+              "pending",
+              "ready",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "suggest": {
+            "title": "Suggest",
+            "type": "boolean"
+          },
+          "usage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UsageOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "status",
+          "sample",
+          "outdated",
+          "generated_at",
+          "usage",
+          "suggest",
+          "message",
+          "reasons"
+        ],
+        "title": "ConsultationOut",
+        "type": "object"
+      },
+      "ConsultationReasonOut": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "name",
+          "reason"
+        ],
+        "title": "ConsultationReasonOut",
+        "type": "object"
+      },
       "DashboardOut": {
         "description": "The two headline scores side by side, never combined (spec 4).",
         "properties": {
@@ -1213,6 +1396,32 @@
           "iq"
         ],
         "title": "DashboardOut",
+        "type": "object"
+      },
+      "DimensionActionsOut": {
+        "properties": {
+          "actions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Actions",
+            "type": "array"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "name",
+          "actions"
+        ],
+        "title": "DimensionActionsOut",
         "type": "object"
       },
       "DimensionDetailOut": {
@@ -1442,6 +1651,45 @@
           "history"
         ],
         "title": "DimensionIqOut",
+        "type": "object"
+      },
+      "DimensionMeaningOut": {
+        "properties": {
+          "gaps": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Gaps",
+            "type": "array"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "meaning": {
+            "title": "Meaning",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "strengths": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Strengths",
+            "type": "array"
+          }
+        },
+        "required": [
+          "key",
+          "name",
+          "meaning",
+          "strengths",
+          "gaps"
+        ],
+        "title": "DimensionMeaningOut",
         "type": "object"
       },
       "DimensionOut": {
@@ -1841,6 +2089,68 @@
           "created_at"
         ],
         "title": "ExplanationOut",
+        "type": "object"
+      },
+      "GapActionsOut": {
+        "properties": {
+          "dimensions": {
+            "items": {
+              "$ref": "#/components/schemas/DimensionActionsOut"
+            },
+            "title": "Dimensions",
+            "type": "array"
+          },
+          "generated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated At"
+          },
+          "outdated": {
+            "title": "Outdated",
+            "type": "boolean"
+          },
+          "sample": {
+            "title": "Sample",
+            "type": "boolean"
+          },
+          "status": {
+            "enum": [
+              "off",
+              "none",
+              "pending",
+              "ready",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "usage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UsageOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "status",
+          "sample",
+          "outdated",
+          "generated_at",
+          "usage",
+          "dimensions"
+        ],
+        "title": "GapActionsOut",
         "type": "object"
       },
       "GrantStatus": {
@@ -2619,6 +2929,88 @@
           }
         },
         "title": "IdeaUpdateIn",
+        "type": "object"
+      },
+      "InterpretationOut": {
+        "properties": {
+          "dimensions": {
+            "items": {
+              "$ref": "#/components/schemas/DimensionMeaningOut"
+            },
+            "title": "Dimensions",
+            "type": "array"
+          },
+          "generated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated At"
+          },
+          "outdated": {
+            "title": "Outdated",
+            "type": "boolean"
+          },
+          "sample": {
+            "title": "Sample",
+            "type": "boolean"
+          },
+          "status": {
+            "enum": [
+              "off",
+              "none",
+              "pending",
+              "ready",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "summary": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Summary",
+            "type": "array"
+          },
+          "usage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UsageOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version"
+          }
+        },
+        "required": [
+          "status",
+          "sample",
+          "outdated",
+          "generated_at",
+          "usage",
+          "version",
+          "summary",
+          "dimensions"
+        ],
+        "title": "InterpretationOut",
         "type": "object"
       },
       "InvitationIn": {
@@ -4403,6 +4795,137 @@
         "title": "ReadinessStatus",
         "type": "string"
       },
+      "RecommendationOut": {
+        "properties": {
+          "fixed_text": {
+            "title": "Fixed Text",
+            "type": "string"
+          },
+          "initiatives": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Initiatives",
+            "type": "array"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "kpis": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Kpis",
+            "type": "array"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "rank": {
+            "title": "Rank",
+            "type": "integer"
+          },
+          "resources": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Resources",
+            "type": "array"
+          },
+          "timeline": {
+            "title": "Timeline",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "name",
+          "rank",
+          "fixed_text",
+          "initiatives",
+          "kpis",
+          "timeline",
+          "resources"
+        ],
+        "title": "RecommendationOut",
+        "type": "object"
+      },
+      "RecommendationsOut": {
+        "properties": {
+          "generated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated At"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RecommendationOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "outdated": {
+            "title": "Outdated",
+            "type": "boolean"
+          },
+          "sample": {
+            "title": "Sample",
+            "type": "boolean"
+          },
+          "status": {
+            "enum": [
+              "off",
+              "none",
+              "pending",
+              "ready",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "usage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UsageOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version"
+          }
+        },
+        "required": [
+          "status",
+          "sample",
+          "outdated",
+          "generated_at",
+          "usage",
+          "version",
+          "items"
+        ],
+        "title": "RecommendationsOut",
+        "type": "object"
+      },
       "ResetPasswordIn": {
         "additionalProperties": false,
         "properties": {
@@ -4928,6 +5451,42 @@
           "direction"
         ],
         "title": "TrendPointOut",
+        "type": "object"
+      },
+      "UsageOut": {
+        "description": "What the shown answer cost. Platform admins only.",
+        "properties": {
+          "cost_usd": {
+            "title": "Cost Usd",
+            "type": "string"
+          },
+          "input_tokens": {
+            "title": "Input Tokens",
+            "type": "integer"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "output_tokens": {
+            "title": "Output Tokens",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "model",
+          "input_tokens",
+          "output_tokens",
+          "cost_usd"
+        ],
+        "title": "UsageOut",
         "type": "object"
       },
       "ValidationError": {
@@ -6214,6 +6773,122 @@
         ]
       }
     },
+    "/api/v1/ideas/{idea_id}/assessments/{assessment_id}/advice": {
+      "get": {
+        "description": "The AI advice on an idea's confirmed scores, part by part, as it stands.",
+        "operationId": "get_iq_advice_api_v1_ideas__idea_id__assessments__assessment_id__advice_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "idea_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Idea Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "assessment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Assessment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdviceOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Iq Advice",
+        "tags": [
+          "advice"
+        ]
+      },
+      "post": {
+        "description": "Ask the AI for advice on an idea's confirmed scores, or ask again. Returns at once;\npoll the GET until no part is \"pending\".",
+        "operationId": "request_iq_advice_api_v1_ideas__idea_id__assessments__assessment_id__advice_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "idea_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Idea Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "assessment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Assessment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdviceRequestIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdviceOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Request Iq Advice",
+        "tags": [
+          "advice"
+        ]
+      }
+    },
     "/api/v1/ideas/{idea_id}/assessments/{assessment_id}/confirm": {
       "post": {
         "description": "Make the scores final. The engine computes the IQ, levels, category scores,\npriorities and Value for Money once; nothing about the assessment changes afterwards.",
@@ -7245,6 +7920,102 @@
         "summary": "Get Assessment",
         "tags": [
           "readiness"
+        ]
+      }
+    },
+    "/api/v1/readiness/assessments/{assessment_id}/advice": {
+      "get": {
+        "description": "The AI advice on a final readiness result, part by part, as it stands.",
+        "operationId": "get_readiness_advice_api_v1_readiness_assessments__assessment_id__advice_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "assessment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Assessment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdviceOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Readiness Advice",
+        "tags": [
+          "advice"
+        ]
+      },
+      "post": {
+        "description": "Ask the AI for advice on a final readiness result, or ask again. Returns at once;\npoll the GET until no part is \"pending\".",
+        "operationId": "request_readiness_advice_api_v1_readiness_assessments__assessment_id__advice_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "assessment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Assessment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdviceRequestIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdviceOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Request Readiness Advice",
+        "tags": [
+          "advice"
         ]
       }
     },

@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   IDEA_ID,
   IQ_ASSESSMENT_ID,
+  fakeNoAdvice,
   fakeConfirmedAssessment,
   fakeIdea,
   fakeIdeaSummary,
@@ -162,6 +163,7 @@ describe("AssessmentPage", () => {
         };
       },
       [`POST ${A}/confirm`]: fakeConfirmedAssessment(),
+      [`GET ${A}/advice`]: fakeNoAdvice({ subject: "iq_assessment" }),
     });
     const user = userEvent.setup();
 
@@ -187,11 +189,18 @@ describe("AssessmentPage", () => {
     await user.click(screen.getByRole("button", { name: "Confirm the scores" }));
     await user.click(screen.getByRole("button", { name: "Confirm now" }));
     expect(await screen.findByText("70.0")).toBeInTheDocument();
-    expect(calls.at(-1)).toMatchObject({ method: "POST", path: `${A}/confirm` });
+    expect(calls.filter((c) => c.method === "POST").at(-1)).toMatchObject({
+      path: `${A}/confirm`,
+    });
+    // The confirmed result offers the AI's advice.
+    expect(await screen.findByRole("button", { name: "Get AI advice" })).toBeInTheDocument();
   });
 
   it("shows a confirmed result with the IQ, Value for Money and the changed score", async () => {
-    stubApi({ [`GET ${A}`]: fakeConfirmedAssessment() });
+    stubApi({
+      [`GET ${A}`]: fakeConfirmedAssessment(),
+      [`GET ${A}/advice`]: fakeNoAdvice({ subject: "iq_assessment" }),
+    });
 
     renderWithMe(<AssessmentPage ideaId={IDEA_ID} assessmentId={IQ_ASSESSMENT_ID} />, fakeMe());
 

@@ -58,4 +58,6 @@ touchpoints:
     effort: low
     max_tokens: 2000
     timeout_seconds: 60
-    enabled: false  # off until touchpoint 8 is built; Q11 decided (AI judges the gap, no fixed threshold)
+    # Q11 decided: the AI judges the gap, there is no fixed threshold. Set
+    # "enabled: false" to switch the consultation suggestion off.
+    enabled: true

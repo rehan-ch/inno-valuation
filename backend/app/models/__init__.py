@@ -12,6 +12,7 @@ from app.models.accounts import (
     User,
     UserToken,
 )
+from app.models.advice import Interpretation, Recommendation
 from app.models.ai import AiRun
 from app.models.audit import AuditEvent
 from app.models.auth import RevokedSession, SignInThrottle
@@ -33,6 +34,7 @@ __all__ = [
     "DimensionTargets",
     "DimensionWeights",
     "Idea",
+    "Interpretation",
     "Invitation",
     "IqAssessment",
     "IqDimensionScore",
@@ -42,6 +44,7 @@ __all__ = [
     "ReadinessConsensus",
     "ReadinessResponse",
     "ReadinessResult",
+    "Recommendation",
     "RevokedSession",
     "SignInThrottle",
     "User",

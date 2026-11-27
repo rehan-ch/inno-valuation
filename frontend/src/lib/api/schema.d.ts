@@ -394,6 +394,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/ideas/{idea_id}/assessments/{assessment_id}/advice": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Iq Advice
+         * @description The AI advice on an idea's confirmed scores, part by part, as it stands.
+         */
+        get: operations["get_iq_advice_api_v1_ideas__idea_id__assessments__assessment_id__advice_get"];
+        put?: never;
+        /**
+         * Request Iq Advice
+         * @description Ask the AI for advice on an idea's confirmed scores, or ask again. Returns at once;
+         *     poll the GET until no part is "pending".
+         */
+        post: operations["request_iq_advice_api_v1_ideas__idea_id__assessments__assessment_id__advice_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/ideas/{idea_id}/assessments/{assessment_id}/confirm": {
         parameters: {
             query?: never;
@@ -777,6 +802,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/readiness/assessments/{assessment_id}/advice": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Readiness Advice
+         * @description The AI advice on a final readiness result, part by part, as it stands.
+         */
+        get: operations["get_readiness_advice_api_v1_readiness_assessments__assessment_id__advice_get"];
+        put?: never;
+        /**
+         * Request Readiness Advice
+         * @description Ask the AI for advice on a final readiness result, or ask again. Returns at once;
+         *     poll the GET until no part is "pending".
+         */
+        post: operations["request_readiness_advice_api_v1_readiness_assessments__assessment_id__advice_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/readiness/assessments/{assessment_id}/consensus": {
         parameters: {
             query?: never;
@@ -1060,6 +1110,40 @@ export interface components {
              */
             organisation_id: string;
         };
+        /** AdviceOut */
+        AdviceOut: {
+            /**
+             * Assessment Id
+             * Format: uuid
+             */
+            assessment_id: string;
+            /** Can Request */
+            can_request: boolean;
+            consultation: components["schemas"]["ConsultationOut"];
+            gap_actions: components["schemas"]["GapActionsOut"];
+            interpretation: components["schemas"]["InterpretationOut"];
+            /** Question Set Version */
+            question_set_version: number;
+            recommendations: components["schemas"]["RecommendationsOut"];
+            subject: components["schemas"]["AdviceSubject"];
+        };
+        /** AdviceRequestIn */
+        AdviceRequestIn: {
+            /** Parts */
+            parts?: ("interpretation" | "gap_actions" | "recommendations" | "consultation")[] | null;
+            /**
+             * Regenerate
+             * @default false
+             */
+            regenerate: boolean;
+        };
+        /**
+         * AdviceSubject
+         * @description What a piece of AI advice is about: one final readiness result or one confirmed IQ
+         *     assessment. The two scores are never mixed (spec 4), so advice is always about one.
+         * @enum {string}
+         */
+        AdviceSubject: "readiness_result" | "iq_assessment";
         /** AnswersIn */
         AnswersIn: {
             /** Answers */
@@ -1471,6 +1555,36 @@ export interface components {
             organisation_name: string;
             organisation_status: components["schemas"]["OrganisationStatus"];
         };
+        /** ConsultationOut */
+        ConsultationOut: {
+            /** Generated At */
+            generated_at: string | null;
+            /** Message */
+            message: string[];
+            /** Outdated */
+            outdated: boolean;
+            /** Reasons */
+            reasons: components["schemas"]["ConsultationReasonOut"][];
+            /** Sample */
+            sample: boolean;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "off" | "none" | "pending" | "ready" | "failed";
+            /** Suggest */
+            suggest: boolean;
+            usage: components["schemas"]["UsageOut"] | null;
+        };
+        /** ConsultationReasonOut */
+        ConsultationReasonOut: {
+            /** Key */
+            key: string;
+            /** Name */
+            name: string;
+            /** Reason */
+            reason: string;
+        };
         /**
          * DashboardOut
          * @description The two headline scores side by side, never combined (spec 4).
@@ -1480,6 +1594,15 @@ export interface components {
             ideas: components["schemas"]["IdeaChoiceOut"][];
             iq: components["schemas"]["IqHeadlineOut"] | null;
             readiness: components["schemas"]["ReadinessHeadlineOut"] | null;
+        };
+        /** DimensionActionsOut */
+        DimensionActionsOut: {
+            /** Actions */
+            actions: string[];
+            /** Key */
+            key: string;
+            /** Name */
+            name: string;
         };
         /**
          * DimensionDetailOut
@@ -1548,6 +1671,19 @@ export interface components {
             score: number;
             /** Target */
             target: number | null;
+        };
+        /** DimensionMeaningOut */
+        DimensionMeaningOut: {
+            /** Gaps */
+            gaps: string[];
+            /** Key */
+            key: string;
+            /** Meaning */
+            meaning: string;
+            /** Name */
+            name: string;
+            /** Strengths */
+            strengths: string[];
         };
         /** DimensionOut */
         DimensionOut: {
@@ -1684,6 +1820,23 @@ export interface components {
              * @enum {string}
              */
             status: "pending" | "ready" | "failed";
+        };
+        /** GapActionsOut */
+        GapActionsOut: {
+            /** Dimensions */
+            dimensions: components["schemas"]["DimensionActionsOut"][];
+            /** Generated At */
+            generated_at: string | null;
+            /** Outdated */
+            outdated: boolean;
+            /** Sample */
+            sample: boolean;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "off" | "none" | "pending" | "ready" | "failed";
+            usage: components["schemas"]["UsageOut"] | null;
         };
         /**
          * GrantStatus
@@ -1924,6 +2077,27 @@ export interface components {
             title?: string | null;
             /** Uniqueness */
             uniqueness?: string | null;
+        };
+        /** InterpretationOut */
+        InterpretationOut: {
+            /** Dimensions */
+            dimensions: components["schemas"]["DimensionMeaningOut"][];
+            /** Generated At */
+            generated_at: string | null;
+            /** Outdated */
+            outdated: boolean;
+            /** Sample */
+            sample: boolean;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "off" | "none" | "pending" | "ready" | "failed";
+            /** Summary */
+            summary: string[];
+            usage: components["schemas"]["UsageOut"] | null;
+            /** Version */
+            version: number | null;
         };
         /** InvitationIn */
         InvitationIn: {
@@ -2529,6 +2703,44 @@ export interface components {
          * @enum {string}
          */
         ReadinessStatus: "draft" | "collecting" | "consensus" | "final";
+        /** RecommendationOut */
+        RecommendationOut: {
+            /** Fixed Text */
+            fixed_text: string;
+            /** Initiatives */
+            initiatives: string[];
+            /** Key */
+            key: string;
+            /** Kpis */
+            kpis: string[];
+            /** Name */
+            name: string;
+            /** Rank */
+            rank: number;
+            /** Resources */
+            resources: string[];
+            /** Timeline */
+            timeline: string;
+        };
+        /** RecommendationsOut */
+        RecommendationsOut: {
+            /** Generated At */
+            generated_at: string | null;
+            /** Items */
+            items: components["schemas"]["RecommendationOut"][];
+            /** Outdated */
+            outdated: boolean;
+            /** Sample */
+            sample: boolean;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "off" | "none" | "pending" | "ready" | "failed";
+            usage: components["schemas"]["UsageOut"] | null;
+            /** Version */
+            version: number | null;
+        };
         /** ResetPasswordIn */
         ResetPasswordIn: {
             /** New Password */
@@ -2733,6 +2945,20 @@ export interface components {
             maximum: number;
             /** Score */
             score: number;
+        };
+        /**
+         * UsageOut
+         * @description What the shown answer cost. Platform admins only.
+         */
+        UsageOut: {
+            /** Cost Usd */
+            cost_usd: string;
+            /** Input Tokens */
+            input_tokens: number;
+            /** Model */
+            model: string | null;
+            /** Output Tokens */
+            output_tokens: number;
         };
         /** ValidationError */
         ValidationError: {
@@ -3495,6 +3721,74 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["IqAssessmentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_iq_advice_api_v1_ideas__idea_id__assessments__assessment_id__advice_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                idea_id: string;
+                assessment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdviceOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    request_iq_advice_api_v1_ideas__idea_id__assessments__assessment_id__advice_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                idea_id: string;
+                assessment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdviceRequestIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdviceOut"];
                 };
             };
             /** @description Validation Error */
@@ -4276,6 +4570,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AssessmentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_readiness_advice_api_v1_readiness_assessments__assessment_id__advice_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assessment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdviceOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    request_readiness_advice_api_v1_readiness_assessments__assessment_id__advice_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assessment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdviceRequestIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdviceOut"];
                 };
             };
             /** @description Validation Error */

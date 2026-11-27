@@ -11,7 +11,7 @@ One table decides who may do what inside an organisation: `ROLE_PERMISSIONS` in 
 
 An archived organisation is view-only until the archive feature exists (Phase 8): it cannot be chosen as the active organisation, and only `organisation.view`, `team.view`, `assessments.view`, `ideas.view` and `audit.view` still work, so results and the activity log stay readable. `require_permission(...)` enforces this; `require_role(...)` checks the role only, so routes that change data use `require_permission(...)`.
 
-## Matrix (Phases 2 to 5)
+## Matrix (Phases 2 to 6)
 
 | Permission | Code | owner | admin | member | committee | investor | consultant |
 |---|---|---|---|---|---|---|---|
@@ -29,6 +29,7 @@ An archived organisation is view-only until the archive feature exists (Phase 8)
 | Edit, submit, confirm or archive anyone's idea | `ideas.manage` | yes | yes | no | no | no | no |
 | Set dimension importance (orders tied priorities only) | `weights.manage` | yes | yes | no | no | no | no |
 | Set target scores per dimension | `targets.manage` | yes | yes | no | no | no | no |
+| Ask the AI for advice on a result | `advice.request` | yes | yes | yes | yes | no | no |
 | View the activity log | `audit.view` | yes | yes | no | no | no | no |
 
 An investor watches: they see assessments, ideas and results but neither answers nor adds ideas. A consultant (Amy) reads assessments, ideas and results only while their grant is live; the service layer additionally limits consultants to assessments that are `final` and to ideas whose latest IQ assessment is confirmed.

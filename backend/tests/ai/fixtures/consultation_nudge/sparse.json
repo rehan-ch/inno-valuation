@@ -1,0 +1,100 @@
+{
+  "about": "Sparse: no targets and even scores; the model sees no significant gap and suggests nothing.",
+  "subject": "readiness",
+  "organisation": {
+    "name": "Quiet Co"
+  },
+  "answers": {
+    "customer_journey_1": 3,
+    "customer_journey_2": 3,
+    "customer_journey_3": 3,
+    "customer_journey_4": 3,
+    "customer_journey_5": 3,
+    "brand_magnetism_1": 3,
+    "brand_magnetism_2": 3,
+    "brand_magnetism_3": 3,
+    "brand_magnetism_4": 3,
+    "brand_magnetism_5": 3,
+    "channel_navigation_1": 3,
+    "channel_navigation_2": 3,
+    "channel_navigation_3": 3,
+    "channel_navigation_4": 3,
+    "channel_navigation_5": 3,
+    "service_excellence_1": 3,
+    "service_excellence_2": 3,
+    "service_excellence_3": 3,
+    "service_excellence_4": 3,
+    "service_excellence_5": 3,
+    "product_evolution_1": 3,
+    "product_evolution_2": 3,
+    "product_evolution_3": 3,
+    "product_evolution_4": 3,
+    "product_evolution_5": 3,
+    "operational_efficiency_1": 3,
+    "operational_efficiency_2": 3,
+    "operational_efficiency_3": 3,
+    "operational_efficiency_4": 3,
+    "operational_efficiency_5": 3,
+    "organizational_agility_1": 3,
+    "organizational_agility_2": 3,
+    "organizational_agility_3": 3,
+    "organizational_agility_4": 3,
+    "organizational_agility_5": 3,
+    "collaborative_synergy_1": 3,
+    "collaborative_synergy_2": 3,
+    "collaborative_synergy_3": 3,
+    "collaborative_synergy_4": 3,
+    "collaborative_synergy_5": 3,
+    "value_creation_engine_1": 3,
+    "value_creation_engine_2": 3,
+    "value_creation_engine_3": 3,
+    "value_creation_engine_4": 3,
+    "value_creation_engine_5": 3,
+    "sustainable_future_1": 3,
+    "sustainable_future_2": 3,
+    "sustainable_future_3": 3,
+    "sustainable_future_4": 3,
+    "sustainable_future_5": 3,
+    "data_intelligence_1": 3,
+    "data_intelligence_2": 3,
+    "data_intelligence_3": 3,
+    "data_intelligence_4": 3,
+    "data_intelligence_5": 3,
+    "financial_imperative_1": 3,
+    "financial_imperative_2": 3,
+    "financial_imperative_3": 3,
+    "financial_imperative_4": 3,
+    "financial_imperative_5": 3
+  },
+  "targets": {},
+  "expect_keys": {
+    "priorities": [
+      "customer_journey",
+      "brand_magnetism",
+      "channel_navigation",
+      "service_excellence",
+      "product_evolution"
+    ],
+    "focus": [
+      "customer_journey",
+      "brand_magnetism",
+      "channel_navigation",
+      "service_excellence",
+      "product_evolution"
+    ]
+  },
+  "replies": [
+    {
+      "output": {
+        "suggest": false,
+        "message": [],
+        "reasons": []
+      },
+      "request_id": "req_sparse_1"
+    }
+  ],
+  "expect": {
+    "status": "succeeded",
+    "attempts": 1
+  }
+}

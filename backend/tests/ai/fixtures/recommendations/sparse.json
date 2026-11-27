@@ -1,0 +1,179 @@
+{
+  "about": "Sparse: no company details; one recommendation per priority.",
+  "subject": "readiness",
+  "organisation": {
+    "name": "Quiet Co"
+  },
+  "answers": {
+    "customer_journey_1": 3,
+    "customer_journey_2": 3,
+    "customer_journey_3": 3,
+    "customer_journey_4": 3,
+    "customer_journey_5": 3,
+    "brand_magnetism_1": 3,
+    "brand_magnetism_2": 3,
+    "brand_magnetism_3": 3,
+    "brand_magnetism_4": 3,
+    "brand_magnetism_5": 3,
+    "channel_navigation_1": 3,
+    "channel_navigation_2": 3,
+    "channel_navigation_3": 3,
+    "channel_navigation_4": 3,
+    "channel_navigation_5": 3,
+    "service_excellence_1": 3,
+    "service_excellence_2": 3,
+    "service_excellence_3": 3,
+    "service_excellence_4": 3,
+    "service_excellence_5": 3,
+    "product_evolution_1": 3,
+    "product_evolution_2": 3,
+    "product_evolution_3": 3,
+    "product_evolution_4": 3,
+    "product_evolution_5": 3,
+    "operational_efficiency_1": 3,
+    "operational_efficiency_2": 3,
+    "operational_efficiency_3": 3,
+    "operational_efficiency_4": 3,
+    "operational_efficiency_5": 3,
+    "organizational_agility_1": 3,
+    "organizational_agility_2": 3,
+    "organizational_agility_3": 3,
+    "organizational_agility_4": 3,
+    "organizational_agility_5": 3,
+    "collaborative_synergy_1": 3,
+    "collaborative_synergy_2": 3,
+    "collaborative_synergy_3": 3,
+    "collaborative_synergy_4": 3,
+    "collaborative_synergy_5": 3,
+    "value_creation_engine_1": 3,
+    "value_creation_engine_2": 3,
+    "value_creation_engine_3": 3,
+    "value_creation_engine_4": 3,
+    "value_creation_engine_5": 3,
+    "sustainable_future_1": 3,
+    "sustainable_future_2": 3,
+    "sustainable_future_3": 3,
+    "sustainable_future_4": 3,
+    "sustainable_future_5": 3,
+    "data_intelligence_1": 3,
+    "data_intelligence_2": 3,
+    "data_intelligence_3": 3,
+    "data_intelligence_4": 3,
+    "data_intelligence_5": 3,
+    "financial_imperative_1": 3,
+    "financial_imperative_2": 3,
+    "financial_imperative_3": 3,
+    "financial_imperative_4": 3,
+    "financial_imperative_5": 3
+  },
+  "targets": {},
+  "expect_keys": {
+    "priorities": [
+      "customer_journey",
+      "brand_magnetism",
+      "channel_navigation",
+      "service_excellence",
+      "product_evolution"
+    ],
+    "focus": [
+      "customer_journey",
+      "brand_magnetism",
+      "channel_navigation",
+      "service_excellence",
+      "product_evolution"
+    ]
+  },
+  "replies": [
+    {
+      "output": {
+        "recommendations": [
+          {
+            "dimension_key": "customer_journey",
+            "fixed_text": "If scoring low, map customer interactions and identify areas for improvement in personalization and service delivery.",
+            "initiatives": [
+              "Run a short review of Customer Journey with the teams involved.",
+              "Start one pilot that improves the weakest part of Customer Journey."
+            ],
+            "kpis": [
+              "Share of planned Customer Journey improvements that are finished each quarter.",
+              "Feedback from staff and customers on Customer Journey, gathered the same way each time."
+            ],
+            "timeline": "Review in the first month, pilot in the next two, then decide what to roll out.",
+            "resources": [
+              "One owner for Customer Journey and a few hours a week from each team involved."
+            ]
+          },
+          {
+            "dimension_key": "brand_magnetism",
+            "fixed_text": "Enhance storytelling, engage customers emotionally, and align branding across all interactions.",
+            "initiatives": [
+              "Run a short review of Brand Magnetism with the teams involved.",
+              "Start one pilot that improves the weakest part of Brand Magnetism."
+            ],
+            "kpis": [
+              "Share of planned Brand Magnetism improvements that are finished each quarter.",
+              "Feedback from staff and customers on Brand Magnetism, gathered the same way each time."
+            ],
+            "timeline": "Review in the first month, pilot in the next two, then decide what to roll out.",
+            "resources": [
+              "One owner for Brand Magnetism and a few hours a week from each team involved."
+            ]
+          },
+          {
+            "dimension_key": "channel_navigation",
+            "fixed_text": "Map out and optimize key touchpoints, and integrate data platforms for a seamless omnichannel experience.",
+            "initiatives": [
+              "Run a short review of Channel Navigation with the teams involved.",
+              "Start one pilot that improves the weakest part of Channel Navigation."
+            ],
+            "kpis": [
+              "Share of planned Channel Navigation improvements that are finished each quarter.",
+              "Feedback from staff and customers on Channel Navigation, gathered the same way each time."
+            ],
+            "timeline": "Review in the first month, pilot in the next two, then decide what to roll out.",
+            "resources": [
+              "One owner for Channel Navigation and a few hours a week from each team involved."
+            ]
+          },
+          {
+            "dimension_key": "service_excellence",
+            "fixed_text": "Focus on expanding service accessibility, integrating customer data, and adopting technologies like AI for better speed and reliability.",
+            "initiatives": [
+              "Run a short review of Service Excellence with the teams involved.",
+              "Start one pilot that improves the weakest part of Service Excellence."
+            ],
+            "kpis": [
+              "Share of planned Service Excellence improvements that are finished each quarter.",
+              "Feedback from staff and customers on Service Excellence, gathered the same way each time."
+            ],
+            "timeline": "Review in the first month, pilot in the next two, then decide what to roll out.",
+            "resources": [
+              "One owner for Service Excellence and a few hours a week from each team involved."
+            ]
+          },
+          {
+            "dimension_key": "product_evolution",
+            "fixed_text": "Conduct customer-focused R&D and adopt agile development practices to innovate products faster and effectively.",
+            "initiatives": [
+              "Run a short review of Product Evolution with the teams involved.",
+              "Start one pilot that improves the weakest part of Product Evolution."
+            ],
+            "kpis": [
+              "Share of planned Product Evolution improvements that are finished each quarter.",
+              "Feedback from staff and customers on Product Evolution, gathered the same way each time."
+            ],
+            "timeline": "Review in the first month, pilot in the next two, then decide what to roll out.",
+            "resources": [
+              "One owner for Product Evolution and a few hours a week from each team involved."
+            ]
+          }
+        ]
+      },
+      "request_id": "req_sparse_1"
+    }
+  ],
+  "expect": {
+    "status": "succeeded",
+    "attempts": 1
+  }
+}

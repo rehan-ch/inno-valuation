@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 
 from app.api.v1 import (
+    advice,
     audit,
     auth,
     consultants,
@@ -32,3 +33,4 @@ api_router.include_router(weights.router)
 api_router.include_router(targets.router)
 api_router.include_router(dashboard.router)
 api_router.include_router(audit.router)
+api_router.include_router(advice.router)

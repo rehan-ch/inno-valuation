@@ -50,8 +50,10 @@ Built in migration `0011_dimension_weights` (`app/models/weights.py`). Weights n
 ## AI
 - `ContextAnswers`: organisation, questions (jsonb), answers (jsonb), ai_run_id, answered_at. Used by touchpoints 3 to 6.
 - `AiRun` (`ai_runs`): see `docs/methodology/ai-touchpoints.md`. `subject_type` + `subject_id` columns (no ORM polymorphism magic). A question explanation (touchpoint 1) is the run itself, subject `readiness_question` / `<version>:<question id>`; there is no separate explanation table.
-- `Recommendation`: subject (ReadinessResult or IqAssessment), dimension_key, fixed_text, ai_json, ai_run_id, priority_rank.
-- `Interpretation`: subject, summary, per_dimension (jsonb), ai_run_id.
+- `Recommendation` (`recommendations`, `0013_advice`): organisation, subject_type (`readiness_result` or `iq_assessment`), subject_id (the readiness assessment or the IQ assessment), question_set_version, version, dimension_key, priority_rank (the engine's rank, spec 7), fixed_text (Amy's next steps, verbatim from the question set, spec 8), ai_json (`initiatives`, `kpis`, `timeline`, `resources`), ai_run. One row per priority dimension per version; unique per (run, dimension) and per (subject, version, dimension).
+- `Interpretation` (`interpretations`, `0013_advice`): organisation, subject_type, subject_id, question_set_version, version, summary (jsonb list of sentences), per_dimension (jsonb `[{dimension_key, meaning, strengths, gaps}]`, every dimension once), ai_run (unique). Words only, no number.
+- Both are copied from a succeeded run the first time it is read and never change; asking again writes the next `version`. The gap actions (touchpoint 5) and the consultation suggestion (touchpoint 8) have no table: they are read from their `AiRun`.
+- `AiRun.params` (jsonb, nullable): what a touchpoint's check needs beyond the subject. For advice runs, `{"keys": [...]}`: the dimensions the prompt asked about. The subject of an advice run is `<question set version>:<assessment id>`.
 
 ## Targets, reports, history
 Targets are built in migration `0012_targets` (`app/models/targets.py`). Where a target can be set is PROVISIONAL Q8: per dimension only, on both scales.

@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { AdvicePanel } from "@/components/advice/AdvicePanel";
+import { useMe } from "@/components/app/me-context";
 import { Compass } from "@/components/compass/Compass";
 import { Alert } from "@/components/ui/Alert";
 import { Bar } from "@/components/ui/Bar";
@@ -22,6 +24,7 @@ type State =
 /** A final readiness result, every number straight from the API (the engine's output).
  * The band text and the next steps are the book's words, shown as written (spec 2.4, 8). */
 export function ResultPage({ assessmentId }: { assessmentId: string }) {
+  const { me } = useMe();
   const [state, setState] = useState<State>({ kind: "loading" });
 
   useEffect(() => {
@@ -171,6 +174,8 @@ export function ResultPage({ assessmentId }: { assessmentId: string }) {
           </ul>
         </Card>
       </div>
+
+      {me.ai_enabled && <AdvicePanel adviceRef={{ kind: "readiness", assessmentId }} />}
 
       {!result.compass && (
       <Card>

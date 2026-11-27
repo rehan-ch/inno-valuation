@@ -10,11 +10,13 @@ import logging
 import uuid
 
 from app.ai import runner
+from app.ai.runner import OutputRejectedError
 from app.ai.touchpoints import SPECS
 from app.jobs.celery_app import celery_app
 from app.jobs.db import task_session
 from app.models import Organisation
 from app.models.enums import OrganisationStatus
+from app.scoring.errors import ScoringError
 
 logger = logging.getLogger(__name__)
 
@@ -42,5 +44,12 @@ def run_ai(run_id: str) -> str:
         if spec is None:
             runner.fail(db, run, f"Touchpoint {run.touchpoint} is not built yet.")
             return run.status.value
-        runner.execute(db, run, spec(run))
+        try:
+            touchpoint = spec(run)
+        except (OutputRejectedError, ScoringError, ValueError) as error:
+            # The run cannot be checked (an unknown question set version, or a run that
+            # does not say what it asked about), so it is not sent.
+            runner.fail(db, run, f"The run could not be prepared ({type(error).__name__}).")
+            return run.status.value
+        runner.execute(db, run, touchpoint)
         return run.status.value

@@ -2,6 +2,7 @@
 import { vi } from "vitest";
 
 import type {
+  AdviceOut,
   AssessmentOut,
   AssessmentSummaryOut,
   AuditEventOut,
@@ -730,6 +731,92 @@ export function fakeAuditEvent(overrides: Partial<AuditEventOut> = {}): AuditEve
     detail: "Changed from the AI's proposal: Organizational Agility.",
     question_set_version: 1,
     ai_model: "claude-opus-5-5",
+    ...overrides,
+  };
+}
+
+const NO_PART = { status: "none", sample: false, outdated: false, generated_at: null, usage: null } as const;
+const READY_PART = { ...NO_PART, status: "ready", generated_at: "2026-11-16T09:00:00Z" } as const;
+
+/** Advice nobody has asked for yet. */
+export function fakeNoAdvice(overrides: Partial<AdviceOut> = {}): AdviceOut {
+  return {
+    subject: "readiness_result",
+    assessment_id: "55555555-5555-5555-5555-555555555555",
+    question_set_version: 1,
+    can_request: true,
+    interpretation: { ...NO_PART, version: null, summary: [], dimensions: [] },
+    gap_actions: { ...NO_PART, dimensions: [] },
+    recommendations: { ...NO_PART, version: null, items: [] },
+    consultation: { ...NO_PART, suggest: false, message: [], reasons: [] },
+    ...overrides,
+  };
+}
+
+/** Full advice: Organizational Agility is the first priority. */
+export function fakeAdvice(overrides: Partial<AdviceOut> = {}): AdviceOut {
+  return {
+    ...fakeNoAdvice(),
+    interpretation: {
+      ...READY_PART,
+      version: 1,
+      summary: ["The result shows a sound base.", "A few areas need steady work."],
+      dimensions: [
+        {
+          key: "organizational_agility",
+          name: "Organizational Agility",
+          meaning: "Agility is among the lowest areas.",
+          strengths: [],
+          gaps: ["Decisions take too long to reach the teams."],
+        },
+        {
+          key: "customer_journey",
+          name: "Customer Journey",
+          meaning: "The customer journey is in a workable place.",
+          strengths: ["The basics of the journey are in place."],
+          gaps: [],
+        },
+      ],
+    },
+    gap_actions: {
+      ...READY_PART,
+      dimensions: [
+        {
+          key: "organizational_agility",
+          name: "Organizational Agility",
+          actions: ["Name one owner for agility.", "Run a small trial.", "Check progress monthly."],
+        },
+      ],
+    },
+    recommendations: {
+      ...READY_PART,
+      version: 1,
+      items: [
+        {
+          key: "organizational_agility",
+          name: "Organizational Agility",
+          rank: 1,
+          // Plainly not the method's wording, so no test reads as if it quoted the book.
+          fixed_text: "TEST FIXTURE: the method's next steps would be here.",
+          initiatives: ["Run a short review of how decisions are made."],
+          kpis: ["Time from decision to action."],
+          timeline: "Review first, then pilot.",
+          resources: ["One owner and a few hours a week."],
+        },
+      ],
+    },
+    consultation: {
+      ...READY_PART,
+      suggest: true,
+      message: ["Several areas sit well below where you want them."],
+      reasons: [
+        {
+          key: "organizational_agility",
+          name: "Organizational Agility",
+          reason: "Agility is well short of its target.",
+        },
+      ],
+    },
     ...overrides,
   };
 }

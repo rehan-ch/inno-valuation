@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 
+import { DimensionAdvice } from "@/components/advice/DimensionAdvice";
 import { useMe } from "@/components/app/me-context";
 import { gapWords } from "@/components/compass/Compass";
 import { Alert } from "@/components/ui/Alert";
@@ -150,16 +151,34 @@ export function DimensionPage({ dimensionKey }: { dimensionKey: string }) {
         </p>
       </Card>
 
-      {me.ai_enabled && (
+      {me.ai_enabled && (detail.readiness || detail.iq) && (
         <Card>
           <CardHeader
             title="AI advice"
-            actions={<Badge dot={false}>Not available yet</Badge>}
+            description={`What the AI makes of ${detail.name}, kept apart from the method's own next steps above.`}
           />
-          <p className="mt-2 max-w-prose text-sm text-neutral-600">
-            Advice written for your organisation on how to close the gap on {detail.name} will
-            appear here. Until then, the next steps above are the method&apos;s own guidance.
-          </p>
+          <div className="mt-4 space-y-4">
+            {detail.readiness && (
+              <DimensionAdvice
+                adviceRef={{ kind: "readiness", assessmentId: detail.readiness.assessment_id }}
+                dimensionKey={detail.key}
+                heading="For the readiness result"
+                resultHref={`/readiness/${detail.readiness.assessment_id}/result`}
+              />
+            )}
+            {detail.iq && (
+              <DimensionAdvice
+                adviceRef={{
+                  kind: "idea",
+                  ideaId: detail.iq.idea_id,
+                  assessmentId: detail.iq.assessment_id,
+                }}
+                dimensionKey={detail.key}
+                heading={`For the idea "${detail.iq.idea_title}"`}
+                resultHref={`/ideas/${detail.iq.idea_id}/assessments/${detail.iq.assessment_id}`}
+              />
+            )}
+          </div>
         </Card>
       )}
     </div>

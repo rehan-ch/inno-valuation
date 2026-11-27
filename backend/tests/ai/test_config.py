@@ -29,8 +29,9 @@ def test_every_touchpoint_is_configured_and_priced() -> None:
         assert config.price(settings.model) is not None
 
 
-def test_the_consultation_nudge_stays_off_until_built() -> None:
-    assert get_ai_config().touchpoint(AiTouchpoint.CONSULTATION_NUDGE).enabled is False
+def test_the_consultation_nudge_is_switched_on() -> None:
+    # Amy Q11: the AI judges the gap. The switch stays in the settings.
+    assert get_ai_config().touchpoint(AiTouchpoint.CONSULTATION_NUDGE).enabled is True
     assert get_ai_config().touchpoint(AiTouchpoint.EXPLAIN_QUESTION).enabled is True
 
 
